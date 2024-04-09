@@ -11,7 +11,7 @@
   "background": {
     "service_worker": "dist/background.js"
   },
-  "options_page": "public/options.html",
+  "options_page": "dist/options.html",
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
@@ -19,7 +19,7 @@
     }
   ],
   "action": {
-    "default_popup": "public/popup.html"
+    "default_popup": "dist/popup.html"
   },
   "host_permissions": [
     "<all_urls>"

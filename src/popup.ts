@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
           chrome.runtime.openOptionsPage();
         } else {
           // Reasonable fallback.
-          window.open(chrome.runtime.getURL('public/options.html'));
+          window.open(chrome.runtime.getURL('dist/options.html'));
         }
       });
     }
