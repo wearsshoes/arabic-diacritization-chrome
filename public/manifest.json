@@ -17,6 +17,10 @@
       "js": ["dist/content.js"]
     }
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' https://api.anthropic.com; object-src 'self'"
+
+  },
   "action": {
     "default_popup": "public/popup.html"
   },
