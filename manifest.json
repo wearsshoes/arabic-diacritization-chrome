@@ -9,7 +9,7 @@
     "storage"
   ],
   "background": {
-    "service_worker": "dist/background.js",
+    "service_worker": "dist/background.js"
   },
   "options_page": "public/options.html",
   "content_scripts": [
