@@ -9,18 +9,15 @@
     "storage"
   ],
   "background": {
-    "service_worker": "dist/background.js"
+    "service_worker": "dist/background.js",
   },
-  "options_page": "options.html",
+  "options_page": "public/options.html",
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
       "js": ["dist/content.js"]
     }
   ],
-  "content_security_policy": {
-    "extension_pages": "script-src 'self' https://api.anthropic.com; object-src 'self'"
-  },
   "action": {
     "default_popup": "public/popup.html"
   },
