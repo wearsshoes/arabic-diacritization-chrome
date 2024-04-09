@@ -4,14 +4,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (diacritizeBtn) {
       diacritizeBtn.addEventListener('click', () => {
+      // temp not implemented
+        const messageDiv = document.getElementById('notImplementedMsg');
+        if (messageDiv) {
+          messageDiv.textContent = 'Not implemented';
+        }
+      });
+      
       // Send a message to the content script to start diacritization
-      alert('Not implemented');
       //   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       //     if (tabs.length > 0 && tabs[0].id !== undefined) {
       //       chrome.tabs.sendMessage(tabs[0].id, { action: 'diacritize' });
       //     }
       //   });
-      });
     }
 
     if (optionsBtn) {
