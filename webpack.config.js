@@ -5,6 +5,9 @@ module.exports = {
   mode: 'development',
   entry: {
     background: './src/background.ts',
+    options: './src/options.ts',
+    popup: './src/popup.ts',
+    content: './src/content.ts'
     // Add other entry points if needed
   },
   output: {
