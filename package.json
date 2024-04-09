@@ -2,7 +2,7 @@
   "name": "arabic-diacritization-chrome",
   "version": "0.1.0",
   "description": "This extension adds full diacritics (tashkeel) to Arabic text using an LLM API.",
-  "main": "manifest.json",
+  "main": "public/manifest.json",
   "scripts": {
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"

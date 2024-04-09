@@ -18,7 +18,7 @@
     }
   ],
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "public/popup.html"
   },
   "host_permissions": [
     "<all_urls>"
