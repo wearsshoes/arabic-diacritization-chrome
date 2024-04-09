@@ -12,7 +12,7 @@
     "service_worker": "dist/background.js"
   },
   "options_ui": {
-    "page": "options.html",
+    "page": "dist/options.html",
     "open_in_tab": true
     },
   "content_scripts": [
