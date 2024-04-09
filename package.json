@@ -1,0 +1,26 @@
+{
+  "name": "arabic-diacritization-chrome",
+  "version": "0.1.0",
+  "description": "This extension adds full diacritics (tashkeel) to Arabic text using an LLM API.",
+  "main": "manifest.json",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wearsshoes/arabic-diacritization-chrome.git"
+  },
+  "keywords": [
+    "arabic"
+  ],
+  "author": "Rachel Shu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wearsshoes/arabic-diacritization-chrome/issues"
+  },
+  "homepage": "https://github.com/wearsshoes/arabic-diacritization-chrome#readme",
+  "devDependencies": {
+    "typescript": "^5.4.4"
+  }
+}
