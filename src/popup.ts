@@ -22,14 +22,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (optionsBtn) {
       optionsBtn.addEventListener('click', () => {
         // Open the options page
-        // if (chrome.runtime.openOptionsPage) {
-        //   // New way to open options pages, if supported (Chrome 42+).
-        //   chrome.runtime.openOptionsPage();
-        // } else {
-        //   // Reasonable fallback.
-        //   chrome.tabs.create({url: 'dist/options.html'});
-        // }
-        chrome.tabs.create({url: 'dist/options.html'});
+        if (chrome.runtime.openOptionsPage) {
+          // New way to open options pages, if supported (Chrome 42+).
+          chrome.runtime.openOptionsPage();
+        } else {
+          // Reasonable fallback.
+          chrome.tabs.create({url: 'dist/options.html'});
+        }
       });
     }
   });
