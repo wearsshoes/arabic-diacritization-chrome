@@ -39,19 +39,6 @@ async function processTranslationBatches(translationBatches: { text: string; ele
   return Promise.all(translationPromises);
 }
 
-
-// **DUMMY** API Call for Translation
-// function translateTexts(texts: string[]): Promise<string[]> {
-//   return new Promise((resolve) => {
-//     // Simulate a delay for the API call
-//     setTimeout(() => {
-//       // For simplicity, let's just append " (translated)" to each text
-//       const translatedTexts = texts.map(text => text + " (translated)");
-//       resolve(translatedTexts);
-//     }, 1000);
-//   });
-// }
-
 // **DUMMY** API Call for Translation
 function translateTexts(texts: string[]): Promise<string[]> {
   return new Promise((resolve) => {
