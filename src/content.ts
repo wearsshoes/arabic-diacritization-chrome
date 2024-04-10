@@ -1,49 +1,134 @@
 // content.ts
 
+
+
+// Utility Functions
+function isVisible(element: Element): boolean {
+  const style = window.getComputedStyle(element);
+  return style.display !== 'none' && style.visibility !== 'hidden';
+}
+
 // Interfaces
 interface TextElement {
   elementId: string;
   originalText: string;
   index: number;
+  // hasChildren: boolean;
 }
 
-// Utility Functions
-function isVisible(element: Element): boolean {
-  if (!(element instanceof HTMLElement)) {
-    return false;
-  }
-  const style = window.getComputedStyle(element);
-  return style.display !== 'none' && style.visibility !== 'hidden';
-}
-
-function extractTextElements(): TextElement[] {
+function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''): TextElement[] {
   const textElements: TextElement[] = [];
-  const elements = document.body.getElementsByTagName('*');
-
-  for (const element of elements) {
-    if (element.textContent?.trim() && isVisible(element)) {
-      const elementId = 'element-' + Math.random().toString(36).substr(2, 9); // Generate a unique ID for the parent element
-      element.setAttribute('data-element-id', elementId); // Set the ID as a data attribute on the parent element
-
-      const childNodes = Array.from(element.childNodes);
-      let textNodeIndex = 0;
-      childNodes.forEach((node) => {
-        if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '') {
-          const textElement: TextElement = {
-            elementId: elementId, // Use the same elementId for all text nodes of this parent element
-            originalText: node.textContent || '',
-            index: textNodeIndex++ // Increment the index for each text node
-          };
-          textElements.push(textElement);
-        } else {
-          textNodeIndex++ 
-        }
-      });
+  
+  if (node.nodeType === Node.ELEMENT_NODE) {
+    elementId = 'element-' + Math.random().toString(36).substring(2, 11); // Generate a unique ID for the element
+    const element = node as Element;
+    element.setAttribute('data-element-id', elementId); // Set the ID as a data attribute on the element
+    if (node.hasChildNodes() && isVisible(element)) {
+      let innerIndex = 0;
+      for (const childNode of node.childNodes) {
+        const innerText = recurseDOM(childNode, innerIndex, elementId)
+        innerText.forEach(innerElement => {
+          textElements.push(innerElement)
+        });
+        innerIndex++;
+     }
     }
-  }
+  } else if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+    const textElement:TextElement = {
+      elementId: elementId,
+      originalText: node.textContent,
+      index: index,
+      // hasChildren: false
+    }
+    // console.log(textElement)
+    textElements.push(textElement)
+  };
 
   return textElements;
 }
+
+// function getHTMLNodes() {
+//   const htmlNodes = document.body.getElementsByTagName('*');
+//   console.log(htmlNodes);
+//   return(htmlNodes)
+// }
+
+// function extractTextElements(htmlNodes:HTMLCollection): TextElement[] {
+//     const textElements: TextElement[] = [];
+//   return textElements
+// }
+
+  //   if (node.textContent?.trim()) {
+  //     const elementId = 'element-' + Math.random().toString(36).substring(2, 11); // Generate a unique ID for the parent element
+  //     node.setAttribute('data-element-id', elementId); // Set the ID as a data attribute on the parent element
+
+  //     let textNodeIndex = 0;
+  //     // const elementTextElements: TextElement[] = []; // Temporary array to hold text elements for this parent
+
+  //     let currentChildNodes;
+
+  //     if (node.childElementCount > 0) {
+  //       currentChildNodes = Array.from(node.childNodes)
+  //       console.log(currentChildNodes)
+  //     }
+      
+  //     textElements.push({
+  //       elementId: elementId,
+  //       originalText: node.textContent.trim(),
+  //       index: 0,
+  //       hasChildren: (node.childElementCount > 0),
+  //       childNodes: currentChildNodes
+  //     });
+  //   } 
+
+  //   }
+  //       if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '') {
+  //         const textElement: TextElement = {
+  //           elementId: elementId, // Use the same elementId for all text nodes of this parent element
+  //           originalText: node.textContent || '',
+  //           index: textNodeIndex++ // Increment the index for each text node
+  //         };
+  //         elementTextElements.push(textElement);
+  //       } else {
+  //         textNodeIndex++ 
+  //       }
+  //   }
+  // }
+
+// function extractTextElements(): TextElement[] {
+//   const textElements: TextElement[] = [];
+//   const elements = document.body.getElementsByTagName('*');
+//   console.log(elements);
+
+//   for (const element of elements) {
+//     if (element.textContent?.trim() && isVisible(element)) {
+//       const elementId = 'element-' + Math.random().toString(36).substring(2, 11); // Generate a unique ID for the parent element
+
+//       const childNodes = Array.from(element.childNodes);
+//       let textNodeIndex = 0;
+//       childNodes.forEach((node) => {
+//         if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '') {
+//           const textElement: TextElement = {
+//             elementId: elementId, // Use the same elementId for all text nodes of this parent element
+//             originalText: node.textContent || '',
+//             index: textNodeIndex++ // Increment the index for each text node
+//           };
+//           textElements.push(textElement);
+//         }
+//       });
+//     }
+//   }
+
+//   // Sort text elements by elementId and index to ensure correct order
+//   textElements.sort((a, b) => {
+//     if (a.elementId === b.elementId) {
+//       return a.index - b.index;
+//     }
+//     return a.elementId.localeCompare(b.elementId);
+//   });
+
+//   return textElements;
+// }
 
 
 // Prepare batches for API
@@ -80,29 +165,6 @@ function createTranslationBatches(textElements: TextElement[], maxCharactersPerR
   return translationBatches;
 }
 
-// // Async worker for API call
-// async function processTranslationBatches(translationBatches: { text: string; elements: TextElement[] }[]): Promise<void> {
-//   const translationPromises = translationBatches.map(batch => translateTexts([batch.text]));
-//   const translatedTextArrays = await Promise.all(translationPromises);
-
-//   for (let i = 0; i < translationBatches.length; i++) {
-//     const translatedTexts = translatedTextArrays[i][0].split('\u200B');
-//     replaceTextWithTranslatedText(translationBatches[i].elements, translatedTexts);
-//   }
-// }
-
-// // **DUMMY** API Call for Translation
-// function translateTexts(texts: string[]): Promise<string[]> {
-//   return new Promise((resolve) => {
-//     // Simulate a delay for the API call
-//     setTimeout(() => {
-//       // For simplicity, let's just append " (translated)" to each text
-//       const translatedTexts = texts.map(text => text + " (translated)");
-//       resolve(translatedTexts);
-//     }, 1000);
-//   });
-// }
-
 // DOM Manipulation
 function replaceTextWithTranslatedText(textElements: TextElement[], translatedTexts: string[]): void {
   for (let i = 0; i < textElements.length; i++) {
@@ -136,27 +198,45 @@ function replaceTextWithTranslatedText(textElements: TextElement[], translatedTe
   }
 }
 
-
 // Main Execution
-(async () => {
-  const textElements = extractTextElements();
-  const translationBatches = createTranslationBatches(textElements, 1000);
-  console.log(translationBatches.length)
+const translationBatches = createTranslationBatches(recurseDOM(), 500)
+console.log(translationBatches);
+translationBatches.forEach(element => {
+  console.log(element.text)
+});
+// const htmlNodes = getHTMLNodes();
+// const textElements = extractTextElements(htmlNodes);
+// // console.log(textElements);
 
-  // Send translation batches to background script
-  chrome.runtime.sendMessage({action: "translate", data: translationBatches}, (response) => {
-    // Handle the translated text here
-    console.log("Translation completed", response.data);
-    if (response.type === 'translationResult') {
-      response.data.forEach((batch: { elements: TextElement[]; translatedTexts: string[] }) => {
-        // console.log('Translated texts:', batch.translatedTexts);
-        if (batch.translatedTexts.length !== batch.elements.length) {
-          console.error('Mismatch in number of translated texts and text elements');
+// const textBody = new(Array);
+// textElements.forEach(element => {
+//   if (element.hasChildren === false) {
+//     textBody.push(element.originalText, element.elementId)
+//   }
+// });
+// console.log(textBody);
+
+// const translationBatches = createTranslationBatches(textElements, 1000);
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "diacritize") {
+    (async () => {
+      // Send translation batches to background script
+      chrome.runtime.sendMessage({action: "translate", data: translationBatches}, (response) => {
+        // Handle the translated text here
+        console.log("Translation completed", response.data);
+        if (response.type === 'translationResult') {
+          response.data.forEach((batch: { elements: TextElement[]; translatedTexts: string[] }) => {
+            // console.log('Translated texts:', batch.translatedTexts);
+            if (batch.translatedTexts.length !== batch.elements.length) {
+              console.error('Mismatch in number of translated texts and text elements');
+            }
+            replaceTextWithTranslatedText(batch.elements, batch.translatedTexts);
+          });
+        } else if (response.type === 'error') {
+          console.error("Translation error:", response.message);
         }
-        replaceTextWithTranslatedText(batch.elements, batch.translatedTexts);
       });
-    } else if (response.type === 'error') {
-      console.error("Translation error:", response.message);
-    }
-  });
-})();
+    })()
+  }
+});
