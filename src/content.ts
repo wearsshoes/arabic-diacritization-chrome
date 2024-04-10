@@ -1,19 +1,16 @@
 // content.ts
 
-
-
-// Utility Functions
-function isVisible(element: Element): boolean {
-  const style = window.getComputedStyle(element);
-  return style.display !== 'none' && style.visibility !== 'hidden';
-}
-
 // Interfaces
 interface TextElement {
   elementId: string;
   originalText: string;
   index: number;
-  // hasChildren: boolean;
+}
+
+// Utility Functions
+function isVisible(element: Element): boolean {
+  const style = window.getComputedStyle(element);
+  return style.display !== 'none' && style.visibility !== 'hidden';
 }
 
 function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''): TextElement[] {
@@ -38,98 +35,12 @@ function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''
       elementId: elementId,
       originalText: node.textContent,
       index: index,
-      // hasChildren: false
     }
-    // console.log(textElement)
     textElements.push(textElement)
   };
 
   return textElements;
 }
-
-// function getHTMLNodes() {
-//   const htmlNodes = document.body.getElementsByTagName('*');
-//   console.log(htmlNodes);
-//   return(htmlNodes)
-// }
-
-// function extractTextElements(htmlNodes:HTMLCollection): TextElement[] {
-//     const textElements: TextElement[] = [];
-//   return textElements
-// }
-
-  //   if (node.textContent?.trim()) {
-  //     const elementId = 'element-' + Math.random().toString(36).substring(2, 11); // Generate a unique ID for the parent element
-  //     node.setAttribute('data-element-id', elementId); // Set the ID as a data attribute on the parent element
-
-  //     let textNodeIndex = 0;
-  //     // const elementTextElements: TextElement[] = []; // Temporary array to hold text elements for this parent
-
-  //     let currentChildNodes;
-
-  //     if (node.childElementCount > 0) {
-  //       currentChildNodes = Array.from(node.childNodes)
-  //       console.log(currentChildNodes)
-  //     }
-      
-  //     textElements.push({
-  //       elementId: elementId,
-  //       originalText: node.textContent.trim(),
-  //       index: 0,
-  //       hasChildren: (node.childElementCount > 0),
-  //       childNodes: currentChildNodes
-  //     });
-  //   } 
-
-  //   }
-  //       if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '') {
-  //         const textElement: TextElement = {
-  //           elementId: elementId, // Use the same elementId for all text nodes of this parent element
-  //           originalText: node.textContent || '',
-  //           index: textNodeIndex++ // Increment the index for each text node
-  //         };
-  //         elementTextElements.push(textElement);
-  //       } else {
-  //         textNodeIndex++ 
-  //       }
-  //   }
-  // }
-
-// function extractTextElements(): TextElement[] {
-//   const textElements: TextElement[] = [];
-//   const elements = document.body.getElementsByTagName('*');
-//   console.log(elements);
-
-//   for (const element of elements) {
-//     if (element.textContent?.trim() && isVisible(element)) {
-//       const elementId = 'element-' + Math.random().toString(36).substring(2, 11); // Generate a unique ID for the parent element
-
-//       const childNodes = Array.from(element.childNodes);
-//       let textNodeIndex = 0;
-//       childNodes.forEach((node) => {
-//         if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '') {
-//           const textElement: TextElement = {
-//             elementId: elementId, // Use the same elementId for all text nodes of this parent element
-//             originalText: node.textContent || '',
-//             index: textNodeIndex++ // Increment the index for each text node
-//           };
-//           textElements.push(textElement);
-//         }
-//       });
-//     }
-//   }
-
-//   // Sort text elements by elementId and index to ensure correct order
-//   textElements.sort((a, b) => {
-//     if (a.elementId === b.elementId) {
-//       return a.index - b.index;
-//     }
-//     return a.elementId.localeCompare(b.elementId);
-//   });
-
-//   return textElements;
-// }
-
 
 // Prepare batches for API
 function createTranslationBatches(textElements: TextElement[], maxCharactersPerRequest: number): { text: string; elements: TextElement[] }[] {
@@ -171,52 +82,22 @@ function replaceTextWithTranslatedText(textElements: TextElement[], translatedTe
     const textElement = textElements[i];
     const translatedText = translatedTexts[i];
     const element = document.querySelector(`[data-element-id="${textElement.elementId}"]`);
-  if (element) {
 
-    console.log(
-    'Replacing ',
-    element.childNodes[textElement.index].textContent,
-    'with ', 
-    translatedText,
-    'at ',
-    element,
-    textElement.index
-    );
-
-    element.childNodes[textElement.index].textContent = translatedText;
-      // // Check if the node is a Text node
-      // if (element.childNodes[textElement.index] instanceof Text) {
-      //   // Update the text content
-      //   element.childNodes[textElement.index].textContent = translatedText;
-      // } else {
-      //   console.error('Node is not a Text node:', element.childNodes[textElement.index]);
-      // }
+    if (element) {
+      console.log('Replacing ', element.childNodes[textElement.index].textContent, 'with ', translatedText, 'at ', element, textElement.index);
+      element.childNodes[textElement.index].textContent = translatedText;
     } else {
       console.log('Error: elementId', textElement.elementId, 'did not map to any element.');
- 
     }
   }
 }
 
 // Main Execution
 const translationBatches = createTranslationBatches(recurseDOM(), 500)
-console.log(translationBatches);
+// console.log(translationBatches);
 translationBatches.forEach(element => {
   console.log(element.text)
 });
-// const htmlNodes = getHTMLNodes();
-// const textElements = extractTextElements(htmlNodes);
-// // console.log(textElements);
-
-// const textBody = new(Array);
-// textElements.forEach(element => {
-//   if (element.hasChildren === false) {
-//     textBody.push(element.originalText, element.elementId)
-//   }
-// });
-// console.log(textBody);
-
-// const translationBatches = createTranslationBatches(textElements, 1000);
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "diacritize") {
