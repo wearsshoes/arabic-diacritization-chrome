@@ -18,10 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
         // temp not implemented
-        const messageDiv = document.getElementById('notImplementedMsg');
-        if (messageDiv) {
-          messageDiv.textContent = 'Not implemented';
-        };
+        // const messageDiv = document.getElementById('notImplementedMsg');
+        // if (messageDiv) {
+        //   messageDiv.textContent = 'Not implemented';
+        // };
       });
     }
 
