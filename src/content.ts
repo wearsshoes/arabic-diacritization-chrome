@@ -36,6 +36,7 @@ function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''
       originalText: node.textContent,
       index: index,
     }
+    // console.log(textElement);
     textElements.push(textElement)
   };
 
@@ -49,7 +50,7 @@ function createTranslationBatches(textElements: TextElement[], maxCharactersPerR
   const translationBatches: { text: string; elements: TextElement[] }[] = [];
 
   textElements.forEach((textElement, index) => {
-    if (/[a-z]/i.test(textElement.originalText)) {
+    if (textElement.originalText) {
       if ((batchText.length + textElement.originalText.length) > maxCharactersPerRequest || index === textElements.length - 1) {
           if (batchText !== '') {
               // Add the current batch to the list of batches
@@ -92,6 +93,17 @@ function replaceTextWithTranslatedText(textElements: TextElement[], translatedTe
   }
 }
 
+function directionLTR() {
+  // Override the CSS styling with !important
+  document.documentElement.setAttribute("lang", "en");
+  document.documentElement.setAttribute("dir", "ltr");
+
+  // Style body
+  const style = document.createElement('style')
+  style.textContent = `body * {direction: ltr;}`;
+  document.head.appendChild(style);
+}    
+
 // Main Execution
 const translationBatches = createTranslationBatches(recurseDOM(), 500)
 // console.log(translationBatches);
@@ -105,7 +117,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // Send translation batches to background script
       chrome.runtime.sendMessage({action: "translate", data: translationBatches}, (response) => {
         // Handle the translated text here
-        console.log("Translation completed", response.data);
         if (response.type === 'translationResult') {
           response.data.forEach((batch: { elements: TextElement[]; translatedTexts: string[] }) => {
             // console.log('Translated texts:', batch.translatedTexts);
@@ -113,6 +124,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               console.error('Mismatch in number of translated texts and text elements');
             }
             replaceTextWithTranslatedText(batch.elements, batch.translatedTexts);
+            directionLTR();
+
           });
         } else if (response.type === 'error') {
           console.error("Translation error:", response.message);
