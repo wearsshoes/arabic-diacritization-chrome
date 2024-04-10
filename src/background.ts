@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import arabizi from './arabizi.json'
 
 const anthropic = new Anthropic({
   apiKey: "my_api_key", // defaults to process.env["ANTHROPIC_API_KEY"]
@@ -26,13 +27,6 @@ async function processTranslationBatches(translationBatches: { text: string; ele
   const translationPromises = translationBatches.map(async (batch) => {
     const translatedTextArray = await translateTexts([batch.text]);
     const translatedTexts = translatedTextArray[0].split('\u200B');
-
-    // Log the tagName and textContent of the first element in the batch, if available
-    // if (batch.elements.length > 0 && batch.elements[0].element) {
-    //   console.log('First element tagName:', batch.elements[0].element.tagName);
-    //   console.log('First element textContent:', batch.elements[0].element.textContent);
-    // }
-
     return { elements: batch.elements, translatedTexts };
   });
 
@@ -44,13 +38,14 @@ function translateTexts(texts: string[]): Promise<string[]> {
   return new Promise((resolve) => {
     // Simulate a delay for the API call
     setTimeout(() => {
-      const translatedTexts = texts.map(text => ALLCAPS(text));
-      resolve(translatedTexts);
+      // const translatedTexts = texts.map(text => arabicToArabizi(text, arabizi.transliteration));
+       const translatedTexts = texts.map(text => arabicToArabizi(text, arabizi.transliteration));
+       resolve(translatedTexts);
     }, 10);
   });
 }
 
-// ROT13 translation function
+// ALLCAPS translation function
 function ALLCAPS(str: string): string {
   return str.replace(/[a-z]/g, (char) => {
     const charCode = char.charCodeAt(0);
@@ -58,7 +53,27 @@ function ALLCAPS(str: string): string {
   });
 }
 
+// Arabizi translation function
+interface TransliterationDict {
+  [key: string]: string[];
+}
 
+function arabicToArabizi(arabicText: string, transliterationDict: TransliterationDict): string {
+  let arabiziText = '';
+
+  for (let i = 0; i < arabicText.length; i++) {
+    const char = arabicText[i];
+    const transliterations = transliterationDict[char];
+
+    if (transliterations) {
+      arabiziText += transliterations[0]; // Use the first transliteration by default
+    } else {
+      arabiziText += char; // If no transliteration found, keep the original character
+    }
+  }
+
+  return arabiziText;
+}
 // chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 //   if (request.action === 'diacritize') {
 //     const chunks: string[] = request.chunks;
