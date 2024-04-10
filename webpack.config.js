@@ -1,5 +1,7 @@
 const path = require('path');
-const CopyPlugin = require('copy-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const ExtReloader = require('webpack-ext-reloader');
+
 
 module.exports = {
   mode: 'development',
@@ -28,7 +30,8 @@ module.exports = {
     extensions: ['.ts', '.js'],
   },
   plugins: [
-    new CopyPlugin({
+    new ExtReloader(),
+    new CopyWebpackPlugin({
       patterns: [
         { from: 'public', to: '.' },
       ],
