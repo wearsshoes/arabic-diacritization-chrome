@@ -1,15 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-// import dotenv from 'dotenv';
-// dotenv.config();
-
-// chrome.storage.sync.get('ANTHROPIC_API_KEY', (data) => {
-//   const apiKey = data.apiKey;
-//   if (apiKey) {
-//       // Use the API key for your API calls
-//   } else {
-//       // Handle the case where the API key is not set
-//   }
-// });
 
 const anthropic = new Anthropic({
   apiKey: "my_api_key", // defaults to process.env["ANTHROPIC_API_KEY"]
