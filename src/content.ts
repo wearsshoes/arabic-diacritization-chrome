@@ -1,75 +1,47 @@
-function extractTextFromElement(element: Node): string {
-    if (element.nodeType === Node.TEXT_NODE) {
-      return element.textContent!.trim();
-    }
-  
-    if (element.nodeType !== Node.ELEMENT_NODE) {
-      return '';
-    }
-  
-    let text = '';
-  
-    if (['H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes((element as Element).tagName)) {
-      text += '\n' + element.textContent!.trim() + '\n';
-    } else if (['P', 'DIV', 'SPAN'].includes((element as Element).tagName)) {
-      text += element.textContent!.trim() + ' ';
-    } else if ((element as Element).tagName === 'LI') {
-      text += '- ' + element.textContent!.trim() + '\n';
-    }
-  
-    for (const child of element.childNodes) {
-      text += extractTextFromElement(child);
-    }
-  
-    return text;
+console.log('Content script loaded');
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "testMessage") {
+      console.log("content script message received");
   }
-  
-  function extractText(): string {
-    const body = document.body;
-    return extractTextFromElement(body);
-  }
-  
-  function chunkText(text: string): string[] {
-    const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
-    const chunks: string[] = [];
-    let currentChunk = '';
-  
-    for (const sentence of sentences) {
-      if (currentChunk.length + sentence.length <= 512) {
-        currentChunk += sentence;
-      } else {
-        chunks.push(currentChunk.trim());
-        currentChunk = sentence;
-      }
-    }
-  
-    if (currentChunk.length > 0) {
-      chunks.push(currentChunk.trim());
-    }
-  
-    return chunks;
-  }
-  
-  function diacritizeText(text: string): string {
-    // TODO: Implement the logic to send the text to the LLM API for diacritization
-    // and return the diacritized text
-    return text;
-  }
-  
-  function diacritizePage(): void {
-    const text = extractText();
-    const chunks = chunkText(text);
-  
-    const diacritizedChunks = chunks.map(chunk => diacritizeText(chunk));
-    const diacritizedText = diacritizedChunks.join(' ');
-  
-    // TODO: Implement the logic to update the page with the diacritized text
-    console.log(diacritizedText);
-  }
-  
-  chrome.runtime.onMessage.addListener(function (request: { action: string }, sender, sendResponse) {
-    if (request.action === 'diacritize') {
-      diacritizePage();
-    }
-  });
-  
+});
+
+// function prepareForDiacritization() {
+//   const chunkSize = 500;
+//   const chunks: Array<{
+//     text: string;
+//     element: Element;
+//     index: number;
+//   }> = [];
+
+//   function traverseDOM(element: Element) {
+//     if (element.nodeType === Node.TEXT_NODE) {
+//       const text = element.textContent || '';
+//       const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+
+//       sentences.forEach((sentence, index) => {
+//         const start = text.indexOf(sentence);
+//         const end = start + sentence.length;
+//         const chunk = text.slice(start, end);
+
+//         chunks.push({
+//           text: chunk,
+//           element: element.parentElement!,
+//           index: start,
+//         });
+
+//         element.textContent = text.slice(0, start) + `{{chunk_${chunks.length - 1}}}` + text.slice(end);
+//       });
+//     } else {
+//       Array.from(element.childNodes).forEach((child) => {
+//         if (child.nodeType === Node.ELEMENT_NODE) {
+//           traverseDOM(child as Element);
+//         }
+//       });
+//     }
+//   }
+
+//   traverseDOM(document.body);
+
+//   console.log(chunks);
+// }
