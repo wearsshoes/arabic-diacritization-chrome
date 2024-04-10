@@ -7,11 +7,17 @@ document.addEventListener('DOMContentLoaded', () => {
       // Send a message to the content script to start diacritization
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           if (tabs.length > 0 && tabs[0].id !== undefined) {
-            chrome.tabs.sendMessage(tabs[0].id, { action: 'diacritize' });
-            console.log('Diacritize button click sent to content script');
+            chrome.tabs.sendMessage(tabs[0].id, { action: 'diacritize' }, (response) => {
+              if (chrome.runtime.lastError) {
+                console.error('Error sending message:', chrome.runtime.lastError);
+              } else {
+                console.log('Diacritization response:', response);
+                // Handle the response from the content script if needed
+              }
+            });
           }
         });
-      // temp not implemented
+        // temp not implemented
         const messageDiv = document.getElementById('notImplementedMsg');
         if (messageDiv) {
           messageDiv.textContent = 'Not implemented';
