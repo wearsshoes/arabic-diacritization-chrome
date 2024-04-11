@@ -1,9 +1,18 @@
 import Anthropic from "@anthropic-ai/sdk";
-import arabizi from './arabizi.json'
+import arabizi from './arabizi.json';
+import prompts from './prompt.json';
 
-const anthropic = new Anthropic({
-  apiKey: "my_api_key", // defaults to process.env["ANTHROPIC_API_KEY"]
-});
+async function getApiKey(): Promise<string> {
+  return new Promise((resolve, reject) => {
+      chrome.storage.sync.get('apiKey', function(result) {
+          if (chrome.runtime.lastError) {
+              reject(chrome.runtime.lastError);
+          } else {
+              resolve(result.apiKey);
+          }
+      });
+  });
+}
 
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -24,98 +33,123 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Async worker for API call
 async function processTranslationBatches(translationBatches: { text: string; elements: TextElement[] }[]): Promise<{ elements: TextElement[]; translatedTexts: string[] }[]> {
-  const translationPromises = translationBatches.map(async (batch) => {
-    const translatedTextArray = await translateTexts([batch.text]);
-    const translatedTexts = translatedTextArray[0].split('\u200B');
+  const texts = translationBatches.map((batch) => batch.text);
+  const translatedTextArrays = await diacritizeTexts(texts);
+
+  return translationBatches.map((batch, index) => {
+    const translatedTexts = translatedTextArrays[index].split('|');
     return { elements: batch.elements, translatedTexts };
   });
+}
 
-  return Promise.all(translationPromises);
+// API Call for Diacritization
+async function diacritizeTexts(texts: string[]): Promise<string[]> {
+  const apiKey = await getApiKey();
+  const anthropic = new Anthropic({
+    apiKey: apiKey
+  });
+  const prompt = prompts.p2
+  console.log('Diacritizing', texts.length, 'texts', texts);
+
+  const diacritizedTexts = await Promise.all(texts.map(async (arabicText) => {
+    try {
+      // console.log('Diacritizing', arabicText);
+      const msg = await anthropic.messages.create({
+        model: "claude-3-haiku-20240307",
+        max_tokens: 4000,
+        temperature: 0,
+        system: prompt,
+        messages: [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": arabicText,
+              }
+            ]
+          }
+        ]
+      });
+      
+      let diacritizedText = msg.content[0].text;
+      console.log('Input tokens:', msg.usage.input_tokens, 'Output tokens;', msg.usage.output_tokens);
+      
+      if (msg.usage.input_tokens > msg.usage.output_tokens) {
+        console.log('Too short, trying again')
+        const newMsg = await anthropic.messages.create({
+          model: "claude-3-opus-20240229",
+          max_tokens: 4000,
+          temperature: 0,
+          system: prompt,
+          messages: [
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "text",
+                  "text": arabicText,
+                }
+              ]
+            }
+          ]
+        }); 
+        console.log('Input tokens:', newMsg.usage.input_tokens, 'Output tokens;', newMsg.usage.output_tokens);
+        diacritizedText = newMsg.content[0].text;
+      }
+
+      console.log(arabicText);
+      console.log(diacritizedText);
+
+      return diacritizedText;
+
+    } 
+    catch (error) {
+      console.error('Error diacritizing chunk:', error);
+      return arabicText;
+    }
+  }));
+
+  return diacritizedTexts;
 }
 
 // **DUMMY** API Call for Translation
-function translateTexts(texts: string[]): Promise<string[]> {
-  return new Promise((resolve) => {
-    // Simulate a delay for the API call
-    setTimeout(() => {
-      // const translatedTexts = texts.map(text => arabicToArabizi(text, arabizi.transliteration));
-       const translatedTexts = texts.map(text => arabicToArabizi(text, arabizi.transliteration));
-       resolve(translatedTexts);
-    }, 10);
-  });
-}
+// function translateTexts(texts: string[]): Promise<string[]> {
+//   return new Promise((resolve) => {
+//     // Simulate a delay for the API call
+//     setTimeout(() => {
+//       const translatedTexts = texts.map(text => arabicToArabizi(text, arabizi.transliteration));
+//        resolve(translatedTexts);
+//     }, 1000);
+//   });
+// }
 
-// ALLCAPS translation function
-function ALLCAPS(str: string): string {
-  return str.replace(/[a-z]/g, (char) => {
-    const charCode = char.charCodeAt(0);
-    return String.fromCharCode(charCode - 32);
-  });
-}
+// // ALLCAPS translation function
+// function ALLCAPS(str: string): string {
+//   return str.replace(/[a-z]/g, (char) => {
+//     const charCode = char.charCodeAt(0);
+//     return String.fromCharCode(charCode - 32);
+//   });
+// }
 
-// Arabizi translation function
-interface TransliterationDict {
-  [key: string]: string[];
-}
+// // Arabizi translation function
+// interface TransliterationDict {
+//   [key: string]: string[];
+// }
 
-function arabicToArabizi(arabicText: string, transliterationDict: TransliterationDict): string {
-  let arabiziText = '';
+// function arabicToArabizi(arabicText: string, transliterationDict: TransliterationDict): string {
+//   let arabiziText = '';
 
-  for (let i = 0; i < arabicText.length; i++) {
-    const char = arabicText[i];
-    const transliterations = transliterationDict[char];
+//   for (let i = 0; i < arabicText.length; i++) {
+//     const char = arabicText[i];
+//     const transliterations = transliterationDict[char];
 
-    if (transliterations) {
-      arabiziText += transliterations[0]; // Use the first transliteration by default
-    } else {
-      arabiziText += char; // If no transliteration found, keep the original character
-    }
-  }
-
-  return arabiziText;
-}
-// chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-//   if (request.action === 'diacritize') {
-//     const chunks: string[] = request.chunks;
-//     const diacritizedChunks: string[] = [];
-
-//     const diacritizeChunk = async (index: number) => {
-//       if (index >= chunks.length) {
-//         sendResponse({ diacritizedChunks: diacritizedChunks });
-//         return;
-//       }
-
-//       const chunk = chunks[index];
-//       try {
-//         const msg = await anthropic.messages.create({
-//           model: "claude-3-haiku-20240307",
-//           max_tokens: 2000,
-//           temperature: 0,
-//           system: "You are an AI assistant that adds full diacritics (taškīl) to Modern Standard Arabic text. Given Arabic text, add all necessary diacritics to fully specify the pronunciation and grammatical function of each word. For example:\n\nOriginal text: ذهب محمد الى المدرسة\nDiacriticized text: ذَهَبَ مُحَمَّدٌ إِلَى الْمَدْرَسَةِ\n\nOnly add the core diacritics (ḥarakāt) used in ordinary Arabic text: fatḥa, kasra, ḍamma, sukūn, šadda, tanwīn. Do not add recitation marks or other diacritics used only in specialized texts like the Quran. Diacriticize the text as it would be pronounced in a neutral, formal MSA accent. \n\nDo not correct grammar. Do not translate non-Arabic words. Preserve punctuation and formatting. Return the full resulting text and nothing else.",
-//           messages: [
-//             {
-//               "role": "user",
-//               "content": [
-//                 {
-//                   "type": "text",
-//                   "text": chunk
-//                 }
-//               ]
-//             }
-//           ]
-//         });
-
-//         const diacritizedChunk = msg.content[-1].text;
-//         diacritizedChunks.push(diacritizedChunk);
-//         diacritizeChunk(index + 1);
-//       } catch (error) {
-//         console.error('Error diacritizing chunk:', error);
-//         sendResponse({ error: 'Failed to diacritize chunk' });
-//       }
-//     };
-
-//     diacritizeChunk(0);
-
-//     return true; // Required to use sendResponse asynchronously
+//     if (transliterations) {
+//       arabiziText += transliterations[0]; // Use the first transliteration by default
+//     } else {
+//       arabiziText += char; // If no transliteration found, keep the original character
+//     }
 //   }
-// });
+
+//   return arabiziText;
+// }
