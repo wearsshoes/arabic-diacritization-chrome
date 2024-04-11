@@ -1,6 +1,7 @@
 // content.ts
 
 // Interfaces
+// I'm not really sure where these are supposed to live - a separate definitions.json?
 interface TextElement {
   elementId: string;
   originalText: string;
@@ -12,18 +13,21 @@ interface APIBatch {
   elements: TextElement[];
 }
 
+interface processorResponse {
+  elements: TextElement[]; 
+  translatedTexts: string[];
+  rawResult: string
+}
+
 // Global Variables
 const delimiter:string = '|'
 let textElementBatches: TextElement[][];
 let APIBatches: APIBatch[];
+// maybe this cache should go to the local storage, to have the option to reuse after page reload.
+let cachedResponse: processorResponse[];
 
 // Utility Functions
-// Checks if node is visible
-function isVisible(element: Element): boolean {
-  const style = window.getComputedStyle(element);
-  // still need some work, returns stuff hidden in menus and some weird stuf at the bottom of pages.
-  return style.display !== 'none' && style.visibility !== 'hidden';
-}
+
 
 // Builds element list according to interface. Recurses through DOM and put the in the right order. 
 function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''): TextElement[] {
@@ -37,7 +41,8 @@ function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''
     if (node.hasChildNodes() && isVisible(element)) {
       let innerIndex = 0;
       for (const childNode of node.childNodes) {
-        // TODO: it's not insane to split nodes at sentence breaks on '. '; this might make better sentences.
+        // TODO: it's not insane to split DOM nodes and modify the DOM at sentence breaks on '. '; 
+        // this might make for better sentence and paragraph control.
         const innerText = recurseDOM(childNode, innerIndex, elementId) // Maybe there's an easier, non-recursing way to do this?
         innerText.forEach(innerElement => {
           textElements.push(innerElement)
@@ -58,6 +63,44 @@ function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''
   return textElements;
 }
 
+
+// Checks if node is visible
+function isVisible(element: Element): boolean {
+  if (!element.getBoundingClientRect) {
+    return false;
+  }
+
+  const rect = element.getBoundingClientRect();
+  const viewHeight = Math.max(document.documentElement.clientHeight, window.innerHeight);
+  const viewWidth = Math.max(document.documentElement.clientWidth, window.innerWidth);
+
+  // Check if the element has dimensions and is within the viewport
+  const isInViewport = (
+    rect.top >= 0 &&
+    rect.left >= 0 &&
+    rect.bottom <= viewHeight &&
+    rect.right <= viewWidth
+  );
+
+  // Check if the element has a visible size
+  const hasSize = (
+    rect.width > 0 &&
+    rect.height > 0
+  );
+
+  // Check if the element's opacity is greater than 0
+  const opacity = parseFloat(window.getComputedStyle(element).getPropertyValue('opacity'));
+  const isOpaque = opacity > 0;
+
+  // Check if the element or any of its ancestors have display: none or visibility: hidden
+  const isDisplayed = (
+    window.getComputedStyle(element).display !== 'none' &&
+    window.getComputedStyle(element).visibility !== 'hidden'
+  );
+
+  return isInViewport && hasSize && isOpaque && isDisplayed;
+}
+
 // Check whether there are any Arabic characters. Not used
 function containsArabicCharacters(text: string): boolean {
   const arabicRegex = /[\u0600-\u06FF]/;
@@ -75,6 +118,8 @@ function createTextElementBatches(textElements: TextElement[], maxChars: number)
     const text = textElement.originalText
     if (text!='') {
     // if (containsArabicCharacters(text)) {
+    // we want to take these out, but doing so might cause us to lose context within sentences.
+    // once we have better batch management with sentences paragraphs etc, we can then address this.
       const textLength = text.length;
 
       if ((currentBatchLength + textLength) > maxChars) {
@@ -134,19 +179,21 @@ function createAPIBatches(textElementBatches: TextElement[][]): { text: string; 
 
 // DOM Manipulation
 function replaceTextWithTranslatedText(textElements: TextElement[], translatedTexts: string[]): void {
-  for (let i = 0; i < textElements.length; i++) {
-    const textElement = textElements[i];
-    const translatedText = translatedTexts[i];
-    const element = document.querySelector(`[data-element-id="${textElement.elementId}"]`);
-
-    if (element) {
-      // console.log('Replacing ', element.childNodes[textElement.index].textContent, 'with ', translatedText, 'at ', element, textElement.index);
-      element.childNodes[textElement.index].textContent = translatedText;
-    } else {
-      console.log('Error: elementId', textElement.elementId, 'did not map to any element.');
+  try {
+    for (let i = 0; i < textElements.length; i++) {
+      const textElement = textElements[i];
+      const translatedText = translatedTexts[i];
+      const element = document.querySelector(`[data-element-id="${textElement.elementId}"]`);
+      if (element) {
+        element.childNodes[textElement.index].textContent = translatedText;
+      } else {
+        console.warn(`Warning: elementId ${textElement.elementId} did not map to any element.`);
+      }
     }
+    console.log('Replaced text with translated text:', translatedTexts);
+  } catch (error) {
+    console.error('Error replacing text with translated text:', error);
   }
-  console.log('inserted', translatedTexts)
 }
 
 // Forces LTR. Only gets called for Arabizi
@@ -157,15 +204,8 @@ function directionLTR() {
   style.textContent = `body * {direction: ltr;}`;
   document.head.appendChild(style);
 }    
-interface processorResponse {
-  elements: TextElement[]; 
-  translatedTexts: string[];
-  rawResult: string
-}
 
-let cachedResponse: processorResponse[];
-
-// diacritize listener - waits for popup click, then sends batches to worker.
+// Diacritize listener - waits for popup click, then sends batches to worker.
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "sendToTranslate") {
     (async () => {
@@ -175,7 +215,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (response.type === 'translationResult') {
           cachedResponse = response.data;
           console.log('Cached result:', cachedResponse);
-          
+
           response.data.forEach((batch: { elements: TextElement[]; translatedTexts: string[] }) => {
             // console.log('Translated texts:', batch.translatedTexts);
             if (batch.translatedTexts.length !== batch.elements.length) {
@@ -194,6 +234,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+// starts the batch preparer
+function main() {
+  try {
+    const mainNode = document.querySelector('main');
+    console.log('Main node:', mainNode);
+    textElementBatches = createTextElementBatches(recurseDOM(mainNode ?? document.body), 500);
+    APIBatches = createAPIBatches(textElementBatches);
+  } catch (error) {
+    console.error('Error during initialization:', error);
+  }
+}
+
 // Run on script load 
 if (document.readyState === "loading") {
   // Wait for loading to finish, otherwise number of elements tends not to converge
@@ -201,11 +253,4 @@ if (document.readyState === "loading") {
 } else {
   // But often, `DOMContentLoaded` has already fired
   main();
-}
-
-function main() {
-  const mainNode = document.querySelector('main')
-  console.log(mainNode);
-  textElementBatches = createTextElementBatches(recurseDOM(mainNode ?? document.body), 500)
-  APIBatches = createAPIBatches(textElementBatches)
 }

@@ -2,16 +2,21 @@ import Anthropic from '@anthropic-ai/sdk';
 import arabizi from './arabizi.json';
 import prompts from './prompt.json';
 import Bottleneck from 'bottleneck'
+import { MessageCreateParams } from '@anthropic-ai/sdk/resources/beta/tools/messages';
 
 const delimiter = '|'
 
-const claude = {
+const claude: Record<string, string> = {
   haiku: "claude-3-haiku-20240307",
   sonnet: "claude-3-sonnet-20240229",
   opus: "claude-3-opus-20240229"
 }
 
 const diacritizePrompt = prompts.p4;
+
+interface TransliterationDict {
+  [key: string]: string[];
+}
 
 
 // Get API Key 
@@ -33,7 +38,7 @@ const anthropicLimiter = new Bottleneck({
   minTime: 1500
 });
 
-async function anthropicAPICall(params: any): Promise<any> {
+async function anthropicAPICall(params: Anthropic.MessageCreateParams): Promise<any> {
   const apiKey = await getApiKey();
   const anthropic = new Anthropic({ apiKey: apiKey });
   console.log('Queued a job with parameters:', params); 
@@ -63,7 +68,7 @@ async function sysPromptTokens(prompt: string): Promise<number> {
         content: [
           {
             type: "text",
-            text: prompt
+            text: diacritizePrompt
           }
         ]
       }
@@ -130,7 +135,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
         model: claude.sonnet,
         max_tokens: 4000,
         temperature: 0,
-        system: prompt,
+        system: diacritizePrompt,
         messages: [
           {
             role: "user",
@@ -169,7 +174,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
           model: claude.sonnet,
           max_tokens: 4000,
           temperature: 0, 
-          system: prompt,
+          system: diacritizePrompt,
           messages: [
             {
               role: "user",
@@ -205,20 +210,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
   return diacritizedTexts;
 }
 
-/*-----------------------------------*/
-
-// Arabizi translation function
-interface TransliterationDict {
-  [key: string]: string[];
-}
-
-// Arabizi
-// function arabicToArabizi(texts: string[], transliterationDict: TransliterationDict = arabizi.transliteration): string[] {
-//   return texts.map(arabicText =>
-//     arabicText.split('').map(char => transliterationDict[char]?.[0] || char).join('')
-//   );
-// }
-
+// Arabizi transliteration
 function arabicToArabizi(texts: string[], transliterationDict: TransliterationDict = arabizi.transliteration): string[] {
   return texts.map(arabicText =>
     arabicText
@@ -230,10 +222,10 @@ function arabicToArabizi(texts: string[], transliterationDict: TransliterationDi
   );
 }
 
-// // ALLCAPS translation function
-// function ALLCAPS(str: string): string {
-//   return str.replace(/[a-z]/g, (char) => {
-//     const charCode = char.charCodeAt(0);
-//     return String.fromCharCode(charCode - 32);
-//   });
-// }
+// ALLCAPS translation function
+function ALLCAPS(str: string): string {
+  return str.replace(/[a-z]/g, (char) => {
+    const charCode = char.charCodeAt(0);
+    return String.fromCharCode(charCode - 32);
+  });
+}
