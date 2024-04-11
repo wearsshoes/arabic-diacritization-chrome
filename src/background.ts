@@ -1,7 +1,11 @@
-import Anthropic from "@anthropic-ai/sdk";
+import Anthropic from '@anthropic-ai/sdk';
 import arabizi from './arabizi.json';
 import prompts from './prompt.json';
+import Bottleneck from 'bottleneck'
 
+const delimiter = '|'
+
+// Get API Key 
 async function getApiKey(): Promise<string> {
   return new Promise((resolve, reject) => {
       chrome.storage.sync.get('apiKey', function(result) {
@@ -12,6 +16,48 @@ async function getApiKey(): Promise<string> {
           }
       });
   });
+}
+
+// Rate-limited Anthropic API call function
+const anthropicLimiter = new Bottleneck({
+  maxConcurrent: 3,
+  minTime: 1200
+});
+
+async function anthropicAPICall(params: any): Promise<any> {
+  const apiKey = await getApiKey();
+  const anthropic = new Anthropic({ apiKey: apiKey });
+  console.log('Queued a job with parameters:', params); 
+  return anthropicLimiter.schedule(async () => {
+    try {
+      console.log('Sent a job with parameters:', params);
+      const result = await anthropic.messages.create(params);
+      return result;
+    }catch{  
+      throw new Error("Failed to make API call");
+    }
+  });
+}
+
+// Check number of system prompt tokens
+async function sysPromptTokens(prompt: string): Promise<number> {
+  const msg = await anthropicAPICall({
+    model: "claude-3-haiku-20240307",
+    max_tokens: 1,
+    temperature: 0,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: prompt
+          }
+        ]
+      }
+    ]
+  });
+  return msg.usage.input_tokens;
 }
 
 // Listen for messages from content scripts
@@ -37,81 +83,96 @@ async function processTranslationBatches(translationBatches: { text: string; ele
   const translatedTextArrays = await diacritizeTexts(texts);
 
   return translationBatches.map((batch, index) => {
-    const translatedTexts = translatedTextArrays[index].split('|');
+    const translatedTexts = translatedTextArrays[index].split(delimiter);
     return { elements: batch.elements, translatedTexts };
   });
 }
 
 // API Call for Diacritization
 async function diacritizeTexts(texts: string[]): Promise<string[]> {
-  const apiKey = await getApiKey();
-  const anthropic = new Anthropic({
-    apiKey: apiKey
-  });
-  const prompt = prompts.p2
+  const prompt = prompts.p3;
   console.log('Diacritizing', texts.length, 'texts', texts);
+
+  const sysPromptLength = await sysPromptTokens(prompt);
+  console.log('System prompt length:', sysPromptLength);
 
   const diacritizedTexts = await Promise.all(texts.map(async (arabicText) => {
     try {
-      // console.log('Diacritizing', arabicText);
-      const msg = await anthropic.messages.create({
+      
+      const msg = await anthropicAPICall({
         model: "claude-3-haiku-20240307",
         max_tokens: 4000,
         temperature: 0,
         system: prompt,
         messages: [
           {
-            "role": "user",
-            "content": [
+            role: "user",
+            content: [
               {
-                "type": "text",
-                "text": arabicText,
+                type: "text",
+                text: arabicText,
               }
             ]
           }
         ]
       });
-      
+
+      console.log('output from', msg)
       let diacritizedText = msg.content[0].text;
-      console.log('Input tokens:', msg.usage.input_tokens, 'Output tokens;', msg.usage.output_tokens);
+
+      let inputTokens = msg.usage.input_tokens - sysPromptLength;
+      let outputTokens = msg.usage.output_tokens;
+      console.log('Input tokens:', inputTokens, 'Output tokens:', outputTokens);
+
+      const separatorsInOriginal = arabicText.split(delimiter).length - 1;
+      const separatorsInDiacritized = diacritizedText.split(delimiter).length - 1;
       
-      if (msg.usage.input_tokens > msg.usage.output_tokens) {
-        console.log('Too short, trying again')
-        const newMsg = await anthropic.messages.create({
-          model: "claude-3-opus-20240229",
+      const maxRetries = 0
+      let retries = 0
+
+      while (retries <= maxRetries && (inputTokens > outputTokens || separatorsInDiacritized != separatorsInOriginal)) {
+        console.log(arabicText);
+        console.log(diacritizedText);
+        console.log('Too short or wrong separators, trying again: try', retries + 1, 'of', maxRetries);
+        const newMsg = await anthropicAPICall({
+          model: "claude-3-sonnet-20240229",
           max_tokens: 4000,
-          temperature: 0,
+          temperature: 0, 
           system: prompt,
           messages: [
             {
-              "role": "user",
-              "content": [
+              role: "user",
+              content: [
                 {
-                  "type": "text",
-                  "text": arabicText,
+                  type: "text",
+                  text: arabicText,
                 }
               ]
             }
           ]
-        }); 
-        console.log('Input tokens:', newMsg.usage.input_tokens, 'Output tokens;', newMsg.usage.output_tokens);
+        });
+        inputTokens = newMsg.usage.input_tokens;
+        outputTokens = newMsg.usage.output_tokens;
+        console.log('Input tokens:', inputTokens, 'Output tokens:', outputTokens);
         diacritizedText = newMsg.content[0].text;
+        retries++;
       }
 
       console.log(arabicText);
       console.log(diacritizedText);
 
       return diacritizedText;
-
-    } 
-    catch (error) {
+    } catch (error) {
       console.error('Error diacritizing chunk:', error);
       return arabicText;
     }
   }));
 
+  console.log('Finished diacritizing.')
   return diacritizedTexts;
 }
+
+/*-----------------------------------*/
 
 // **DUMMY** API Call for Translation
 // function translateTexts(texts: string[]): Promise<string[]> {
