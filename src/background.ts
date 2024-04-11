@@ -5,6 +5,15 @@ import Bottleneck from 'bottleneck'
 
 const delimiter = '|'
 
+const claude = {
+  haiku: "claude-3-haiku-20240307",
+  sonnet: "claude-3-sonnet-20240229",
+  opus: "claude-3-opus-20240229"
+}
+
+const diacritizePrompt = prompts.p4;
+
+
 // Get API Key 
 async function getApiKey(): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -21,7 +30,7 @@ async function getApiKey(): Promise<string> {
 // Rate-limited Anthropic API call function
 const anthropicLimiter = new Bottleneck({
   maxConcurrent: 3,
-  minTime: 1200
+  minTime: 1500
 });
 
 async function anthropicAPICall(params: any): Promise<any> {
@@ -33,8 +42,11 @@ async function anthropicAPICall(params: any): Promise<any> {
       console.log('Sent a job with parameters:', params);
       const result = await anthropic.messages.create(params);
       return result;
-    }catch{  
-      throw new Error("Failed to make API call");
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+      }
+      throw error;
     }
   });
 }
@@ -42,7 +54,7 @@ async function anthropicAPICall(params: any): Promise<any> {
 // Check number of system prompt tokens
 async function sysPromptTokens(prompt: string): Promise<number> {
   const msg = await anthropicAPICall({
-    model: "claude-3-haiku-20240307",
+    model: claude.sonnet,
     max_tokens: 1,
     temperature: 0,
     messages: [
@@ -64,7 +76,7 @@ async function sysPromptTokens(prompt: string): Promise<number> {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "translate" && request.data) {
     // Process the translation batches received from the content script
-    processTranslationBatches(request.data)
+    processTranslationBatches(request.method, request.cache, request.data)
       .then(translatedBatches => {
         sendResponse({type: 'translationResult', data: translatedBatches});
       })
@@ -78,29 +90,44 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // Async worker for API call
-async function processTranslationBatches(translationBatches: { text: string; elements: TextElement[] }[]): Promise<{ elements: TextElement[]; translatedTexts: string[] }[]> {
+async function processTranslationBatches(method: string, cache: processorResponse[], translationBatches: { text: string; elements: TextElement[] }[]): Promise<processorResponse[]> {
   const texts = translationBatches.map((batch) => batch.text);
-  const translatedTextArrays = await diacritizeTexts(texts);
-
+  let translatedTextArray: string[] = [];
+  if (method === 'diacritize') {
+    console.log('Received diacritization request and data, processing');
+    const diacritizeArray = await diacritizeTexts(texts);
+    translatedTextArray = diacritizeArray
+  } else if (method === 'arabizi') {
+    console.log('Received arabizi request and data, processing');
+    if (cache.length) {
+      console.log('Diacritization inferred to exist, transliterating')
+      translatedTextArray = arabicToArabizi(cache.map((batch) => batch.rawResult));
+    } else {
+      console.log('Diacritizing text first')
+      const diacritizeArray = await diacritizeTexts(texts);
+      translatedTextArray = arabicToArabizi(diacritizeArray)
+    }
+  }
   return translationBatches.map((batch, index) => {
-    const translatedTexts = translatedTextArrays[index].split(delimiter);
-    return { elements: batch.elements, translatedTexts };
+    const translatedTexts = translatedTextArray[index].split(delimiter);
+    return { elements: batch.elements, translatedTexts, rawResult: translatedTextArray[index]};
   });
 }
 
 // API Call for Diacritization
 async function diacritizeTexts(texts: string[]): Promise<string[]> {
-  const prompt = prompts.p3;
   console.log('Diacritizing', texts.length, 'texts', texts);
 
-  const sysPromptLength = await sysPromptTokens(prompt);
+  const sysPromptLength = await sysPromptTokens(diacritizePrompt);
   console.log('System prompt length:', sysPromptLength);
+
+  let diacritizedText:string;
 
   const diacritizedTexts = await Promise.all(texts.map(async (arabicText) => {
     try {
       
       const msg = await anthropicAPICall({
-        model: "claude-3-haiku-20240307",
+        model: claude.sonnet,
         max_tokens: 4000,
         temperature: 0,
         system: prompt,
@@ -118,7 +145,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
       });
 
       console.log('output from', msg)
-      let diacritizedText = msg.content[0].text;
+      diacritizedText = msg.content[0].text;
 
       let inputTokens = msg.usage.input_tokens - sysPromptLength;
       let outputTokens = msg.usage.output_tokens;
@@ -129,13 +156,17 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
       
       const maxRetries = 0
       let retries = 0
+      let fudgefactor = 1
 
-      while (retries <= maxRetries && (inputTokens > outputTokens || separatorsInDiacritized != separatorsInOriginal)) {
+      while (retries <= maxRetries && (inputTokens > outputTokens || (separatorsInDiacritized + fudgefactor < separatorsInOriginal))) {
+        if (retries === maxRetries) {
+          throw new Error('max retries exceeded')
+        }
         console.log(arabicText);
         console.log(diacritizedText);
         console.log('Too short or wrong separators, trying again: try', retries + 1, 'of', maxRetries);
         const newMsg = await anthropicAPICall({
-          model: "claude-3-sonnet-20240229",
+          model: claude.sonnet,
           max_tokens: 4000,
           temperature: 0, 
           system: prompt,
@@ -151,7 +182,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
             }
           ]
         });
-        inputTokens = newMsg.usage.input_tokens;
+        inputTokens = newMsg.usage.input_tokens - sysPromptLength;
         outputTokens = newMsg.usage.output_tokens;
         console.log('Input tokens:', inputTokens, 'Output tokens:', outputTokens);
         diacritizedText = newMsg.content[0].text;
@@ -163,7 +194,9 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
 
       return diacritizedText;
     } catch (error) {
-      console.error('Error diacritizing chunk:', error);
+        console.error('Error diacritizing chunk:', error);
+        console.log(arabicText);
+        console.log(diacritizedText);
       return arabicText;
     }
   }));
@@ -174,16 +207,28 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
 
 /*-----------------------------------*/
 
-// **DUMMY** API Call for Translation
-// function translateTexts(texts: string[]): Promise<string[]> {
-//   return new Promise((resolve) => {
-//     // Simulate a delay for the API call
-//     setTimeout(() => {
-//       const translatedTexts = texts.map(text => arabicToArabizi(text, arabizi.transliteration));
-//        resolve(translatedTexts);
-//     }, 1000);
-//   });
+// Arabizi translation function
+interface TransliterationDict {
+  [key: string]: string[];
+}
+
+// Arabizi
+// function arabicToArabizi(texts: string[], transliterationDict: TransliterationDict = arabizi.transliteration): string[] {
+//   return texts.map(arabicText =>
+//     arabicText.split('').map(char => transliterationDict[char]?.[0] || char).join('')
+//   );
 // }
+
+function arabicToArabizi(texts: string[], transliterationDict: TransliterationDict = arabizi.transliteration): string[] {
+  return texts.map(arabicText =>
+    arabicText
+    .replace(/[ْ]/g, '') // remove sukoon
+    .replace(/([\u0621-\u064A])([\u064B-\u0652]*)(\u0651)/g, '$1$1$2') // replace all cases of shadda with previous letter
+    .split('')
+    .map(char => transliterationDict[char]
+    ?.[0] || char).join('')
+  );
+}
 
 // // ALLCAPS translation function
 // function ALLCAPS(str: string): string {
@@ -191,26 +236,4 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
 //     const charCode = char.charCodeAt(0);
 //     return String.fromCharCode(charCode - 32);
 //   });
-// }
-
-// // Arabizi translation function
-// interface TransliterationDict {
-//   [key: string]: string[];
-// }
-
-// function arabicToArabizi(arabicText: string, transliterationDict: TransliterationDict): string {
-//   let arabiziText = '';
-
-//   for (let i = 0; i < arabicText.length; i++) {
-//     const char = arabicText[i];
-//     const transliterations = transliterationDict[char];
-
-//     if (transliterations) {
-//       arabiziText += transliterations[0]; // Use the first transliteration by default
-//     } else {
-//       arabiziText += char; // If no transliteration found, keep the original character
-//     }
-//   }
-
-//   return arabiziText;
 // }
