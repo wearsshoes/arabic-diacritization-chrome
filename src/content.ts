@@ -63,6 +63,61 @@ function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''
   return textElements;
 }
 
+// NOT CALLED OR TESTED. STRAIGHT UP AI CODE. THIS BE SUSSY
+function newRecurseDOM(node: Node = document.body, index: number = 0, elementId: string = ''): TextElement[] {
+  const textElements: TextElement[] = [];
+
+  if (node.nodeType === Node.ELEMENT_NODE) {
+    elementId = 'element-' + generateUniqueId();
+    const element = node as Element;
+    element.setAttribute('data-element-id', elementId);
+
+    if (node.hasChildNodes() && isVisible(element)) {
+      let innerIndex = 0;
+      for (const childNode of Array.from(node.childNodes)) {
+        const innerText = newRecurseDOM(childNode, innerIndex, elementId);
+        textElements.push(...innerText);
+        innerIndex += innerText.length;
+      }
+    }
+  } else if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+    const sentences = splitTextIntoSentences(node.textContent);
+    const fragment = document.createDocumentFragment();
+
+    sentences.forEach((sentence, sentenceIndex) => {
+      const cleanText = sentence.replace(delimiter, '');
+      const textNodeId = `text-${generateUniqueId()}`;
+      const textNode = document.createTextNode(cleanText);
+      textNode.nodeValue = cleanText;
+      textNode.textContent = cleanText;
+      fragment.appendChild(textNode);
+
+      const textElement: TextElement = {
+        elementId: textNodeId,
+        originalText: cleanText,
+        index: index + sentenceIndex,
+      };
+      textElements.push(textElement);
+    });
+
+    node.parentNode?.replaceChild(fragment, node);
+  }
+
+  return textElements;
+}
+
+function generateUniqueId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+function splitTextIntoSentences(text: string): string[] {
+  const abbreviations = ['Mr', 'Mrs', 'Ms', 'Dr', 'Prof', 'Sr', 'Jr', 'Mt', 'St'];
+  const abbreviationRegex = new RegExp(`\\b(?:${abbreviations.join('|')})\\.\\.?`, 'g');
+  const sentenceRegex = new RegExp(`(?:${abbreviationRegex.source})?[^.!?]+[.!?](?:\\s+|\\n|$)`, 'g');
+  
+  const matches = text.match(sentenceRegex) || [];
+  return matches.map(sentence => sentence.trim());
+}
 
 // Checks if node is visible
 function isVisible(element: Element): boolean {
