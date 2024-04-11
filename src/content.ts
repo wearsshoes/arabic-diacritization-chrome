@@ -39,41 +39,79 @@ function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''
     // console.log(textElement);
     textElements.push(textElement)
   };
-
+  
   return textElements;
 }
 
-// Prepare batches for API
-function createTranslationBatches(textElements: TextElement[], maxCharactersPerRequest: number): { text: string; elements: TextElement[] }[] {
-  let batchText = '';
-  let batchElements: TextElement[] = [];
-  const translationBatches: { text: string; elements: TextElement[] }[] = [];
+function containsArabicCharacters(text: string): boolean {
+  const arabicRegex = /[\u0600-\u06FF]/;
+  return arabicRegex.test(text);
+}
 
-  textElements.forEach((textElement, index) => {
-    if (textElement.originalText) {
-      if ((batchText.length + textElement.originalText.length) > maxCharactersPerRequest || index === textElements.length - 1) {
-          if (batchText !== '') {
-              // Add the current batch to the list of batches
-              translationBatches.push({ text: batchText, elements: batchElements });
-          }
-          // Start a new batch with the current text element
-          batchText = textElement.originalText;
-          batchElements = [textElement];
+// Create batches
+function createTextElementBatches(textElements: TextElement[], maxChars: number): TextElement[][] {
+  console.log('starting batching on', textElements.length, 'elements')
+  const textElementBatches: TextElement[][] = [];
+  let currentBatch: TextElement[] = [];
+  let currentBatchLength = 0;
+
+  textElements.forEach((textElement) => {
+    const text = textElement.originalText
+    if (containsArabicCharacters(text)) {
+      const textLength = text.length;
+
+      if ((currentBatchLength + textLength) > maxChars) {
+        if (currentBatch.length > 0) {
+          console.log(currentBatchLength, 'maxChars');
+          textElementBatches.push(currentBatch);
+        }
+        currentBatch = [textElement];
+        currentBatchLength = textLength;
       } else {
-          // Append the current text element to the existing batch, with a separator if needed
-          if (batchText !== '') {
-              batchText += '\u200B';
-          }
-          batchText += textElement.originalText;
-          batchElements.push(textElement);
+        currentBatch.push(textElement);
+        currentBatchLength += textLength;
+        
+        // handle sentence breaks as new batch        
+        // often fails due to periods being not at the end of the node
+        if (text.substring(text.length - 1 ) === "." && (currentBatchLength > (maxChars / 2))){
+          console.log(currentBatchLength, 'end of sentence');
+          textElementBatches.push(currentBatch);
+          currentBatch = [];
+          currentBatchLength = 0
+        }
+        // handle paragraph breaks as new batch
+        // } else if (text.substring(text.length - 1) === "\n") {
+        //   console.log(currentBatchLength, 'end of paragraph');
+        //   textElementBatches.push(currentBatch);
+        //   currentBatch = [];
+        //   currentBatchLength = 0 
+        // }
       }
+    } else {
+      // console.log(textElement, ' is empty');
     }
   });
+  console.log("batches created:", textElementBatches.length);
+  textElementBatches.forEach(batch => {
+    console.log(batch);
+  });
+  return textElementBatches;
+}
 
-  // Add the last batch if it's not empty
-  if (batchText !== '') {
-      translationBatches.push({ text: batchText, elements: batchElements });
-  }
+// Prepare batches for API
+function createAPIBatches(textElementBatches: TextElement[][]): { text: string; elements: TextElement[] }[] {
+  console.log('beginning api batching')
+  const translationBatches: { text: string; elements: TextElement[] }[] = [];
+
+  textElementBatches.forEach((batch) => {
+    const batchText = batch.map((textElement) => textElement.originalText).join('|');
+    console.log(batchText)
+    translationBatches.push({ 
+      text: batchText, 
+      elements: batch 
+    });
+  });
+  
   return translationBatches;
 }
 
@@ -85,12 +123,13 @@ function replaceTextWithTranslatedText(textElements: TextElement[], translatedTe
     const element = document.querySelector(`[data-element-id="${textElement.elementId}"]`);
 
     if (element) {
-      console.log('Replacing ', element.childNodes[textElement.index].textContent, 'with ', translatedText, 'at ', element, textElement.index);
+      // console.log('Replacing ', element.childNodes[textElement.index].textContent, 'with ', translatedText, 'at ', element, textElement.index);
       element.childNodes[textElement.index].textContent = translatedText;
     } else {
       console.log('Error: elementId', textElement.elementId, 'did not map to any element.');
     }
   }
+  console.log('inserted', translatedTexts)
 }
 
 function directionLTR() {
@@ -105,17 +144,14 @@ function directionLTR() {
 }    
 
 // Main Execution
-const translationBatches = createTranslationBatches(recurseDOM(), 500)
-// console.log(translationBatches);
-translationBatches.forEach(element => {
-  console.log(element.text)
-});
+const textElementBatches = createTextElementBatches(recurseDOM(), 800)
+const APIBatches = createAPIBatches(textElementBatches)
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "diacritize") {
     (async () => {
       // Send translation batches to background script
-      chrome.runtime.sendMessage({action: "translate", data: translationBatches}, (response) => {
+      chrome.runtime.sendMessage({action: "translate", data: APIBatches}, (response) => {
         // Handle the translated text here
         if (response.type === 'translationResult') {
           response.data.forEach((batch: { elements: TextElement[]; translatedTexts: string[] }) => {
@@ -124,7 +160,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               console.error('Mismatch in number of translated texts and text elements');
             }
             replaceTextWithTranslatedText(batch.elements, batch.translatedTexts);
-            directionLTR();
+            // directionLTR();
 
           });
         } else if (response.type === 'error') {
