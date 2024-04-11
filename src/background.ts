@@ -99,12 +99,17 @@ async function processTranslationBatches(method: string, cache: processorRespons
   const texts = translationBatches.map((batch) => batch.text);
   let translatedTextArray: string[] = [];
   if (method === 'diacritize') {
+    // could be fun to have claude run with figuring out the dialect, and then feeding that as an argument to the prompt
+    // partial diacritization... just build out a lot of options...
     console.log('Received diacritization request and data, processing');
     const diacritizeArray = await diacritizeTexts(texts);
     translatedTextArray = diacritizeArray
   } else if (method === 'arabizi') {
+  // honestly, this could just be generated automatically and toggled on/off back to full arabic cache state
+  // could also be fun to do a "wubi" version on alternating lines?
     console.log('Received arabizi request and data, processing');
-    if (cache.length) {
+    console.log(cache);
+    if (cache && cache.length) {
       console.log('Diacritization inferred to exist, transliterating')
       translatedTextArray = arabicToArabizi(cache.map((batch) => batch.rawResult));
     } else {
@@ -211,6 +216,10 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
 }
 
 // Arabizi transliteration
+// still need to do a lot of things: sun/moon transformation
+// fii instead of fiy, etc
+// man, maybe there's even different pronunciation choices for dialects...? too much to consider...
+// simple one: get the punctuation marks to change to english equivs
 function arabicToArabizi(texts: string[], transliterationDict: TransliterationDict = arabizi.transliteration): string[] {
   return texts.map(arabicText =>
     arabicText

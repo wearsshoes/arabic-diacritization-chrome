@@ -32,7 +32,6 @@ let cachedResponse: processorResponse[];
 // Builds element list according to interface. Recurses through DOM and put the in the right order. 
 function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''): TextElement[] {
   const textElements: TextElement[] = [];
-  
   // if we're on an element node, record elementId and pass to children.
   if (node.nodeType === Node.ELEMENT_NODE) {
     elementId = 'element-' + Math.random().toString(36).substring(2, 11); // Generate a unique ID for the element
@@ -125,27 +124,27 @@ function isVisible(element: Element): boolean {
     return false;
   }
 
-  const rect = element.getBoundingClientRect();
-  const viewHeight = Math.max(document.documentElement.clientHeight, window.innerHeight);
-  const viewWidth = Math.max(document.documentElement.clientWidth, window.innerWidth);
+  // const rect = element.getBoundingClientRect();
+  // const viewHeight = Math.max(document.documentElement.clientHeight, window.innerHeight);
+  // const viewWidth = Math.max(document.documentElement.clientWidth, window.innerWidth);
 
-  // Check if the element has dimensions and is within the viewport
-  const isInViewport = (
-    rect.top >= 0 &&
-    rect.left >= 0 &&
-    rect.bottom <= viewHeight &&
-    rect.right <= viewWidth
-  );
+  // // Check if the element has dimensions and is within the viewport
+  // const isInViewport = (
+  //   rect.top >= 0 &&
+  //   rect.left >= 0 &&
+  //   rect.bottom <= viewHeight &&
+  //   rect.right <= viewWidth
+  // );
 
-  // Check if the element has a visible size
-  const hasSize = (
-    rect.width > 0 &&
-    rect.height > 0
-  );
+  // // Check if the element has a visible size
+  // const hasSize = (
+  //   rect.width > 0 &&
+  //   rect.height > 0
+  // );
 
-  // Check if the element's opacity is greater than 0
-  const opacity = parseFloat(window.getComputedStyle(element).getPropertyValue('opacity'));
-  const isOpaque = opacity > 0;
+  // // Check if the element's opacity is greater than 0
+  // const opacity = parseFloat(window.getComputedStyle(element).getPropertyValue('opacity'));
+  // const isOpaque = opacity > 0;
 
   // Check if the element or any of its ancestors have display: none or visibility: hidden
   const isDisplayed = (
@@ -153,7 +152,8 @@ function isVisible(element: Element): boolean {
     window.getComputedStyle(element).visibility !== 'hidden'
   );
 
-  return isInViewport && hasSize && isOpaque && isDisplayed;
+  // return isInViewport && hasSize && isOpaque && isDisplayed;
+  return isDisplayed
 }
 
 // Check whether there are any Arabic characters. Not used
@@ -302,6 +302,7 @@ function main() {
 }
 
 // Run on script load 
+// should maybe set to only run on lang="ar"?
 if (document.readyState === "loading") {
   // Wait for loading to finish, otherwise number of elements tends not to converge
   document.addEventListener('DOMContentLoaded', main);
