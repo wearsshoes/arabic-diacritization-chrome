@@ -37,6 +37,7 @@ function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''
     if (node.hasChildNodes() && isVisible(element)) {
       let innerIndex = 0;
       for (const childNode of node.childNodes) {
+        // TODO: it's not insane to split nodes at sentence breaks on '. '; this might make better sentences.
         const innerText = recurseDOM(childNode, innerIndex, elementId) // Maybe there's an easier, non-recursing way to do this?
         innerText.forEach(innerElement => {
           textElements.push(innerElement)
@@ -156,26 +157,37 @@ function directionLTR() {
   style.textContent = `body * {direction: ltr;}`;
   document.head.appendChild(style);
 }    
+interface processorResponse {
+  elements: TextElement[]; 
+  translatedTexts: string[];
+  rawResult: string
+}
+
+let cachedResponse: processorResponse[];
 
 // diacritize listener - waits for popup click, then sends batches to worker.
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "diacritize") {
+  if (request.action === "sendToTranslate") {
     (async () => {
       // Send translation batches to background script
-      chrome.runtime.sendMessage({action: "translate", data: APIBatches}, (response) => {
+      chrome.runtime.sendMessage({action: "translate", method: request.method, cache:cachedResponse, data: APIBatches}, (response) => {
         // Handle the translated text here
         if (response.type === 'translationResult') {
+          cachedResponse = response.data;
+          console.log('Cached result:', cachedResponse);
+          
           response.data.forEach((batch: { elements: TextElement[]; translatedTexts: string[] }) => {
             // console.log('Translated texts:', batch.translatedTexts);
             if (batch.translatedTexts.length !== batch.elements.length) {
               console.error('Mismatch in number of translated texts and text elements');
             }
             replaceTextWithTranslatedText(batch.elements, batch.translatedTexts);
-            // directionLTR();
-
           });
         } else if (response.type === 'error') {
           console.error("Translation error:", response.message);
+        }
+        if(request.method === 'arabizi'){
+          directionLTR();
         }
       });
     })()
@@ -192,6 +204,8 @@ if (document.readyState === "loading") {
 }
 
 function main() {
-  textElementBatches = createTextElementBatches(recurseDOM(), 800)
+  const mainNode = document.querySelector('main')
+  console.log(mainNode);
+  textElementBatches = createTextElementBatches(recurseDOM(mainNode ?? document.body), 500)
   APIBatches = createAPIBatches(textElementBatches)
 }
