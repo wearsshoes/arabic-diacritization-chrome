@@ -7,15 +7,29 @@ interface TextElement {
   index: number;
 }
 
+interface APIBatch {
+  text: string;
+  elements: TextElement[];
+}
+
+// Global Variables
+const delimiter:string = '|'
+let textElementBatches: TextElement[][];
+let APIBatches: APIBatch[];
+
 // Utility Functions
+// Checks if node is visible
 function isVisible(element: Element): boolean {
   const style = window.getComputedStyle(element);
+  // still need some work, returns stuff hidden in menus and some weird stuf at the bottom of pages.
   return style.display !== 'none' && style.visibility !== 'hidden';
 }
 
+// Builds element list according to interface. Recurses through DOM and put the in the right order. 
 function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''): TextElement[] {
   const textElements: TextElement[] = [];
   
+  // if we're on an element node, record elementId and pass to children.
   if (node.nodeType === Node.ELEMENT_NODE) {
     elementId = 'element-' + Math.random().toString(36).substring(2, 11); // Generate a unique ID for the element
     const element = node as Element;
@@ -23,32 +37,33 @@ function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''
     if (node.hasChildNodes() && isVisible(element)) {
       let innerIndex = 0;
       for (const childNode of node.childNodes) {
-        const innerText = recurseDOM(childNode, innerIndex, elementId)
+        const innerText = recurseDOM(childNode, innerIndex, elementId) // Maybe there's an easier, non-recursing way to do this?
         innerText.forEach(innerElement => {
           textElements.push(innerElement)
         });
         innerIndex++;
      }
     }
-  } else if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+  } else if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) { // if we've reached a text node, push it with its parent's elementId.
+    const cleanText = node.textContent.replace(delimiter,'') // so we don't have any of the delimiter character confusing us later. this is a bit jank...
     const textElement:TextElement = {
       elementId: elementId,
       originalText: node.textContent,
       index: index,
     }
-    // console.log(textElement);
     textElements.push(textElement)
   };
   
   return textElements;
 }
 
+// Check whether there are any Arabic characters. Not used
 function containsArabicCharacters(text: string): boolean {
   const arabicRegex = /[\u0600-\u06FF]/;
   return arabicRegex.test(text);
 }
 
-// Create batches
+// Create batches of elements according to sentence boundaries and API character limit.
 function createTextElementBatches(textElements: TextElement[], maxChars: number): TextElement[][] {
   console.log('starting batching on', textElements.length, 'elements')
   const textElementBatches: TextElement[][] = [];
@@ -57,7 +72,8 @@ function createTextElementBatches(textElements: TextElement[], maxChars: number)
 
   textElements.forEach((textElement) => {
     const text = textElement.originalText
-    if (containsArabicCharacters(text)) {
+    if (text!='') {
+    // if (containsArabicCharacters(text)) {
       const textLength = text.length;
 
       if ((currentBatchLength + textLength) > maxChars) {
@@ -88,7 +104,7 @@ function createTextElementBatches(textElements: TextElement[], maxChars: number)
         // }
       }
     } else {
-      // console.log(textElement, ' is empty');
+      console.log(textElement, ' is empty');
     }
   });
   console.log("batches created:", textElementBatches.length);
@@ -98,13 +114,13 @@ function createTextElementBatches(textElements: TextElement[], maxChars: number)
   return textElementBatches;
 }
 
-// Prepare batches for API
+// Prepare batches for API by extracting the text with delimiters.
 function createAPIBatches(textElementBatches: TextElement[][]): { text: string; elements: TextElement[] }[] {
   console.log('beginning api batching')
   const translationBatches: { text: string; elements: TextElement[] }[] = [];
 
   textElementBatches.forEach((batch) => {
-    const batchText = batch.map((textElement) => textElement.originalText).join('|');
+    const batchText = batch.map((textElement) => textElement.originalText).join(delimiter);
     console.log(batchText)
     translationBatches.push({ 
       text: batchText, 
@@ -132,21 +148,16 @@ function replaceTextWithTranslatedText(textElements: TextElement[], translatedTe
   console.log('inserted', translatedTexts)
 }
 
+// Forces LTR. Only gets called for Arabizi
 function directionLTR() {
-  // Override the CSS styling with !important
   document.documentElement.setAttribute("lang", "en");
   document.documentElement.setAttribute("dir", "ltr");
-
-  // Style body
   const style = document.createElement('style')
   style.textContent = `body * {direction: ltr;}`;
   document.head.appendChild(style);
 }    
 
-// Main Execution
-const textElementBatches = createTextElementBatches(recurseDOM(), 800)
-const APIBatches = createAPIBatches(textElementBatches)
-
+// diacritize listener - waits for popup click, then sends batches to worker.
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "diacritize") {
     (async () => {
@@ -170,3 +181,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     })()
   }
 });
+
+// Run on script load 
+if (document.readyState === "loading") {
+  // Wait for loading to finish, otherwise number of elements tends not to converge
+  document.addEventListener('DOMContentLoaded', main);
+} else {
+  // But often, `DOMContentLoaded` has already fired
+  main();
+}
+
+function main() {
+  textElementBatches = createTextElementBatches(recurseDOM(), 800)
+  APIBatches = createAPIBatches(textElementBatches)
+}
