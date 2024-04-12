@@ -1,19 +1,97 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Extension Options</title>
+    <link rel="stylesheet" href="options.css">
 </head>
 <body>
     <h1>Extension Options</h1>
-    <form id="optionsForm">
-        <label for="apiKey">API Key:</label>
-        <input type="text" id="apiKey" name="apiKey">
-        <button type="submit">Save</button>
-    </form>
-    <div id="savedInfo">
-        <p id="savedKey">Current saved key: </p>
-        <p id="savedTime">Last saved at: </p>
+    <p>Customize your extension settings here.</p>
+    <div id="llmChoice">
+        <h2>LLM Options</h2>
+        <label for="llmChoice">LLM Choice:</label>
+        <select id="llmChoice" name="llmChoice">
+            <option value="haiku">Claude Haiku</option>
+            <option value="sonnet">Claude Sonnet</option>
+            <option value="opus">Claude Opus</option>
+            <option value="gpt3">GPT 3.5</option>
+            <option value="gpt4">GPT 4</option>
+            
+            <option value="local">Local (not implemented)</option>
+        </select>
+        <br>
+        <label for="customPrompt">Custom Prompt:</label>
+        <br>
+        <textarea id="customPrompt" name="customPrompt" rows="5" cols="50" maxlength="1000"></textarea>
+        <br>
+        <select id="loadPrompt" name="loadPrompt">
+            <option value="default">Default</option>
+            <option value="custom1">Custom 1</option>
+        </select>
+        <button id="loadPromptBtn">Load</button>
+        <button id="savePromptBtn">Save</button>
+        <button id="resetPromptBtn">Reset</button>
+    </div>
+    <div id="apiKey">
+        <h2>API Key</h2>
+        <form id="optionsForm">
+            <label for="apiKey">API Key:</label>
+            <input type="text" id="apiKey" name="apiKey">
+            <button type="submit">Save</button>
+        </form>
+            <p id="savedKey">Current saved key: </p>
+            <p id="savedTime">Last saved at: </p>
+            <button id="clearBtn">Clear</button>
     </div>
     <script src="options.js"></script>
+    <div id="apiUsage"></div>
+        <h2>API Usage (in progress) </h2>
+        <p>Queries sent: <span id="queriesSent"></span></p>
+        <p>Tokens sent: <span id="tokensSent"></span></p>
+        <p>Tokens received: <span id="tokensReceived"></span></p>
+        <p>Prompt size: <span id="promptSize"></span></p>
+    </div>
+    <div id="arabiziOptions"></div>
+        <h2>Arabizi Options (in progress) </h2>
+        <label for="arabiziChoice">Arabizi Choice:</label>
+        <select id="arabiziChoice" name="arabiziChoice">
+            <option value="msa">MSA</option>
+            <option value="dialect">Dialect</option>
+        </select>
+        <br>
+        <!-- checkbox for case endings -->
+        <label for="caseEndings">Case Endings:</label>
+        <input type="checkbox" id="caseEndings" name="caseEndings">
+        <br>
+        <h3>Character Substitutions</h3>
+        <table id="characterSubstitutions">
+            <tr>
+                <th>Character</th>
+                <th>Initial</th>
+                <th>Medial</th>
+                <th>Final</th>
+                <th>Isolated</th>
+            </tr>
+            <tr>
+                <td>
+                    <select id="ch" name="ch">
+                        <option value="aleph">Alif</option>
+                        <option value="hamza">Hamza</option>
+                    </select>
+
+                </td>
+                <td><input type="text" id="chInitial" name="chInitial"></td>
+                <td><input type="text" id="chMedial" name="chMedial"></td>
+                <td><input type="text" id="chFinal" name="chFinal"></td>
+                <td><input type="text" id="chIsolated" name="chIsolated"></td>
+            </tr>
+        </table>
+        <br>
+        <button id="saveBtn">Save</button>
+        <button id="resetSavedBtn">Reset to Saved</button>
+        <button id="resetDefaultBtn">Reset to Default</button>
+    </div>
 </body>
 </html>

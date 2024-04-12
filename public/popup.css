@@ -1,0 +1,19 @@
+
+/* Set the size and position of the popup */
+body {
+    width: 300px;
+    height: 400px;
+    margin: 10px;
+}
+
+/* Dark theme styles */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #222;
+        color: #ccc;
+    }
+    button {
+        background-color: #444;
+        color: #ccc;
+    }
+}

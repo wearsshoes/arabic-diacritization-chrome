@@ -3,6 +3,48 @@ import arabizi from './arabizi.json';
 import prompts from './prompt.json';
 import Bottleneck from 'bottleneck'
 import { MessageCreateParams } from '@anthropic-ai/sdk/resources/beta/tools/messages';
+import { prototype } from 'copy-webpack-plugin';
+
+// Check whether new version is installed
+chrome.runtime.onInstalled.addListener(function(details){
+  if(details.reason == "install"){
+      console.log("ArabEasy successfully installed! Thank you for using this app.");
+  }else if(details.reason == "update"){
+      var thisVersion = chrome.runtime.getManifest().version;
+      console.log("Updated from " + details.previousVersion + " to " + thisVersion + "!");
+  }
+});
+
+let apiKeyExists: boolean = true;
+
+// Listen for messages from content scripts
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "translate" && message.data) {
+    // Process the translation batches received from the content script
+    processTranslationBatches(message.method, message.cache, message.data)
+      .then(translatedBatches => {
+        sendResponse({type: 'translationResult', data: translatedBatches});
+      })
+      .catch(error => {
+        console.error('Error processing translation batches:', error);
+        sendResponse({type: 'error', message: 'Failed to process translation batches'});
+      });
+    // Return true to indicate that sendResponse will be called asynchronously
+    return true;
+  }
+});
+
+// Waits for popup to connect and sends a message to it
+
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === "popup" && apiKeyExists === false) {
+    chrome.runtime.sendMessage({ action: "promptForAPIKey" }, (response) => {
+      if (response === "success") {
+        console.log("API Key needed");
+      }
+    });
+  };
+});
 
 const delimiter = '|'
 
@@ -76,23 +118,6 @@ async function sysPromptTokens(prompt: string): Promise<number> {
   });
   return msg.usage.input_tokens;
 }
-
-// Listen for messages from content scripts
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "translate" && request.data) {
-    // Process the translation batches received from the content script
-    processTranslationBatches(request.method, request.cache, request.data)
-      .then(translatedBatches => {
-        sendResponse({type: 'translationResult', data: translatedBatches});
-      })
-      .catch(error => {
-        console.error('Error processing translation batches:', error);
-        sendResponse({type: 'error', message: 'Failed to process translation batches'});
-      });
-    // Return true to indicate that sendResponse will be called asynchronously
-    return true;
-  }
-});
 
 // Async worker for API call
 async function processTranslationBatches(method: string, cache: processorResponse[], translationBatches: { text: string; elements: TextElement[] }[]): Promise<processorResponse[]> {
@@ -238,3 +263,15 @@ function ALLCAPS(str: string): string {
     return String.fromCharCode(charCode - 32);
   });
 }
+
+const main = async () => {
+  const apiKey = await getApiKey();
+  if (!apiKey) {
+    apiKeyExists = false;
+    console.log('No API key found');
+  } else {
+    console.log('API key found');
+  }
+}
+
+main();

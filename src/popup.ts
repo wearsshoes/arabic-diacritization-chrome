@@ -1,8 +1,16 @@
+
+
 document.addEventListener('DOMContentLoaded', () => {
+
     const diacritizeBtn = document.getElementById('diacritizeBtn');
+    diacritizeBtn?.addEventListener('click', () => sendMessageToContentScript('diacritize'));
+
     const arabiziBtn = document.getElementById('arabiziBtn');
-    const optionsBtn = document.getElementById('optionsBtn');
+    arabiziBtn?.addEventListener('click', () => sendMessageToContentScript('arabizi'));
     
+    const optionsBtn = document.getElementById('optionsBtn');
+    optionsBtn?.addEventListener('click', () => chrome.runtime.openOptionsPage());    
+
     const sendMessageToContentScript = async (method: string) => {
       try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -13,9 +21,5 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error(`Error in ${method}:`, error);
       }
     };
-  
-    diacritizeBtn?.addEventListener('click', () => sendMessageToContentScript('diacritize'));
-    arabiziBtn?.addEventListener('click', () => sendMessageToContentScript('arabizi'));
-    optionsBtn?.addEventListener('click', () => chrome.runtime.openOptionsPage());
-    
+
   });
