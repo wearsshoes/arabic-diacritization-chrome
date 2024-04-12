@@ -1,9 +1,8 @@
 
 /* Set the size and position of the popup */
 body {
-    width: 300px;
-    height: 400px;
-    margin: 10px;
+    width: 360px;
+    padding: 30px;
 }
 
 /* Dark theme styles */
