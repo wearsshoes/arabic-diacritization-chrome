@@ -122,8 +122,7 @@ const anthropicLimiter = new Bottleneck({
 
 async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: string): Promise<any> {
   
-  //probably shouldn't call this every time... but it's fine for now
-  // option to pass in a key to avoid this call
+  // get the API key if it's not provided
   const apiKey = key || await getAPIKey();
 
   const anthropic = new Anthropic({ apiKey: apiKey });
@@ -197,20 +196,28 @@ async function processTranslationBatches(method: string, cache: processorRespons
 async function diacritizeTexts(texts: string[]): Promise<string[]> {
   console.log('Diacritizing', texts.length, 'texts', texts);
   
+  // parameters for retrying
   const fudgefactor = 1
   const maxTries = 1
   let tries = 0
   
+  // get the API key
   const apiKey = await getAPIKey() || '';
   
+  // get the prompt
   const diacritizePrompt = await getPrompt() || defaultPrompt;
   const promptText = diacritizePrompt.text;
   
+  // get the system prompt length
   const sysPromptLength = await sysPromptTokens(promptText) || 0;
   console.log('System prompt length:', sysPromptLength);
 
+  // diacritize the texts
   const diacritizedTexts = await Promise.all(texts.map(async (arabicText) => {
+    
+    // diacritization loop
     while (tries >= 0 && tries < maxTries) {
+
       const msg: Anthropic.Messages.MessageCreateParams = {
         model: escalateModel(defaultModel, tries).currentVersion,
         max_tokens: 4000,
@@ -227,33 +234,40 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
             ]
           }
         ]
-      }
+      };
+
       try {
         const response = await anthropicAPICall(msg, apiKey);
         console.log(response.id);
 
+        // check the token usage
         const inputTokens = response.usage.input_tokens - sysPromptLength;
         const outputTokens = response.usage.output_tokens;
         console.log('Input tokens:', inputTokens, 'Output tokens:', outputTokens);
+        const enoughTokens = inputTokens >= outputTokens;
         
         const diacritizedText: string = response.content[0].text;
         console.log(arabicText);
         console.log(diacritizedText);
         
+        // check if the diacritized text is longer than the original text
         const separatorsInOriginal = arabicText.split(delimiter).length - 1;
         const separatorsInDiacritized = diacritizedText.split(delimiter).length - 1;
-        if (inputTokens >= outputTokens && separatorsInDiacritized + fudgefactor >= separatorsInOriginal) {
+        console.log('Separators in original:', separatorsInOriginal, 'Separators in diacritized:', separatorsInDiacritized);
+        const rightDelimiters = separatorsInDiacritized + fudgefactor >= separatorsInOriginal;
+        
+        if (enoughTokens && rightDelimiters) {
           return diacritizedText;
         } else {
           console.log('Too short or wrong separators, trying again: try', tries, 'of', maxTries);
           tries++;
         }
-      } catch (error) {
+      } 
+      catch (error) {
         console.error('Error diacritizing chunk:', error);
         break;
       }
     }
-    console.error('Failed to diacritize text.');
     return arabicText;
   }));
   console.log('Finished diacritizing.')
