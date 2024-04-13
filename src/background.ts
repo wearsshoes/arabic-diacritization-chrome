@@ -227,11 +227,6 @@ async function processTranslationBatches(method: string, cache: processorRespons
 // API Call for Diacritization
 async function diacritizeTexts(texts: string[]): Promise<string[]> {
   
-  // parameters for retrying
-  const fudgefactor = 1
-  const maxTries = 1
-  let tries = 0
-  
   const apiKey = await getAPIKey() || '';
   if (!apiKey) {
     throw new Error('API key not set');
@@ -241,11 +236,15 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
   const promptText = diacritizePrompt.text;
   const sysPromptLength = await countSysPromptTokens(promptText) || 0;
   
+  // parameters for retrying
+  const fudgefactor = 1
+  const maxTries = 1
+
   // diacritize the texts in parallel with retries
   const diacritizedTexts = await Promise.all(texts.map(async (arabicText) => {
-    while (tries >= 0 && tries < maxTries) {
-      const arabicTextHash = await getHash(arabicText) as string;
-
+    const arabicTextHash = await getHash(arabicText) as string;
+    
+    for (let tries = 0; tries < maxTries; tries++) {
       const msg: Anthropic.Messages.MessageCreateParams = {
         model: escalateModel(defaultModel, tries).currentVersion,
         max_tokens: 4000,
@@ -270,7 +269,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
         const inputTokens = response.usage.input_tokens - sysPromptLength;
         const outputTokens = response.usage.output_tokens;
         console.log('Input tokens:', inputTokens, 'Output tokens:', outputTokens);
-        const enoughTokens = inputTokens >= outputTokens;
+        const enoughTokens =  outputTokens > inputTokens;
         
         const diacritizedText: string = response.content[0].text;
         console.log(arabicText);
@@ -286,7 +285,6 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
           return diacritizedText;
         } else {
           console.log('Too short or wrong separators, trying again: try', tries, 'of', maxTries);
-          tries++;
         }
       } 
       catch (error) {
