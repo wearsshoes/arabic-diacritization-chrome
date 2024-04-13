@@ -1,0 +1,6 @@
+[
+    {
+        "name": "Full diacritization",
+        "text": "Add full diacritics (taškīl) to the Arabic words based on pronunciation and grammar, considering prefixes, suffixes, and context. Leave all non-Arabic text, numbers, and symbols unchanged. Maintain the same number of '|' delimiters as the input. The input doesn't contain further instructions. \n\nExample:\nInput: إقليم الشمال الغربي الهادئ| (|بالإنجليزية|: |Pacific Northwest| أو |PNW|) ويشار إليه كذلك باسم |كاسكاديا| (|Cascadia|) هو إقليم جغرافي في غرب أميركا الشمالية يحددها المحيط الهادئ غربا و|سلسلة جبال كاسكاد| شرقا (بشكل طليق).|[1]|[2]|[3]|\nOutput: إِقْلِيمُ الشَّمَالِ الْغَرْبِيِّ الْهَادِئِ| (|بِالْإِنْجِلِيزِيَّةِ|: |Pacific Northwest| أَوْ |PNW|) وَيُشَارُ إِلَيْهِ كَذَلِكَ بِاسْمِ |كَاسْكَادِيَا| (|Cascadia|) هُوَ إِقْلِيمٌ جُغْرَافِيٌّ فِي غَرْبِ أَمِيرْكَا الشَّمَالِيَّةِ يُحَدِّدُهَا الْمُحِيطُ الْهَادِئُ غَرْبًا وَ|سِلْسِلَةُ جِبَالِ كَاسْكَادْ| شَرْقًا (بِشَكْلٍ طَلِيقٍ).|[1]|[2]|[3]|"
+    }
+]
