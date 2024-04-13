@@ -3,7 +3,7 @@ import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
 import Bottleneck from 'bottleneck'
 import { calculateHash } from './utils';  
-import { Model, Models, Prompt, TransliterationDict, processorResponse, TextElement, sysPromptTokenCache } from './types';
+import { Model, Models, Prompt, TransliterationDict, ProcessorResponse, TextElement, sysPromptTokenCache } from './types';
 
 // Rewriting control flow of the translation service
 // Placeholder for the translation service
@@ -190,7 +190,7 @@ function saveSysPromptTokenCount(promptHash: string, model: string, tokens: numb
   });
 }
 // Async worker for API call
-async function processTranslationBatches(method: string, cache: processorResponse[], translationBatches: { text: string; elements: TextElement[] }[]): Promise<processorResponse[]> {
+async function processTranslationBatches(method: string, cache: ProcessorResponse[], translationBatches: { text: string; elements: TextElement[] }[]): Promise<ProcessorResponse[]> {
   const texts = translationBatches.map((batch) => batch.text);
   let translatedTextArray: string[] = [];
   if (method === 'diacritize') {

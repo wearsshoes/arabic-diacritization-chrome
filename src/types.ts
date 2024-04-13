@@ -3,13 +3,13 @@ export interface TextElement {
   originalText: string;
   index: number;
 }
-
-export interface APIBatch {
+  
+export interface TranslationRequestBatch {
   text: string;
   elements: TextElement[];
 }
-
-export interface processorResponse {
+  
+export interface ProcessorResponse {
   elements: TextElement[]; 
   translatedTexts: string[];
   rawResult: string
@@ -33,7 +33,7 @@ export interface TransliterationDict {
   [key: string]: string[];
 }
 
-export interface sysPromptTokenCache {
+export interface SysPromptTokenCache {
   hash: string;
   model: string;
   tokens: number;
