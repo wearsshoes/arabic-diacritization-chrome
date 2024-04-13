@@ -2,15 +2,14 @@ import Anthropic from '@anthropic-ai/sdk';
 import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
 import { calculateHash, getAPIKey } from './utils';  
-import { Model, Models, Prompt, ProcessorResponse, TextElement, SysPromptTokenCache, TransliterationDict, DiacritizationRequestBatch } from './types';
 import { DiacritizationDataManager } from './datamanager';
+import { Model, Models, Prompt, ProcessorResponse, TextElement, SysPromptTokenCache, TransliterationDict, DiacritizationRequestBatch } from './types';
 
 
 
 // ----------------- Event Listeners ----------------- //
-import Bottleneck from 'bottleneck'
-import { calculateHash } from './utils';  
-import { Model, Models, Prompt, ProcessorResponse, TextElement, SysPromptTokenCache, TransliterationDict } from './types';
+const dataManager = DiacritizationDataManager.getInstance();
+
 
 // Rewriting control flow of the diacritization service
 // Placeholder for the diacritization service
@@ -173,7 +172,6 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
   if (method === 'diacritize') {
     if (webPageData) {
       // If saved data exists for the current webpage and the method is 'diacritize'
-      // Conform the saved results to the expected format. Ideally, could just return the saved results directly.
       const savedResults = Object.values(webPageData.elements).map(element => element.diacritizedText);
       return diacritizationBatches.map((batch, index) => {
         const diacritizedTexts = savedResults[index].split(delimiter);
@@ -187,6 +185,7 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
     console.log('Received diacritization request and data, processing');
     const diacritizeArray = await diacritizeTexts(texts);
     diacritizedTextArray = diacritizeArray
+  
   } else if (method === 'arabizi') {
     // honestly, this could just be generated automatically and toggled on/off back to full arabic cache state
     // could also be fun to do a "wubi" version on alternating lines?
