@@ -1,6 +1,21 @@
 // content.ts
 import { TextElement, APIBatch, processorResponse } from "./types";
 
+// when queried by popup, returns the language of the page
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'getWebsiteLanguage') {
+    const language = document.documentElement.lang;
+    sendResponse(language);
+  }
+  // when website text length is requested, returns apibatches details
+  if (request.action === 'getWebsiteCharacterCount') {
+    const totalTextLength = APIBatches.map(element => element.text.length).reduce((acc, curr) => acc + curr, 0);
+    const numBatches = APIBatches.length;
+    sendResponse({chars: totalTextLength, batches: numBatches});
+  }
+});
+
+
 // Global Variables
 const delimiter:string = '|'
 let textElementBatches: TextElement[][];
@@ -282,14 +297,6 @@ function main() {
     console.error('Error during initialization:', error);
   }
 }
-
-// when queried by popup, returns the language of the page
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'getWebsiteLanguage') {
-    const language = document.documentElement.lang;
-    sendResponse(language);
-  }
-});
 
 // Run on script load 
 // should maybe set to only run on lang="ar"?
