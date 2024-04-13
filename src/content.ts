@@ -1,5 +1,5 @@
 // content.ts
-import { TextElement, APIBatch, processorResponse } from "./types";
+import { TextElement, TranslationRequestBatch, ProcessorResponse } from "./types";
 
 // when queried by popup, returns the language of the page
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -19,9 +19,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Global Variables
 const delimiter:string = '|'
 let textElementBatches: TextElement[][];
-let APIBatches: APIBatch[];
+let APIBatches: TranslationRequestBatch[];
 // maybe this cache should go to the local storage, to have the option to reuse after page reload.
-let cachedResponse: processorResponse[];
+let cachedResponse: ProcessorResponse[];
 
 // Utility Functions
 
