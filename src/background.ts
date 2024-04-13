@@ -3,7 +3,7 @@ import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
 import Bottleneck from 'bottleneck'
 import { calculateHash } from './utils';  
-import { Model, Models, Prompt, DiacritizationDict, ProcessorResponse, TextElement, sysPromptTokenCache, TransliterationDict } from './types';
+import { Model, Models, Prompt, ProcessorResponse, TextElement, SysPromptTokenCache, TransliterationDict } from './types';
 
 // Rewriting control flow of the diacritization service
 // Placeholder for the diacritization service
@@ -168,7 +168,7 @@ async function countSysPromptTokens(prompt: string, model?: string): Promise<num
 
 async function getStoredPromptTokenCount(promptHash: string, model: string): Promise<number | null> {
   return new Promise((resolve) => {
-    chrome.storage.sync.get('savedResults', (data: { savedResults?: sysPromptTokenCache[] }) => {
+    chrome.storage.sync.get('savedResults', (data: { savedResults?: SysPromptTokenCache[] }) => {
       if (Array.isArray(data.savedResults)) {
         const storedPrompt = data.savedResults.find(
           (result) => result.hash === promptHash && result.model === model
@@ -183,7 +183,7 @@ async function getStoredPromptTokenCount(promptHash: string, model: string): Pro
 }
 
 function saveSysPromptTokenCount(promptHash: string, model: string, tokens: number): void {
-  chrome.storage.sync.get('savedResults', (data: { savedResults?: sysPromptTokenCache[] }) => {
+  chrome.storage.sync.get('savedResults', (data: { savedResults?: SysPromptTokenCache[] }) => {
     const savedResults = data.savedResults || [];
     savedResults.push({ hash: promptHash, model, tokens });
     chrome.storage.sync.set({ savedResults });
@@ -298,7 +298,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
 // man, maybe there's even different pronunciation choices for dialects...? too much to consider...
 // simple one: get the punctuation marks to change to english equivs
 
-function arabicToArabizi(texts: string[], transliterationDict: TransliterationDict = arabizi.diacritization): string[] {
+function arabicToArabizi(texts: string[], transliterationDict: TransliterationDict = arabizi.transliteration): string[] {
   return texts.map(arabicText =>
     arabicText
     .replace(/[ْ]/g, '') // remove sukoon
