@@ -36,6 +36,7 @@ async function getAPIKey(): Promise<string> {
     chrome.storage.sync.get(['apiKey'], (data: { apiKey?: string }) => {
       if (chrome.runtime.lastError) {
         reject(chrome.runtime.lastError);
+        alert('ArabEasy: Please set your API key in the options page.');
       } else {
         const apiKey: string = data.apiKey || '';
         resolve(apiKey);
@@ -190,6 +191,9 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
   
   // get the API key
   const apiKey = await getAPIKey() || '';
+  if (!apiKey) {
+    throw new Error('API key not set');
+  }
   
   // get the prompt
   const diacritizePrompt = await getPrompt() || defaultPrompt;
