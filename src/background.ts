@@ -1,9 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import arabizi from './arabizi.json';
-import prompts from './prompt.json';
+import prompts from './defaultPrompts.json';
 import Bottleneck from 'bottleneck'
-import { MessageCreateParams } from '@anthropic-ai/sdk/resources/beta/tools/messages';
-import { prototype } from 'copy-webpack-plugin';
 
 // Check whether new version is installed
 chrome.runtime.onInstalled.addListener(function(details){
@@ -14,8 +12,6 @@ chrome.runtime.onInstalled.addListener(function(details){
       console.log("Updated from " + details.previousVersion + " to " + thisVersion + "!");
   }
 });
-
-let apiKeyExists: boolean = true;
 
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -34,43 +30,87 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Waits for popup to connect and sends a message to it
+// Waits for popup to connect and sends a message to it to prompt for API key if it doesn't exist
+// not implemented
 
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name === "popup" && apiKeyExists === false) {
     chrome.runtime.sendMessage({ action: "promptForAPIKey" }, (response) => {
       if (response === "success") {
-        console.log("API Key needed");
+        console.log("Attempting to prompt for API key.");
       }
     });
   };
 });
 
-const delimiter = '|'
-
-const claude: Record<string, string> = {
-  haiku: "claude-3-haiku-20240307",
-  sonnet: "claude-3-sonnet-20240229",
-  opus: "claude-3-opus-20240229"
-}
-
-const diacritizePrompt = prompts.p4;
-
-interface TransliterationDict {
-  [key: string]: string[];
-}
-
-
 // Get API Key 
-async function getApiKey(): Promise<string> {
+async function getAPIKey(): Promise<string> {
   return new Promise((resolve, reject) => {
-      chrome.storage.sync.get('apiKey', function(result) {
-          if (chrome.runtime.lastError) {
-              reject(chrome.runtime.lastError);
-          } else {
-              resolve(result.apiKey);
-          }
-      });
+    chrome.storage.sync.get(['apiKey'], (data: { apiKey?: string }) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      } else {
+        const apiKey: string = data.apiKey || '';
+        resolve(apiKey);
+      }
+    });
+  });
+}
+
+
+interface Models {
+  [key: string]: Model;
+}
+
+interface Model {
+  currentVersion: string;
+  level: number;
+}
+
+const claude: Models = {
+  haiku: {
+    currentVersion: "claude-3-haiku-20240307",
+    level: 0
+  },
+  sonnet: { 
+    currentVersion: "claude-3-sonnet-20240229",
+    level: 1
+  },
+  opus: {
+    currentVersion: "claude-3-opus-20240229",
+    level: 2
+  }
+};
+
+const defaultModel: Model = claude.haiku;
+
+function escalateModel (model: Model, n: number) : Model {
+  // return the model whose level is one higher than the input model using map
+    const mPlusOne = Object.values(claude).find((m) => m.level === model.level + n);
+    if (mPlusOne) {
+      return mPlusOne;
+    } else {
+      return model;
+    }
+} 
+
+interface Prompt {
+  name: string;
+  text: string;
+}
+
+const defaultPrompt: Prompt = prompts[0];
+
+async function getPrompt(): Promise<Prompt> {
+  return new Promise((resolve, reject) => {
+    chrome.storage.sync.get(['selectedPrompt'], (data: { selectedPrompt?: Prompt }) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      } else {
+        const prompt: Prompt = data.selectedPrompt || defaultPrompt;
+        resolve(prompt);
+      }
+    });
   });
 }
 
@@ -80,8 +120,12 @@ const anthropicLimiter = new Bottleneck({
   minTime: 1500
 });
 
-async function anthropicAPICall(params: Anthropic.MessageCreateParams): Promise<any> {
-  const apiKey = await getApiKey();
+async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: string): Promise<any> {
+  
+  //probably shouldn't call this every time... but it's fine for now
+  // option to pass in a key to avoid this call
+  const apiKey = key || await getAPIKey();
+
   const anthropic = new Anthropic({ apiKey: apiKey });
   console.log('Queued a job with parameters:', params); 
   return anthropicLimiter.schedule(async () => {
@@ -101,7 +145,7 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams): Promise<
 // Check number of system prompt tokens
 async function sysPromptTokens(prompt: string): Promise<number> {
   const msg = await anthropicAPICall({
-    model: claude.sonnet,
+    model: claude.haiku.currentVersion,
     max_tokens: 1,
     temperature: 0,
     messages: [
@@ -110,7 +154,7 @@ async function sysPromptTokens(prompt: string): Promise<number> {
         content: [
           {
             type: "text",
-            text: diacritizePrompt
+            text: prompt
           }
         ]
       }
@@ -152,20 +196,26 @@ async function processTranslationBatches(method: string, cache: processorRespons
 // API Call for Diacritization
 async function diacritizeTexts(texts: string[]): Promise<string[]> {
   console.log('Diacritizing', texts.length, 'texts', texts);
-
-  const sysPromptLength = await sysPromptTokens(diacritizePrompt);
+  
+  const fudgefactor = 1
+  const maxTries = 1
+  let tries = 0
+  
+  const apiKey = await getAPIKey() || '';
+  
+  const diacritizePrompt = await getPrompt() || defaultPrompt;
+  const promptText = diacritizePrompt.text;
+  
+  const sysPromptLength = await sysPromptTokens(promptText) || 0;
   console.log('System prompt length:', sysPromptLength);
 
-  let diacritizedText:string;
-
   const diacritizedTexts = await Promise.all(texts.map(async (arabicText) => {
-    try {
-      
-      const msg = await anthropicAPICall({
-        model: claude.sonnet,
+    while (tries >= 0 && tries < maxTries) {
+      const msg: Anthropic.Messages.MessageCreateParams = {
+        model: escalateModel(defaultModel, tries).currentVersion,
         max_tokens: 4000,
         temperature: 0,
-        system: diacritizePrompt,
+        system: promptText,
         messages: [
           {
             role: "user",
@@ -177,65 +227,35 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
             ]
           }
         ]
-      });
-
-      console.log('output from', msg)
-      diacritizedText = msg.content[0].text;
-
-      let inputTokens = msg.usage.input_tokens - sysPromptLength;
-      let outputTokens = msg.usage.output_tokens;
-      console.log('Input tokens:', inputTokens, 'Output tokens:', outputTokens);
-
-      const separatorsInOriginal = arabicText.split(delimiter).length - 1;
-      const separatorsInDiacritized = diacritizedText.split(delimiter).length - 1;
-      
-      const maxRetries = 0
-      let retries = 0
-      let fudgefactor = 1
-
-      while (retries <= maxRetries && (inputTokens > outputTokens || (separatorsInDiacritized + fudgefactor < separatorsInOriginal))) {
-        if (retries === maxRetries) {
-          throw new Error('max retries exceeded')
-        }
-        console.log(arabicText);
-        console.log(diacritizedText);
-        console.log('Too short or wrong separators, trying again: try', retries + 1, 'of', maxRetries);
-        const newMsg = await anthropicAPICall({
-          model: claude.sonnet,
-          max_tokens: 4000,
-          temperature: 0, 
-          system: diacritizePrompt,
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: arabicText,
-                }
-              ]
-            }
-          ]
-        });
-        inputTokens = newMsg.usage.input_tokens - sysPromptLength;
-        outputTokens = newMsg.usage.output_tokens;
-        console.log('Input tokens:', inputTokens, 'Output tokens:', outputTokens);
-        diacritizedText = newMsg.content[0].text;
-        retries++;
       }
+      try {
+        const response = await anthropicAPICall(msg, apiKey);
+        console.log(response.id);
 
-      console.log(arabicText);
-      console.log(diacritizedText);
-
-      return diacritizedText;
-    } catch (error) {
-        console.error('Error diacritizing chunk:', error);
+        const inputTokens = response.usage.input_tokens - sysPromptLength;
+        const outputTokens = response.usage.output_tokens;
+        console.log('Input tokens:', inputTokens, 'Output tokens:', outputTokens);
+        
+        const diacritizedText: string = response.content[0].text;
         console.log(arabicText);
         console.log(diacritizedText);
-      return arabicText;
+        
+        const separatorsInOriginal = arabicText.split(delimiter).length - 1;
+        const separatorsInDiacritized = diacritizedText.split(delimiter).length - 1;
+        if (inputTokens >= outputTokens && separatorsInDiacritized + fudgefactor >= separatorsInOriginal) {
+          return diacritizedText;
+        } else {
+          console.log('Too short or wrong separators, trying again: try', tries, 'of', maxTries);
+          tries++;
+        }
+      } catch (error) {
+        console.error('Error diacritizing chunk:', error);
+        break;
+      }
     }
+    console.error('Failed to diacritize text.');
+    return arabicText;
   }));
-
   console.log('Finished diacritizing.')
   return diacritizedTexts;
 }
@@ -245,6 +265,11 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
 // fii instead of fiy, etc
 // man, maybe there's even different pronunciation choices for dialects...? too much to consider...
 // simple one: get the punctuation marks to change to english equivs
+
+interface TransliterationDict {
+  [key: string]: string[];
+}
+
 function arabicToArabizi(texts: string[], transliterationDict: TransliterationDict = arabizi.transliteration): string[] {
   return texts.map(arabicText =>
     arabicText
@@ -256,7 +281,7 @@ function arabicToArabizi(texts: string[], transliterationDict: TransliterationDi
   );
 }
 
-// ALLCAPS translation function
+// ALLCAPS translation function <for fun>
 function ALLCAPS(str: string): string {
   return str.replace(/[a-z]/g, (char) => {
     const charCode = char.charCodeAt(0);
@@ -264,13 +289,18 @@ function ALLCAPS(str: string): string {
   });
 }
 
+let apiKeyExists = false;
+
+// Main function
 const main = async () => {
-  const apiKey = await getApiKey();
-  if (!apiKey) {
-    apiKeyExists = false;
-    console.log('No API key found');
+  // Check if API key exists
+  const apiKey = await getAPIKey();
+  if (apiKey) {
+    apiKeyExists = true;
+    console.log('API Key found:', apiKey);
   } else {
-    console.log('API key found');
+    apiKeyExists = false;
+    console.log('API Key not found.');
   }
 }
 
