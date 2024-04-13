@@ -12,29 +12,37 @@
     <div id="llmChoice">
         <h2>LLM Options</h2>
         <label for="llmChoice">LLM Choice:</label>
-        <select id="llmChoice" name="llmChoice">
-            <option value="haiku">Claude Haiku</option>
-            <option value="sonnet">Claude Sonnet</option>
-            <option value="opus">Claude Opus</option>
-            <option value="gpt3">GPT 3.5</option>
-            <option value="gpt4">GPT 4</option>
-            
-            <option value="local">Local (not implemented)</option>
-        </select>
-        <br>
-        <label for="customPrompt">Custom Prompt:</label>
-        <br>
-        <textarea id="customPrompt" name="customPrompt" rows="5" cols="50" maxlength="1000"></textarea>
-        <br>
-        <select id="loadPrompt" name="loadPrompt">
-            <option value="default">Default</option>
-            <option value="custom1">Custom 1</option>
-        </select>
-        <button id="loadPromptBtn">Load</button>
-        <button id="savePromptBtn">Save</button>
-        <button id="resetPromptBtn">Reset</button>
+        <div>
+            <select id="llmChoice" name="llmChoice">
+                <option value="haiku">Claude Haiku</option>
+                <option value="sonnet">Claude Sonnet</option>
+                <option value="opus">Claude Opus</option>
+                <option value="gpt3">GPT 3.5</option>
+                <option value="gpt4">GPT 4</option>
+                <option value="local">Local (not implemented)</option>
+            </select>
+        </div>
+        <div>
+            <label for="customPrompt">Custom Prompt:</label>
+            <br>
+            <textarea id="customPromptTextArea" name="customPrompt" rows="20" cols="75" maxlength="2000">defaultvalue</textarea>
+        </div>
+        <div>
+            <select id="loadPrompt" name="loadPrompt">
+            </select>
+            <!-- <button id="loadPromptBtn">Load</button> -->
+        </div>
+        <div>
+            <form id="savePromptForm">
+                <button type="submit" id="savePromptBtn">Save As</button>
+                <input type="text" id="newPromptName" name="newPromptName">
+            </form>
+        </div>
+
+        <button id="deletePromptBtn">Delete</button>
+        <button id="resetPromptBtn">Reset to saved</button>
     </div>
-    <div id="apiKey">
+    <div id="apiKeyForm">
         <h2>API Key</h2>
         <form id="optionsForm">
             <label for="apiKey">API Key:</label>
