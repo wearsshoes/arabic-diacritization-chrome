@@ -192,9 +192,18 @@ function saveSysPromptTokenCount(promptHash: string, model: string, tokens: numb
     chrome.storage.sync.set({ savedResults });
   });
 }
+
 // Async worker for API call
+// TODO: try to get this to take and return objects of the class WebPageDiacritizationData
 async function processDiacritizationBatches(method: string, cache: ProcessorResponse[], diacritizationBatches: { text: string; elements: TextElement[] }[]): Promise<ProcessorResponse[]> {
+  
+  
   const texts = diacritizationBatches.map((batch) => batch.text);
+  
+  // Replace the caching logic with TranslationDataManager methods
+  const pageUrl = await getCurrentPageUrl(); // Implement this function to get the current page URL
+  // const webPageData = await dataManager.getWebPageData(pageUrl);
+  
   let diacritizedTextArray: string[] = [];
   if (method === 'diacritize') {
     // could be fun to have claude run with figuring out the dialect, and then feeding that as an argument to the prompt
@@ -204,6 +213,7 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
     diacritizedTextArray = diacritizeArray
   } else if (method === 'arabizi') {
   // honestly, this could just be generated automatically and toggled on/off back to full arabic cache state
+  
   // could also be fun to do a "wubi" version on alternating lines?
     console.log('Received arabizi request and data, processing');
      if (cache && cache.length) {
@@ -215,9 +225,23 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
       diacritizedTextArray = arabicToArabizi(diacritizeArray)
     }
   }
+  
   return diacritizationBatches.map((batch, index) => {
     const diacritizedTexts = diacritizedTextArray[index].split(delimiter);
     return { elements: batch.elements, diacritizedTexts, rawResult: diacritizedTextArray[index]};
+  });
+}
+
+// Get the current page URL
+async function getCurrentPageUrl(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs.length > 0) {
+        resolve(tabs[0].url as string);
+      } else {
+        reject('No active tabs found');
+      }
+    });
   });
 }
 
