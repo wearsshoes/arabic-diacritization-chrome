@@ -39,17 +39,30 @@ export interface sysPromptTokenCache {
   tokens: number;
 }
 
-export interface TranslationData {
-  [PageID: string]: {
-    lastVisited: Date;
-    elements: {
-      [ElementHash: string]: {
-        originalText: string;
-        translatedText: string;
-        xPaths: string[];
-        lastTranslated: Date;
-        attributes: { [key: string]: string };
-      };
-    };
-  };
+class WebPageTranslationData {
+  constructor(
+      public pageId: string,
+      public lastVisited: Date,
+      public contentSignature: string,
+      public structuralMetadata: string,
+      public elements: { [elementHash: string]: TranslationElement }
+  ) { }
+
+  updateLastVisited(date: Date): void {
+      this.lastVisited = date;
+  }
+}
+
+interface TranslationElement {
+  originalText: string;
+  translatedText: string;
+  xPaths: string[];
+  lastTranslated: Date;
+  attributes: ElementAttributes;
+}
+
+interface ElementAttributes {
+  className?: string;
+  id?: string;
+  tagName: string;
 }
