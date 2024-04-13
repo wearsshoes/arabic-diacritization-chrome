@@ -1,3 +1,5 @@
+import { WebPageDiacritizationData } from "./types";
+
 export class DiacritizationDataManager {
     private static instance: DiacritizationDataManager;
     private constructor() { }
@@ -9,9 +11,10 @@ export class DiacritizationDataManager {
         return this.instance;
     }
   
-    // async getWebPageData(url: string): Promise<WebPageDiacritizationData | undefined> {
-    //     // Implementation to retrieve data from IndexedDB
-    // }
+    async getWebPageData(url: string): Promise<WebPageDiacritizationData | undefined> {
+        // Implementation to retrieve data from IndexedDB
+        return undefined;
+    }
   
     // async updateWebPageData(url: string, data: WebPageDiacritizationData): Promise<void> {
     //     // Implementation to update data in IndexedDB

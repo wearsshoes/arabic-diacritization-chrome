@@ -202,7 +202,7 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
   
   // Replace the caching logic with TranslationDataManager methods
   const pageUrl = await getCurrentPageUrl(); // Implement this function to get the current page URL
-  // const webPageData = await dataManager.getWebPageData(pageUrl);
+  const webPageData = await dataManager.getWebPageData(pageUrl);
   
   let diacritizedTextArray: string[] = [];
   if (method === 'diacritize') {

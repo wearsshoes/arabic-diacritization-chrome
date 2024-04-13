@@ -39,7 +39,7 @@ export interface SysPromptTokenCache {
   tokens: number;
 }
 
-class WebPageDiacritizationData {
+export class WebPageDiacritizationData {
   constructor(
       public pageId: string,
       public lastVisited: Date,
@@ -53,7 +53,7 @@ class WebPageDiacritizationData {
   }
 }
 
-interface DiacritizationElement {
+export interface DiacritizationElement {
   originalText: string;
   diacritizedText: string;
   xPaths: string[];
@@ -61,7 +61,7 @@ interface DiacritizationElement {
   attributes: ElementAttributes;
 }
 
-interface ElementAttributes {
+export interface ElementAttributes {
   className?: string;
   id?: string;
   tagName: string;
