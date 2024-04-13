@@ -3,8 +3,6 @@ import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
 import Bottleneck from 'bottleneck'
 import { Model, Models, Prompt, TransliterationDict, processorResponse, TextElement, SavedResultsType } from './types';
-import { get, has } from 'lodash';
-import { sys, tokenToString } from 'typescript';
 
 // Check whether new version is installed
 chrome.runtime.onInstalled.addListener(function(details){
@@ -171,6 +169,7 @@ async function getHash(prompt: string): Promise<string | null> {
     return null;
   }
 }
+
 
 async function getStoredPromptTokenCount(promptHash: string, model: string): Promise<number | null> {
   return new Promise((resolve) => {
