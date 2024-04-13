@@ -4,6 +4,9 @@ import prompts from './defaultPrompts.json';
 import Bottleneck from 'bottleneck'
 import { calculateHash } from './utils';  
 import { Model, Models, Prompt, ProcessorResponse, TextElement, SysPromptTokenCache, TransliterationDict } from './types';
+import { DiacritizationDataManager } from './datamanager';
+
+const dataManager = DiacritizationDataManager.getInstance();
 
 // Rewriting control flow of the diacritization service
 // Placeholder for the diacritization service
