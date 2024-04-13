@@ -33,7 +33,7 @@ export interface TransliterationDict {
   [key: string]: string[];
 }
 
-export interface SavedResultsType {
+export interface sysPromptTokenCache {
   hash: string;
   model: string;
   tokens: number;
