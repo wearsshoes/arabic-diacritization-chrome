@@ -171,6 +171,20 @@ async function getHash(prompt: string): Promise<string | null> {
   }
 }
 
+async function calculateHash(input: string[]): Promise<string[]> {
+  // Creates the WebAssembly instance.
+  const hasher = await xxhash();
+  const response: string[] = []
+
+  // Calculates the 64-bit hash.
+  input.forEach(inputString => {
+    const hash64Hex = hasher.h64ToString(inputString);
+    response.push(hash64Hex)
+  });
+  
+  return response;
+}
+
 async function getStoredPromptTokenCount(promptHash: string, model: string): Promise<number | null> {
   return new Promise((resolve) => {
     chrome.storage.sync.get('savedResults', (data: { savedResults?: SavedResultsType[] }) => {
