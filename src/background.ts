@@ -210,6 +210,7 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
   if (method === 'diacritize') {
     if (webPageData) {
       // If saved data exists for the current webpage and the method is 'diacritize'
+      // Conform the saved results to the expected format. Ideally, could just return the saved results directly.
       const savedResults = Object.values(webPageData.elements).map(element => element.diacritizedText);
       return diacritizationBatches.map((batch, index) => {
         const diacritizedTexts = savedResults[index].split(delimiter);
