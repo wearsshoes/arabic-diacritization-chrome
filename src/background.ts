@@ -127,7 +127,7 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
 // Check number of system prompt tokens, look up in cache, or call API
 async function countSysPromptTokens(prompt: string, model?: string): Promise<number> {
   const modelUsed = model || defaultModel.currentVersion;
-  const promptHash = await getHash(prompt) as string;
+  const promptHash = await calculateHash(prompt) as string;
 
   const storedTokenCount = await getStoredPromptTokenCount(promptHash, modelUsed);
   if (storedTokenCount !== null) {
@@ -243,7 +243,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
 
   // diacritize the texts in parallel with retries
   const diacritizedTexts = await Promise.all(texts.map(async (arabicText) => {
-    const arabicTextHash = await calculateHash([arabicText]);
+    const arabicTextHash = await calculateHash(arabicText);
     
     for (let tries = 0; tries < maxTries; tries++) {
       const msg: Anthropic.Messages.MessageCreateParams = {
@@ -264,7 +264,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
         ]
       };
       try {
-        const response = await anthropicAPICall(msg, apiKey, arabicTextHash[0]);
+        const response = await anthropicAPICall(msg, apiKey, arabicTextHash);
 
         // check the token usage
         const inputTokens = response.usage.input_tokens - sysPromptLength;
