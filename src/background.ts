@@ -157,6 +157,8 @@ async function countSysPromptTokens(prompt: string, model?: string): Promise<num
   return sysPromptTokens;
 }
 
+
+// trying to remove the need for the hash
 async function getHash(prompt: string): Promise<string | null> {
   try {
     const encoder = new TextEncoder();
@@ -241,7 +243,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
 
   // diacritize the texts in parallel with retries
   const diacritizedTexts = await Promise.all(texts.map(async (arabicText) => {
-    const arabicTextHash = await getHash(arabicText) as string;
+    const arabicTextHash = await calculateHash([arabicText]);
     
     for (let tries = 0; tries < maxTries; tries++) {
       const msg: Anthropic.Messages.MessageCreateParams = {
@@ -262,7 +264,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
         ]
       };
       try {
-        const response = await anthropicAPICall(msg, apiKey, arabicTextHash.substring(0, 5));
+        const response = await anthropicAPICall(msg, apiKey, arabicTextHash[0]);
 
         // check the token usage
         const inputTokens = response.usage.input_tokens - sysPromptLength;
