@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async() => {
   // Get the website language
   const languageDisplayElement = document.getElementById('pageLanguage');
   if (languageDisplayElement) {
-    languageDisplayElement.innerHTML = 'Loading...';
+    languageDisplayElement.textContent = 'Loading...';
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (tab.id === undefined) throw new Error('No active tab found');
@@ -55,6 +55,34 @@ document.addEventListener('DOMContentLoaded', async() => {
     }
   }
 
+  // get the website text length
+  const characterCountElement = document.getElementById('characterCount');
+  const outputTokenCountElement = document.getElementById('outputTokenCount');
+  if (characterCountElement) {
+    characterCountElement.textContent = 'Loading...';
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab.id === undefined) throw new Error('No active tab found');
+      
+      console.log('Sending message to get text length');
+      const response = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteCharacterCount' });
+      console.log('Text length:', response.chars);  // Log the text length
+      a.chars = response.chars
+      a.batches = response.batches
+      characterCountElement.textContent = 'Character Count: ' + response.chars;
+
+      // Output tokens assuming 2.3 tokens per input character, if Arabic characters and diacritics are all 1 token each
+      if (outputTokenCountElement) {
+        const outputTokens = (response.chars * 2.3).toFixed(0);
+        outputTokenCountElement.textContent = 'Estimated output token count: ' + outputTokens;
+      }
+
+    } catch (error) {
+      console.error('Failed to get text length:', error);
+      characterCountElement.textContent = 'Character Count: Unknown';
+    }
+  }
+
   // get selectedPrompt from storage
   const promptDisplayElement = document.getElementById('selectedPrompt');
   const promptLengthElement = document.getElementById('promptLength');
@@ -67,9 +95,53 @@ document.addEventListener('DOMContentLoaded', async() => {
 
         // We should store the prompt length to avoid this call
         chrome.runtime.sendMessage({action: "getSystemPromptLength", prompt: data.selectedPrompt.text}, (response) => {
-          if (response) {promptLengthElement.textContent = "Prompt Length: " + response;}
+          if (response) {
+            promptLengthElement.textContent = "Prompt Length: " + response;
+            a.promptLength = response
+          }
         });
       }
     });
   }
+
+  const modelDisplayElement = document.getElementById('model');
+  if (modelDisplayElement) {
+    modelDisplayElement.textContent = 'Model: Claude Haiku';
+    // chrome.storage.sync.get(['selectedModel'], (data) => {
+    //   if (data.selectedModel) {
+    //     modelDisplayElement.textContent = "Model: " + data.selectedModel.name;
+    //   } else {
+    //     modelDisplayElement.textContent = "Model: No model selected";
+    //   }
+    // });
+  }
+
+  // calculate the cost of translation
+  const calculateBtn = document.getElementById('calculateBtn');
+  calculateBtn?.addEventListener('click', () => {
+    const costElement = document.getElementById('costEstimate');
+    if (costElement && a.batches && a.chars && a.promptLength) {
+      const costEstimate = calculateCost()
+      const costInDollars = costEstimate.toFixed(2);
+      costElement.textContent = 'Estimated cost: $' + costInDollars;
+    } else if (costElement) {
+      costElement.textContent = 'Estimated cost: Unknown';
+    }
+  });
 });
+
+let a: { [key: string]: number } = {}
+
+// function for calculating cost of translation
+function calculateCost(): number {
+  // if (dictOfThings.model != 0) return "I can't calculate the cost for this model yet";
+  
+  const inputCost = 0.25/1000000; // $0.25 per million tokens
+  const inputSubtotal = ((a.promptLength * a.batches) + a.chars) * inputCost;
+  const outputCost = 1.25/1000000; // $1.25 per million tokens
+  const outputSubtotal = (a.chars * 2.3) * outputCost;
+  
+  // 10% tax for bad outputs lmao
+  const totalCostPlusTax = (inputSubtotal + outputSubtotal) * 1.1;
+  return totalCostPlusTax
+}
