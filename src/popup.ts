@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', async() => {
   };
 
   // Get the website language
+  const diacritizeMessage = document.getElementById('diacritizeMessage');
   const languageDisplayElement = document.getElementById('pageLanguage');
   if (languageDisplayElement) {
     languageDisplayElement.textContent = 'Loading...';
@@ -47,11 +48,30 @@ document.addEventListener('DOMContentLoaded', async() => {
       
       const lang = languageNamesInEnglish.of(response);
       const lang_ar = languageNamesInArabic.of(response);
+      const arabicDialects = ['ar', 'ar-AE', 'ar-BH', 'ar-DZ', 'ar-EG', 'ar-IQ', 'ar-JO', 'ar-KW', 'ar-LB', 'ar-LY', 'ar-MA', 'ar-OM', 'ar-QA', 'ar-SA', 'ar-SD', 'ar-SY', 'ar-TN', 'ar-YE'];
       languageDisplayElement.textContent = 'Language: ' + lang + ' (' + lang_ar + ')';
+      if (diacritizeMessage) {
+        if (arabicDialects.includes(response)) {
+          diacritizeMessage.textContent = 'This website is in Arabic.';
+          diacritizeMessage.style.color = 'green';
+          diacritizeBtn?.removeAttribute('disabled');
+          arabiziBtn?.removeAttribute('disabled');
 
+        } else {
+          diacritizeMessage.textContent = 'Warning! This website is not in Arabic.';
+          diacritizeMessage.style.setProperty('color', 'red');
+          diacritizeBtn?.setAttribute('disabled', 'true');
+          arabiziBtn?.setAttribute('disabled', 'true'); 
+        }
+      }
     } catch (error) {
       console.error('Failed to get website language:', error);
       languageDisplayElement.textContent = 'Language: Unknown';
+      if (diacritizeMessage) {diacritizeMessage.textContent = 'Warning! This website may not be in Arabic.'};
+      // grey out the diacritize button
+      diacritizeMessage?.style.setProperty('color', 'red');
+      diacritizeBtn?.removeAttribute('disabled');
+      arabiziBtn?.removeAttribute('disabled');
     }
   }
 
