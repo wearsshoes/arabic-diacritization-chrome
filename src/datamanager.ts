@@ -1,4 +1,4 @@
-class DiacritizationDataManager {
+export class DiacritizationDataManager {
     private static instance: DiacritizationDataManager;
     private constructor() { }
   
