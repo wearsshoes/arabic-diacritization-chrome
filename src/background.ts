@@ -3,7 +3,7 @@ import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
 import Bottleneck from 'bottleneck'
 import { calculateHash } from './utils';  
-import { Model, Models, Prompt, ProcessorResponse, TextElement, SysPromptTokenCache, TransliterationDict } from './types';
+import { Model, Models, Prompt, ProcessorResponse, TextElement, SysPromptTokenCache, TransliterationDict, DiacritizationRequestBatch } from './types';
 import { DiacritizationDataManager } from './datamanager';
 
 const dataManager = DiacritizationDataManager.getInstance();
@@ -195,7 +195,7 @@ function saveSysPromptTokenCount(promptHash: string, model: string, tokens: numb
 
 // Async worker for API call
 // TODO: try to get this to take and return objects of the class WebPageDiacritizationData
-async function processDiacritizationBatches(method: string, cache: ProcessorResponse[], diacritizationBatches: { text: string; elements: TextElement[] }[]): Promise<ProcessorResponse[]> {
+async function processDiacritizationBatches(method: string, cache: ProcessorResponse[], diacritizationBatches: DiacritizationRequestBatch[]): Promise<ProcessorResponse[]> {
   
   
   const texts = diacritizationBatches.map((batch) => batch.text);
@@ -205,16 +205,28 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
   const webPageData = await dataManager.getWebPageData(pageUrl);
   
   let diacritizedTextArray: string[] = [];
+
+  // If the method is 'diacritize' and saved data exists for the current webpage, return the saved results
   if (method === 'diacritize') {
+    if (webPageData) {
+      // If saved data exists for the current webpage and the method is 'diacritize'
+      const savedResults = Object.values(webPageData.elements).map(element => element.diacritizedText);
+      return diacritizationBatches.map((batch, index) => {
+        const diacritizedTexts = savedResults[index].split(delimiter);
+        return { elements: batch.elements, diacritizedTexts: diacritizedTexts, rawResult: savedResults[index] };
+      });
+    }
+
     // could be fun to have claude run with figuring out the dialect, and then feeding that as an argument to the prompt
     // partial diacritization... just build out a lot of options...
+    
     console.log('Received diacritization request and data, processing');
     const diacritizeArray = await diacritizeTexts(texts);
     diacritizedTextArray = diacritizeArray
-  } else if (method === 'arabizi') {
-  // honestly, this could just be generated automatically and toggled on/off back to full arabic cache state
   
-  // could also be fun to do a "wubi" version on alternating lines?
+  } else if (method === 'arabizi') {
+    // honestly, this could just be generated automatically and toggled on/off back to full arabic cache state
+    // could also be fun to do a "wubi" version on alternating lines?
     console.log('Received arabizi request and data, processing');
      if (cache && cache.length) {
       console.log('Diacritization inferred to exist, transliterating')
