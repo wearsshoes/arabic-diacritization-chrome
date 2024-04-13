@@ -8,14 +8,17 @@ import { DiacritizationDataManager } from './datamanager';
 
 
 // ----------------- Event Listeners ----------------- //
+import Bottleneck from 'bottleneck'
+import { calculateHash } from './utils';  
+import { Model, Models, Prompt, DiacritizationDict, ProcessorResponse, TextElement, sysPromptTokenCache, TransliterationDict } from './types';
 
-// Rewriting control flow of the translation service
-// Placeholder for the translation service
-class TranslationService {
+// Rewriting control flow of the diacritization service
+// Placeholder for the diacritization service
+class DiacritizationService {
   // async checkAndUpdateCache(pageId, elementHash, text) { /* ... */ }
-  // async fetchTranslation(text) { /* ... */ }
-  // async saveTranslation(pageId, elementData) { /* ... */ }
-  // async getTranslation(pageId, elementHash) { /* ... */ }
+  // async fetchDiacritization(text) { /* ... */ }
+  // async saveDiacritization(pageId, elementData) { /* ... */ }
+  // async getDiacritization(pageId, elementHash) { /* ... */ }
 }
 
 // Check whether new version is installed
@@ -35,16 +38,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     countSysPromptTokens(prompt).then((tokens) => sendResponse(tokens));
     return true;
   }
-  if (request.action === "translate" && request.data) {
-    // Process the translation batches received from the content script
-    processTranslationBatches(request.method, request.cache, request.data)
-    .then(translatedBatches => {
-      sendResponse({type: 'translationResult', data: translatedBatches});
-    })
-    .catch(error => {
-      console.error('Error processing translation batches:', error);
-      sendResponse({type: 'error', message: 'Failed to process translation batches'});
-    });
+  if (request.action === "diacritize" && request.data) {
+    // Process the diacritization batches received from the content script
+    processDiacritizationBatches(request.method, request.cache, request.data)
+      .then(diacritizedBatches => {
+        sendResponse({type: 'diacritizationResult', data: diacritizedBatches});
+      })
+      .catch(error => {
+        console.error('Error processing diacritization batches:', error);
+        sendResponse({type: 'error', message: 'Failed to process diacritization batches'});
+      });
     // Return true to indicate that sendResponse will be called asynchronously
     return true;
   }
@@ -100,7 +103,6 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
     console.log('Received diacritization request and data, processing');
     const diacritizeArray = await diacritizeTexts(texts);
     diacritizedTextArray = diacritizeArray
-  
   } else if (method === 'arabizi') {
     // honestly, this could just be generated automatically and toggled on/off back to full arabic cache state
     // could also be fun to do a "wubi" version on alternating lines?
@@ -214,7 +216,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
 // man, maybe there's even different pronunciation choices for dialects...? too much to consider...
 // simple one: get the punctuation marks to change to english equivs
 
-function arabicToArabizi(texts: string[], transliterationDict: TransliterationDict = arabizi.transliteration): string[] {
+function arabicToArabizi(texts: string[], transliterationDict: TransliterationDict = arabizi.diacritization): string[] {
   return texts.map(arabicText =>
     arabicText
     .replace(/[ْ]/g, '') // remove sukoon
