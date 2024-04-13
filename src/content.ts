@@ -301,6 +301,14 @@ function main() {
   }
 }
 
+// when queried by popup, returns the language of the page
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'getWebsiteLanguage') {
+    const language = document.documentElement.lang;
+    sendResponse(language);
+  }
+});
+
 // Run on script load 
 // should maybe set to only run on lang="ar"?
 if (document.readyState === "loading") {

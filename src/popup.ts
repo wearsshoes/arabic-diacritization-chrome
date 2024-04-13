@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async() => {
 
   // when the popup is opened, check if the api key is set
   chrome.storage.sync.get(['apiKey'], (data) => {
@@ -29,5 +29,28 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(`Error in ${method}:`, error);
     }
   };
-    
+
+  // Get the website language
+  const languageDisplayElement = document.getElementById('pageLanguage');
+  if (languageDisplayElement) {
+    languageDisplayElement.innerHTML = 'Loading...';
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab.id === undefined) throw new Error('No active tab found');
+      
+      const response = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteLanguage' });
+      console.log('Website language:', response);  // Log the language
+      const languageNamesInEnglish = new Intl.DisplayNames(['en'], { type: 'language' });
+      const languageNamesInArabic = new Intl.DisplayNames(['ar'], { type: 'language' });
+      
+      const lang = languageNamesInEnglish.of(response);
+      const lang_ar = languageNamesInArabic.of(response);
+      languageDisplayElement.textContent = 'Language: ' + lang + ' (' + lang_ar + ')';
+
+    } catch (error) {
+      console.error('Failed to get website language:', error);
+      languageDisplayElement.textContent = 'Language: Unknown';
+    }
+  }
+
 });
