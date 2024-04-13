@@ -1,9 +1,6 @@
 import defaultPrompts from './defaultPrompts.json';
+import { Prompt } from './types';
 
-interface Prompt {
-    name: string;
-    text: string;
-}
 let allPrompts:Prompt[] = defaultPrompts;
 
 const apiKeyInput = document.getElementById('apiKey') as HTMLInputElement;

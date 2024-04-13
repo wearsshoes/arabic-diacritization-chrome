@@ -1,23 +1,5 @@
 // content.ts
-
-// Interfaces
-// I'm not really sure where these are supposed to live - a separate definitions.json?
-interface TextElement {
-  elementId: string;
-  originalText: string;
-  index: number;
-}
-
-interface APIBatch {
-  text: string;
-  elements: TextElement[];
-}
-
-interface processorResponse {
-  elements: TextElement[]; 
-  translatedTexts: string[];
-  rawResult: string
-}
+import { TextElement, APIBatch, processorResponse } from "./types";
 
 // Global Variables
 const delimiter:string = '|'
@@ -27,7 +9,6 @@ let APIBatches: APIBatch[];
 let cachedResponse: processorResponse[];
 
 // Utility Functions
-
 
 // Builds element list according to interface. Recurses through DOM and put the in the right order. 
 function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''): TextElement[] {
@@ -285,7 +266,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           directionLTR();
         }
       });
-    })()
+    })();
+    return true;
   }
 });
 

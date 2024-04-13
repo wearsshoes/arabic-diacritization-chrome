@@ -1,3 +1,5 @@
+import { Prompt } from './types'
+
 document.addEventListener('DOMContentLoaded', async() => {
 
   // when the popup is opened, check if the api key is set
@@ -53,4 +55,21 @@ document.addEventListener('DOMContentLoaded', async() => {
     }
   }
 
+  // get selectedPrompt from storage
+  const promptDisplayElement = document.getElementById('selectedPrompt');
+  const promptLengthElement = document.getElementById('promptLength');
+  if (promptDisplayElement && promptLengthElement) {
+    chrome.storage.sync.get(['selectedPrompt'], (data: {selectedPrompt?: Prompt}) => {
+      if (data.selectedPrompt) {
+
+        const prompt = data.selectedPrompt.name || 'No prompt selected';
+        promptDisplayElement.textContent = "Prompt: " + prompt;
+
+        // We should store the prompt length to avoid this call
+        chrome.runtime.sendMessage({action: "getSystemPromptLength", prompt: data.selectedPrompt.text}, (response) => {
+          if (response) {promptLengthElement.textContent = "Prompt Length: " + response;}
+        });
+      }
+    });
+  }
 });

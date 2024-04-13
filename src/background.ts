@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
 import Bottleneck from 'bottleneck'
+import { Model, Models, Prompt, TransliterationDict, processorResponse, TextElement } from './types';
 
 // Check whether new version is installed
 chrome.runtime.onInstalled.addListener(function(details){
@@ -13,11 +14,18 @@ chrome.runtime.onInstalled.addListener(function(details){
   }
 });
 
+const delimiter = '|';
+
 // Listen for messages from content scripts
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "translate" && message.data) {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "getSystemPromptLength") {
+    const prompt = request.prompt;
+    sysPromptTokens(prompt).then((tokens) => sendResponse(tokens));
+    return true;
+  }
+  if (request.action === "translate" && request.data) {
     // Process the translation batches received from the content script
-    processTranslationBatches(message.method, message.cache, message.data)
+    processTranslationBatches(request.method, request.cache, request.data)
       .then(translatedBatches => {
         sendResponse({type: 'translationResult', data: translatedBatches});
       })
@@ -43,16 +51,6 @@ async function getAPIKey(): Promise<string> {
       }
     });
   });
-}
-
-
-interface Models {
-  [key: string]: Model;
-}
-
-interface Model {
-  currentVersion: string;
-  level: number;
 }
 
 const claude: Models = {
@@ -81,11 +79,6 @@ function escalateModel (model: Model, n: number) : Model {
       return model;
     }
 } 
-
-interface Prompt {
-  name: string;
-  text: string;
-}
 
 const defaultPrompt: Prompt = prompts[0];
 
@@ -131,6 +124,7 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
 
 // Check number of system prompt tokens
 async function sysPromptTokens(prompt: string): Promise<number> {
+  console.log('Checking system prompt tokens');
   const msg = await anthropicAPICall({
     model: claude.haiku.currentVersion,
     max_tokens: 1,
@@ -270,10 +264,6 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
 // fii instead of fiy, etc
 // man, maybe there's even different pronunciation choices for dialects...? too much to consider...
 // simple one: get the punctuation marks to change to english equivs
-
-interface TransliterationDict {
-  [key: string]: string[];
-}
 
 function arabicToArabizi(texts: string[], transliterationDict: TransliterationDict = arabizi.transliteration): string[] {
   return texts.map(arabicText =>
