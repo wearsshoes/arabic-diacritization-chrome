@@ -90,8 +90,8 @@ document.addEventListener('DOMContentLoaded', async() => {
     chrome.storage.sync.get(['selectedPrompt'], (data: {selectedPrompt?: Prompt}) => {
       if (data.selectedPrompt) {
 
-        const prompt = data.selectedPrompt.name || 'No prompt selected';
-        promptDisplayElement.textContent = "Prompt: " + prompt;
+        const task = data.selectedPrompt.name || 'No task selected';
+        promptDisplayElement.textContent = "Task: " + task;
 
         // We should store the prompt length to avoid this call
         chrome.runtime.sendMessage({action: "getSystemPromptLength", prompt: data.selectedPrompt.text}, (response) => {

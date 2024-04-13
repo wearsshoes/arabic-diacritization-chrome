@@ -15,11 +15,11 @@
         <div>
             <select id="llmChoice" name="llmChoice">
                 <option value="haiku">Claude Haiku</option>
-                <option value="sonnet">Claude Sonnet</option>
+                <!-- <option value="sonnet">Claude Sonnet</option>
                 <option value="opus">Claude Opus</option>
                 <option value="gpt3">GPT 3.5</option>
                 <option value="gpt4">GPT 4</option>
-                <option value="local">Local (not implemented)</option>
+                <option value="local">Local (not implemented)</option> -->
             </select>
         </div>
         <div>
@@ -34,13 +34,14 @@
         </div>
         <div>
             <form id="savePromptForm">
-                <button type="submit" id="savePromptBtn">Save As</button>
+                <label for="newPromptName">New Prompt Name:</label>
                 <input type="text" id="newPromptName" name="newPromptName">
+                <button type="submit" id="savePromptBtn">Save</button>
             </form>
         </div>
 
-        <button id="deletePromptBtn">Delete</button>
         <button id="resetPromptBtn">Reset to saved</button>
+        <button id="deletePromptBtn">Delete custom prompt</button>
     </div>
     <div id="apiKeyForm">
         <h2>API Key</h2>
@@ -54,14 +55,14 @@
             <button id="clearBtn">Clear</button>
     </div>
     <script src="options.js"></script>
-    <div id="apiUsage"></div>
+    <!-- <div id="apiUsage"></div>
         <h2>API Usage (in progress) </h2>
         <p>Queries sent: <span id="queriesSent"></span></p>
         <p>Tokens sent: <span id="tokensSent"></span></p>
         <p>Tokens received: <span id="tokensReceived"></span></p>
         <p>Prompt size: <span id="promptSize"></span></p>
-    </div>
-    <div id="arabiziOptions"></div>
+    </div> -->
+    <!-- <div id="arabiziOptions"></div>
         <h2>Arabizi Options (in progress) </h2>
         <label for="arabiziChoice">Arabizi Choice:</label>
         <select id="arabiziChoice" name="arabiziChoice">
@@ -69,7 +70,6 @@
             <option value="dialect">Dialect</option>
         </select>
         <br>
-        <!-- checkbox for case endings -->
         <label for="caseEndings">Case Endings:</label>
         <input type="checkbox" id="caseEndings" name="caseEndings">
         <br>
@@ -100,6 +100,6 @@
         <button id="saveBtn">Save</button>
         <button id="resetSavedBtn">Reset to Saved</button>
         <button id="resetDefaultBtn">Reset to Default</button>
-    </div>
+    </div> -->
 </body>
 </html>
