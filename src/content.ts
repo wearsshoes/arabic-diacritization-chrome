@@ -21,7 +21,16 @@ const delimiter:string = '|'
 let textElementBatches: TextElement[][];
 let APIBatches: APIBatch[];
 // maybe this cache should go to the local storage, to have the option to reuse after page reload.
+// TODO: save cache to local storage.
 let cachedResponse: processorResponse[];
+
+// TODO: check page hash to see if we've already translated this page.
+
+// TODO: if cached, try to align page with translations by hash and xpath.
+
+// TODO: update page hash with new translations.
+
+// TODO: hash the page url (what data structure to put this in?)
 
 // Utility Functions
 
@@ -30,6 +39,7 @@ function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''
   const textElements: TextElement[] = [];
   // if we're on an element node, record elementId and pass to children.
   if (node.nodeType === Node.ELEMENT_NODE) {
+    // TODO: replace with xxhash
     elementId = 'element-' + Math.random().toString(36).substring(2, 11); // Generate a unique ID for the element
     const element = node as Element;
     element.setAttribute('data-element-id', elementId); // Set the ID as a data attribute on the element
@@ -51,6 +61,7 @@ function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''
       elementId: elementId,
       originalText: node.textContent,
       index: index,
+      // TODO: add a hash here to avoid sending the same text to the API
     }
     textElements.push(textElement)
   };
