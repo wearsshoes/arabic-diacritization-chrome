@@ -2,7 +2,9 @@ import Anthropic from '@anthropic-ai/sdk';
 import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
 import Bottleneck from 'bottleneck'
-import { Model, Models, Prompt, TransliterationDict, processorResponse, TextElement } from './types';
+import { Model, Models, Prompt, TransliterationDict, processorResponse, TextElement, SavedResultsType } from './types';
+import { get, has } from 'lodash';
+import { sys, tokenToString } from 'typescript';
 
 // Check whether new version is installed
 chrome.runtime.onInstalled.addListener(function(details){
@@ -20,7 +22,7 @@ const delimiter = '|';
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "getSystemPromptLength") {
     const prompt = request.prompt;
-    sysPromptTokens(prompt).then((tokens) => sendResponse(tokens));
+    countSysPromptTokens(prompt).then((tokens) => sendResponse(tokens));
     return true;
   }
   if (request.action === "translate" && request.data) {
@@ -101,17 +103,18 @@ const anthropicLimiter = new Bottleneck({
   minTime: 1500
 });
 
-async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: string): Promise<any> {
+async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: string, hash?: string): Promise<any> {
   
   // get the API key if it's not provided
   const apiKey = key || await getAPIKey();
 
   const anthropic = new Anthropic({ apiKey: apiKey });
-  console.log('Queued a job with parameters:', params); 
+  console.log('Queued job', hash); 
   return anthropicLimiter.schedule(async () => {
     try {
-      console.log('Sent a job with parameters:', params);
+      console.log('Sent job', hash);
       const result = await anthropic.messages.create(params);
+      console.log('Received result for:', hash);
       return result;
     } catch (error) {
       if (error instanceof Error) {
@@ -122,11 +125,18 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
   });
 }
 
-// Check number of system prompt tokens
-async function sysPromptTokens(prompt: string): Promise<number> {
-  console.log('Checking system prompt tokens');
+// Check number of system prompt tokens, look up in cache, or call API
+async function countSysPromptTokens(prompt: string, model?: string): Promise<number> {
+  const modelUsed = model || defaultModel.currentVersion;
+  const promptHash = await getHash(prompt) as string;
+
+  const storedTokenCount = await getStoredPromptTokenCount(promptHash, modelUsed);
+  if (storedTokenCount !== null) {
+    return storedTokenCount;
+  }
+
   const msg = await anthropicAPICall({
-    model: claude.haiku.currentVersion,
+    model: modelUsed,
     max_tokens: 1,
     temperature: 0,
     messages: [
@@ -141,9 +151,50 @@ async function sysPromptTokens(prompt: string): Promise<number> {
       }
     ]
   });
-  return msg.usage.input_tokens;
+
+  const sysPromptTokens: number = msg.usage.input_tokens;
+  saveSysPromptTokenCount(promptHash, modelUsed, sysPromptTokens);
+
+  return sysPromptTokens;
 }
 
+async function getHash(prompt: string): Promise<string | null> {
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(prompt);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+  } catch (error) {
+    console.error('Error generating hash:', error);
+    return null;
+  }
+}
+
+async function getStoredPromptTokenCount(promptHash: string, model: string): Promise<number | null> {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get('savedResults', (data: { savedResults?: SavedResultsType[] }) => {
+      if (Array.isArray(data.savedResults)) {
+        const storedPrompt = data.savedResults.find(
+          (result) => result.hash === promptHash && result.model === model
+        );
+        if (storedPrompt) {
+          return resolve(storedPrompt.tokens);
+        }
+      }
+      resolve(null);
+    });
+  });
+}
+
+function saveSysPromptTokenCount(promptHash: string, model: string, tokens: number): void {
+  chrome.storage.sync.get('savedResults', (data: { savedResults?: SavedResultsType[] }) => {
+    const savedResults = data.savedResults || [];
+    savedResults.push({ hash: promptHash, model, tokens });
+    chrome.storage.sync.set({ savedResults });
+  });
+}
 // Async worker for API call
 async function processTranslationBatches(method: string, cache: processorResponse[], translationBatches: { text: string; elements: TextElement[] }[]): Promise<processorResponse[]> {
   const texts = translationBatches.map((batch) => batch.text);
@@ -158,8 +209,7 @@ async function processTranslationBatches(method: string, cache: processorRespons
   // honestly, this could just be generated automatically and toggled on/off back to full arabic cache state
   // could also be fun to do a "wubi" version on alternating lines?
     console.log('Received arabizi request and data, processing');
-    console.log(cache);
-    if (cache && cache.length) {
+     if (cache && cache.length) {
       console.log('Diacritization inferred to exist, transliterating')
       translatedTextArray = arabicToArabizi(cache.map((batch) => batch.rawResult));
     } else {
@@ -176,32 +226,25 @@ async function processTranslationBatches(method: string, cache: processorRespons
 
 // API Call for Diacritization
 async function diacritizeTexts(texts: string[]): Promise<string[]> {
-  console.log('Diacritizing', texts.length, 'texts', texts);
   
   // parameters for retrying
   const fudgefactor = 1
   const maxTries = 1
   let tries = 0
   
-  // get the API key
   const apiKey = await getAPIKey() || '';
   if (!apiKey) {
     throw new Error('API key not set');
   }
   
-  // get the prompt
   const diacritizePrompt = await getPrompt() || defaultPrompt;
   const promptText = diacritizePrompt.text;
+  const sysPromptLength = await countSysPromptTokens(promptText) || 0;
   
-  // get the system prompt length
-  const sysPromptLength = await sysPromptTokens(promptText) || 0;
-  console.log('System prompt length:', sysPromptLength);
-
-  // diacritize the texts
+  // diacritize the texts in parallel with retries
   const diacritizedTexts = await Promise.all(texts.map(async (arabicText) => {
-    
-    // diacritization loop
     while (tries >= 0 && tries < maxTries) {
+      const arabicTextHash = await getHash(arabicText) as string;
 
       const msg: Anthropic.Messages.MessageCreateParams = {
         model: escalateModel(defaultModel, tries).currentVersion,
@@ -220,10 +263,8 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
           }
         ]
       };
-
       try {
-        const response = await anthropicAPICall(msg, apiKey);
-        console.log(response.id);
+        const response = await anthropicAPICall(msg, apiKey, arabicTextHash.substring(0, 5));
 
         // check the token usage
         const inputTokens = response.usage.input_tokens - sysPromptLength;

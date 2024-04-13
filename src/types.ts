@@ -32,3 +32,9 @@ export interface Model {
 export interface TransliterationDict {
   [key: string]: string[];
 }
+
+export interface SavedResultsType {
+  hash: string;
+  model: string;
+  tokens: number;
+}
