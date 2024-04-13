@@ -12,7 +12,6 @@ const llmChoice = document.getElementById('llmChoice') as HTMLInputElement;
 llmChoice?.addEventListener('change', (event: Event) => {
     const target = event.target as HTMLInputElement;
     chrome.storage.sync.set({ llmChoice: target.value });
-    console.log(target.value);
 });
 
 // save the API key
@@ -22,17 +21,12 @@ optionsForm?.addEventListener('submit', (event: Event) => {
     const apiKeyInput = document.getElementById('apiKey') as HTMLInputElement;
     if (apiKeyInput) {
         const apiKey = apiKeyInput.value;
-        console.log(apiKey);
         const apiKeySavedAt = new Date().toLocaleString();
         chrome.storage.sync.set({ apiKey, apiKeySavedAt: apiKeySavedAt }, () => {
             alert('API Key saved!');
             if (savedKeyDisplay && savedTimeDisplay) {
                 savedKeyDisplay.textContent = `Current saved key: ${apiKey}`;
                 savedTimeDisplay.textContent = `Last saved at: ${apiKeySavedAt}`;
-                    // show all saved data in console
-    chrome.storage.sync.get(null, (data) => {
-        console.log(data);
-    });
             }
         });
     }
@@ -53,11 +47,11 @@ const promptSelect = document.getElementById('loadPrompt') as HTMLSelectElement;
 chrome.storage.sync.get(['savedPrompts'], (data: { savedPrompts?:Prompt[] }) => {
     if (data.savedPrompts) {
         for (const prompt of data.savedPrompts) {
-            console.log(prompt);
             allPrompts.push(prompt);
         }
     } else {
-        console.log("no prompts saved");
+        // should return an error message here instead
+        console.log("Error: no prompts saved");
     }
     if (promptSelect) {
         for (const prompt of allPrompts) {
@@ -131,7 +125,6 @@ saveNewPrompt?.addEventListener('submit', (event: Event) => {
             const savedPrompts = data.savedPrompts || [];
             savedPrompts.push(prompt);
             allPrompts.push(prompt);
-            console.log(savedPrompts);
             chrome.storage.sync.set({ savedPrompts }, () => {
                 alert('Prompt saved!');
             });
@@ -151,10 +144,6 @@ saveNewPrompt?.addEventListener('submit', (event: Event) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    // show all saved data in console
-    chrome.storage.sync.get(null, (data) => {
-        console.log(data);
-    });
     // load the API key
     chrome.storage.sync.get(['apiKey', 'savedAt'], (data: { apiKey?: string; savedAt?: string }) => {
         if (apiKeyInput && savedKeyDisplay && savedTimeDisplay) {
