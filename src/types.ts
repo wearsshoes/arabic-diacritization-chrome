@@ -3,12 +3,12 @@ export interface TextElement {
   originalText: string;
   index: number;
 }
-  
+
 export interface APIBatch {
   text: string;
   elements: TextElement[];
 }
-  
+
 export interface processorResponse {
   elements: TextElement[]; 
   translatedTexts: string[];
@@ -37,4 +37,19 @@ export interface SavedResultsType {
   hash: string;
   model: string;
   tokens: number;
+}
+
+export interface TranslationData {
+  [PageID: string]: {
+    lastVisited: Date;
+    elements: {
+      [ElementHash: string]: {
+        originalText: string;
+        translatedText: string;
+        xPaths: string[];
+        lastTranslated: Date;
+        attributes: { [key: string]: string };
+      };
+    };
+  };
 }
