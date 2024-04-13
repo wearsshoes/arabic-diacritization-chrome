@@ -1,4 +1,5 @@
 import { WebPageDiacritizationData } from "./types";
+import { openDatabase, saveData, loadData } from "./database";
 
 export class DiacritizationDataManager {
     private static instance: DiacritizationDataManager;
@@ -13,7 +14,13 @@ export class DiacritizationDataManager {
   
     async getWebPageData(url: string): Promise<WebPageDiacritizationData | undefined> {
         // Implementation to retrieve data from IndexedDB
-        return undefined;
+        const db = await openDatabase("WebpageDiacritizations", "diacritizations_msa", 1);
+        const data = await loadData(db, "diacritizations_msa" , url);
+        if (data) {
+            return data as WebPageDiacritizationData;
+        } else {
+            return undefined;
+        }
     }
   
     // async updateWebPageData(url: string, data: WebPageDiacritizationData): Promise<void> {
