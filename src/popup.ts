@@ -3,11 +3,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // when the popup is opened, check if the api key is set
   chrome.storage.sync.get(['apiKey'], (data) => {
     if (!data.apiKey) {
-      const main = document.getElementById('main');
       const button = document.createElement('button');
-      button.id = 'optionsBtn';
-      button.innerHTML = 'Please set your API key in the options page.';
-      main?.replaceChildren(button);
+      button.textContent = 'Please set your API key in the options page.';
+      document.getElementById('main')?.replaceChildren(button);
+      button.addEventListener('click', () => chrome.runtime.openOptionsPage());    
     }
   });
 
