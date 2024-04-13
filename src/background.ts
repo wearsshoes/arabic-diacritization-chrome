@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
 import Bottleneck from 'bottleneck'
+import xxhash from 'xxhash-wasm'
 import { Model, Models, Prompt, TransliterationDict, processorResponse, TextElement, SavedResultsType } from './types';
 
 // Check whether new version is installed
@@ -169,7 +170,6 @@ async function getHash(prompt: string): Promise<string | null> {
     return null;
   }
 }
-
 
 async function getStoredPromptTokenCount(promptHash: string, model: string): Promise<number | null> {
   return new Promise((resolve) => {
