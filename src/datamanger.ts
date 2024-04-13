@@ -1,27 +1,27 @@
-class TranslationDataManager {
-    private static instance: TranslationDataManager;
+class DiacritizationDataManager {
+    private static instance: DiacritizationDataManager;
     private constructor() { }
   
-    public static getInstance(): TranslationDataManager {
+    public static getInstance(): DiacritizationDataManager {
         if (!this.instance) {
-            this.instance = new TranslationDataManager();
+            this.instance = new DiacritizationDataManager();
         }
         return this.instance;
     }
   
-    async getWebPageData(url: string): Promise<WebPageTranslationData | undefined> {
+    async getWebPageData(url: string): Promise<WebPageDiacritizationData | undefined> {
         // Implementation to retrieve data from IndexedDB
     }
   
-    async updateWebPageData(url: string, data: WebPageTranslationData): Promise<void> {
+    async updateWebPageData(url: string, data: WebPageDiacritizationData): Promise<void> {
         // Implementation to update data in IndexedDB
     }
   
-    async getElementData(pageId: string, elementHash: string): Promise<TranslationElement | undefined> {
+    async getElementData(pageId: string, elementHash: string): Promise<DiacritizationElement | undefined> {
         // Retrieve specific element data
     }
   
-    async updateElementData(pageId: string, elementHash: string, data: TranslationElement): Promise<void> {
+    async updateElementData(pageId: string, elementHash: string, data: DiacritizationElement): Promise<void> {
         // Update element data in the database
     }
   

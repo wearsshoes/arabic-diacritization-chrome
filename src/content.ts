@@ -1,5 +1,5 @@
 // content.ts
-import { TextElement, TranslationRequestBatch, ProcessorResponse } from "./types";
+import { TextElement, DiacritizationRequestBatch, ProcessorResponse } from "./types";
 
 // when queried by popup, returns the language of the page
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -19,16 +19,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Global Variables
 const delimiter:string = '|'
 let textElementBatches: TextElement[][];
-let APIBatches: TranslationRequestBatch[];
+let APIBatches: DiacritizationRequestBatch[];
 // maybe this cache should go to the local storage, to have the option to reuse after page reload.
 // TODO: save cache to local storage.
 let cachedResponse: ProcessorResponse[];
 
-// TODO: check page hash to see if we've already translated this page.
+// TODO: check page hash to see if we've already diacritized this page.
 
-// TODO: if cached, try to align page with translations by hash and xpath.
+// TODO: if cached, try to align page with diacritizations by hash and xpath.
 
-// TODO: update page hash with new translations.
+// TODO: update page hash with new diacritizations.
 
 // TODO: hash the page url (what data structure to put this in?)
 
@@ -225,36 +225,36 @@ function createTextElementBatches(textElements: TextElement[], maxChars: number)
 // Prepare batches for API by extracting the text with delimiters.
 function createAPIBatches(textElementBatches: TextElement[][]): { text: string; elements: TextElement[] }[] {
   console.log('beginning api batching')
-  const translationBatches: { text: string; elements: TextElement[] }[] = [];
+  const diacritizationBatches: { text: string; elements: TextElement[] }[] = [];
 
   textElementBatches.forEach((batch) => {
     const batchText = batch.map((textElement) => textElement.originalText).join(delimiter);
     console.log(batchText)
-    translationBatches.push({ 
+    diacritizationBatches.push({ 
       text: batchText, 
       elements: batch 
     });
   });
   
-  return translationBatches;
+  return diacritizationBatches;
 }
 
 // DOM Manipulation
-function replaceTextWithTranslatedText(textElements: TextElement[], translatedTexts: string[]): void {
+function replaceTextWithDiacritizedText(textElements: TextElement[], diacritizedTexts: string[]): void {
   try {
     for (let i = 0; i < textElements.length; i++) {
       const textElement = textElements[i];
-      const translatedText = translatedTexts[i];
+      const diacritizedText = diacritizedTexts[i];
       const element = document.querySelector(`[data-element-id="${textElement.elementId}"]`);
       if (element) {
-        element.childNodes[textElement.index].textContent = translatedText;
+        element.childNodes[textElement.index].textContent = diacritizedText;
       } else {
         console.warn(`Warning: elementId ${textElement.elementId} did not map to any element.`);
       }
     }
-    console.log('Replaced text with translated text:', translatedTexts);
+    console.log('Replaced text with diacritized text:', diacritizedTexts);
   } catch (error) {
-    console.error('Error replacing text with translated text:', error);
+    console.error('Error replacing text with diacritized text:', error);
   }
 }
 
@@ -269,24 +269,24 @@ function directionLTR() {
 
 // Diacritize listener - waits for popup click, then sends batches to worker.
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "sendToTranslate") {
+  if (request.action === "sendToDiacritize") {
     (async () => {
-      // Send translation batches to background script
-      chrome.runtime.sendMessage({action: "translate", method: request.method, cache:cachedResponse, data: APIBatches}, (response) => {
-        // Handle the translated text here
-        if (response.type === 'translationResult') {
+      // Send diacritization batches to background script
+      chrome.runtime.sendMessage({action: "diacritize", method: request.method, cache:cachedResponse, data: APIBatches}, (response) => {
+        // Handle the diacritized text here
+        if (response.type === 'diacritizationResult') {
           cachedResponse = response.data;
           console.log('Cached result:', cachedResponse);
 
-          response.data.forEach((batch: { elements: TextElement[]; translatedTexts: string[] }) => {
-            // console.log('Translated texts:', batch.translatedTexts);
-            if (batch.translatedTexts.length !== batch.elements.length) {
-              console.error('Mismatch in number of translated texts and text elements');
+          response.data.forEach((batch: { elements: TextElement[]; diacritizedTexts: string[] }) => {
+            // console.log('Diacritized texts:', batch.diacritizedTexts);
+            if (batch.diacritizedTexts.length !== batch.elements.length) {
+              console.error('Mismatch in number of diacritized texts and text elements');
             }
-            replaceTextWithTranslatedText(batch.elements, batch.translatedTexts);
+            replaceTextWithDiacritizedText(batch.elements, batch.diacritizedTexts);
           });
         } else if (response.type === 'error') {
-          console.error("Translation error:", response.message);
+          console.error("Diacritization error:", response.message);
         }
         if(request.method === 'arabizi'){
           directionLTR();

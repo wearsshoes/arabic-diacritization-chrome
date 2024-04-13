@@ -4,14 +4,14 @@ export interface TextElement {
   index: number;
 }
   
-export interface TranslationRequestBatch {
+export interface DiacritizationRequestBatch {
   text: string;
   elements: TextElement[];
 }
   
 export interface ProcessorResponse {
   elements: TextElement[]; 
-  translatedTexts: string[];
+  diacritizedTexts: string[];
   rawResult: string
 } 
  
@@ -39,13 +39,13 @@ export interface SysPromptTokenCache {
   tokens: number;
 }
 
-class WebPageTranslationData {
+class WebPageDiacritizationData {
   constructor(
       public pageId: string,
       public lastVisited: Date,
       public contentSignature: string,
       public structuralMetadata: string,
-      public elements: { [elementHash: string]: TranslationElement }
+      public elements: { [elementHash: string]: DiacritizationElement }
   ) { }
 
   updateLastVisited(date: Date): void {
@@ -53,11 +53,11 @@ class WebPageTranslationData {
   }
 }
 
-interface TranslationElement {
+interface DiacritizationElement {
   originalText: string;
-  translatedText: string;
+  diacritizedText: string;
   xPaths: string[];
-  lastTranslated: Date;
+  lastDiacritized: Date;
   attributes: ElementAttributes;
 }
 
