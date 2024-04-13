@@ -30,19 +30,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Waits for popup to connect and sends a message to it to prompt for API key if it doesn't exist
-// not implemented
-
-chrome.runtime.onConnect.addListener((port) => {
-  if (port.name === "popup" && apiKeyExists === false) {
-    chrome.runtime.sendMessage({ action: "promptForAPIKey" }, (response) => {
-      if (response === "success") {
-        console.log("Attempting to prompt for API key.");
-      }
-    });
-  };
-});
-
 // Get API Key 
 async function getAPIKey(): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -302,20 +289,3 @@ function ALLCAPS(str: string): string {
     return String.fromCharCode(charCode - 32);
   });
 }
-
-let apiKeyExists = false;
-
-// Main function
-const main = async () => {
-  // Check if API key exists
-  const apiKey = await getAPIKey();
-  if (apiKey) {
-    apiKeyExists = true;
-    console.log('API Key found:', apiKey);
-  } else {
-    apiKeyExists = false;
-    console.log('API Key not found.');
-  }
-}
-
-main();
