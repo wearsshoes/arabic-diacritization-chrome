@@ -9,6 +9,15 @@ import { DiacritizationDataManager } from './datamanager';
 
 // ----------------- Event Listeners ----------------- //
 
+// Rewriting control flow of the translation service
+// Placeholder for the translation service
+class TranslationService {
+  // async checkAndUpdateCache(pageId, elementHash, text) { /* ... */ }
+  // async fetchTranslation(text) { /* ... */ }
+  // async saveTranslation(pageId, elementData) { /* ... */ }
+  // async getTranslation(pageId, elementHash) { /* ... */ }
+}
+
 // Check whether new version is installed
 chrome.runtime.onInstalled.addListener(function(details){
   if(details.reason == "install"){
