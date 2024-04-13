@@ -157,22 +157,6 @@ async function countSysPromptTokens(prompt: string, model?: string): Promise<num
   return sysPromptTokens;
 }
 
-
-// trying to remove the need for the hash
-async function getHash(prompt: string): Promise<string | null> {
-  try {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(prompt);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
-  } catch (error) {
-    console.error('Error generating hash:', error);
-    return null;
-  }
-}
-
 async function getStoredPromptTokenCount(promptHash: string, model: string): Promise<number | null> {
   return new Promise((resolve) => {
     chrome.storage.sync.get('savedResults', (data: { savedResults?: SavedResultsType[] }) => {
