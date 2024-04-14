@@ -69,41 +69,6 @@ let cachedResponse: ProcessorResponse[];
 // Utility Functions
 
 // Builds element list according to interface. Recurses through DOM and put the in the right order. 
-
-// function recurseDOM(node:Node=document.body, index:number=0, elementId:string='', iterator:number=0): {textElements:TextElement[], iterator:number} {
-//   const textElements: TextElement[] = [];
-
-//   if (node.nodeType === Node.ELEMENT_NODE) {
-//     const element = node as Element;
-//     elementId = 'element-' + iterator + '-' + calculateHash(iterator + element.tagName + element.id + element.className);
-//     element.setAttribute('data-element-id', elementId); 
-    
-//   if (node.hasChildNodes() && isVisible(element)) {
-//     let innerIndex = 0;
-//     for (const childNode of node.childNodes) {
-//         const result = recurseDOM(childNode, innerIndex, elementId, iterator++)
-//         const innerText = result.textElements;
-//         innerText.forEach(innerElement => {
-//           textElements.push(innerElement)
-//         });
-//         iterator = result.iterator;
-//         innerIndex++;
-//       }
-//     };
-//   } else if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) { // if we've reached a text node, push it with its parent's elementId.
-//     const cleanText = node.textContent.replace(delimiter,'')
-//     const textElement:TextElement = {
-//       elementId: elementId,
-//       originalText: cleanText,
-//       index: index,
-//     }
-//     textElements.push(textElement)
-//   };
-  
-//   return {textElements, iterator};
-// }
-
-// NOT CALLED OR TESTED. STRAIGHT UP AI CODE. THIS BE SUSSY
 function newRecurseDOM(node: Node = document.body, index: number = 0, elementId: string = '', iterator: number = 0): {textElements: TextElement[], iterator: number} {
   const textElements: TextElement[] = [];
 
