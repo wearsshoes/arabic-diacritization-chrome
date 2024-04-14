@@ -107,6 +107,10 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
   
   // get the API key if it's not provided
   const apiKey = key || await getAPIKey();
+  if (!apiKey) {
+    // should rewrite to pass getAPIKey error to the caller
+    throw new Error('API key not set');
+  }
 
   const anthropic = new Anthropic({ apiKey: apiKey });
   console.log('Queued job', hash); 
