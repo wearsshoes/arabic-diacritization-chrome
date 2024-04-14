@@ -5,6 +5,8 @@ import { calculateHash, getAPIKey } from './utils';
 import { Prompt, TransliterationDict, ProcessorResponse, TextElement } from './types';
 import { defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel } from './anthropicCaller'
 
+// ----------------- Event Listeners ----------------- //
+
 // Check whether new version is installed
 chrome.runtime.onInstalled.addListener(function(details){
   if(details.reason == "install"){
@@ -14,8 +16,6 @@ chrome.runtime.onInstalled.addListener(function(details){
       console.log("Updated from " + details.previousVersion + " to " + thisVersion + "!");
   }
 });
-
-const delimiter = '|';
 
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -27,18 +27,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "translate" && request.data) {
     // Process the translation batches received from the content script
     processTranslationBatches(request.method, request.cache, request.data)
-      .then(translatedBatches => {
-        sendResponse({type: 'translationResult', data: translatedBatches});
-      })
-      .catch(error => {
-        console.error('Error processing translation batches:', error);
-        sendResponse({type: 'error', message: 'Failed to process translation batches'});
-      });
+    .then(translatedBatches => {
+      sendResponse({type: 'translationResult', data: translatedBatches});
+    })
+    .catch(error => {
+      console.error('Error processing translation batches:', error);
+      sendResponse({type: 'error', message: 'Failed to process translation batches'});
+    });
     // Return true to indicate that sendResponse will be called asynchronously
     return true;
   }
 });
 
+// ----------------- Functions ----------------- //
+
+const delimiter = '|';
 const defaultPrompt: Prompt = prompts[0];
 
 async function getPrompt(): Promise<Prompt> {
