@@ -3,7 +3,18 @@ import { openDatabase, saveData, loadData } from "./database";
 
 export class DiacritizationDataManager {
     private static instance: DiacritizationDataManager;
-    private constructor() { }
+    private db: IDBDatabase | null = null;
+    
+    private constructor() {
+        // Initialize the database
+        openDatabase("WebpageDiacritizations", "diacritizations_msa", 1)
+            .then((db) => {
+                this.db = db;
+            })
+            .catch((error) => {
+                console.error("Error opening database", error);
+            });
+     }
   
     public static getInstance(): DiacritizationDataManager {
         if (!this.instance) {
@@ -13,8 +24,10 @@ export class DiacritizationDataManager {
     }
   
     async getWebPageData(url: string): Promise<WebPageDiacritizationData | undefined> {
+        if (!this.db) {
+            throw new Error("Database not initialized");
+        }
         // Implementation to retrieve data from IndexedDB
-        const db = await openDatabase("WebpageDiacritizations", "diacritizations_msa", 1);
         const data = await loadData(db, "diacritizations_msa" , url);
         if (data) {
             return data as WebPageDiacritizationData;
