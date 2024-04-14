@@ -1,4 +1,4 @@
-import { WebPageDiacritizationData } from "./types";
+import { WebPageDiacritizationData, DiacritizationElement } from "./types";
 import { openDatabase, saveData, loadData } from "./database";
 
 export class DiacritizationDataManager {
@@ -31,9 +31,10 @@ export class DiacritizationDataManager {
     //     // Retrieve specific element data
     // }
   
-    // async updateElementData(pageId: string, elementHash: string, data: DiacritizationElement): Promise<void> {
-    //     // Update element data in the database
-    // }
+    async updateElementData(pageId: string, elementHash: string, data: DiacritizationElement): Promise<void> {
+        // Update element data in the database
+        return undefined;
+    }
   
     // async removeElement(pageId: string, elementHash: string): Promise<void> {
     //     // Remove an element from storage
