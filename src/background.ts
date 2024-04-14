@@ -2,17 +2,11 @@ import Anthropic from '@anthropic-ai/sdk';
 import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
 import { calculateHash, getAPIKey } from './utils';  
+import { Prompt, TransliterationDict, ProcessorResponse, WebPageDiacritizationData, DiacritizationElement, DiacritizationRequestBatch } from './types';
+import { defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel } from './anthropicCaller'
 import { DiacritizationDataManager } from './datamanager';
-import { Model, Models, Prompt, ProcessorResponse, TextElement, SysPromptTokenCache, TransliterationDict, DiacritizationRequestBatch } from './types';
-
-
 
 // ----------------- Event Listeners ----------------- //
-import Bottleneck from 'bottleneck'
-import { calculateHash } from './utils';  
-import { Model, Models, Prompt, ProcessorResponse, DiacritizationElement, SysPromptTokenCache, TransliterationDict, DiacritizationRequestBatch, WebPageDiacritizationData } from './types';
-import { DiacritizationDataManager } from './datamanager';
-
 const dataManager = DiacritizationDataManager.getInstance();
 
 
@@ -76,90 +70,6 @@ async function getPrompt(): Promise<Prompt> {
   });
 }
 
-// Rate-limited Anthropic API call function
-const anthropicLimiter = new Bottleneck({
-  maxConcurrent: 3,
-  minTime: 1500
-});
-
-async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: string, hash?: string): Promise<any> {
-  
-  // get the API key if it's not provided
-  const apiKey = key || await getAPIKey();
-
-  const anthropic = new Anthropic({ apiKey: apiKey });
-  console.log('Queued job', hash); 
-  return anthropicLimiter.schedule(async () => {
-    try {
-      console.log('Sent job', hash);
-      const result = await anthropic.messages.create(params);
-      console.log('Received result for:', hash);
-      return result;
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error('Error message:', error.message);
-      }
-      throw error;
-    }
-  });
-}
-
-// Check number of system prompt tokens, look up in cache, or call API
-async function countSysPromptTokens(prompt: string, model?: string): Promise<number> {
-  const modelUsed = model || defaultModel.currentVersion;
-  const promptHash = await calculateHash(prompt) as string;
-
-  const storedTokenCount = await getStoredPromptTokenCount(promptHash, modelUsed);
-  if (storedTokenCount !== null) {
-    return storedTokenCount;
-  }
-
-  const msg = await anthropicAPICall({
-    model: modelUsed,
-    max_tokens: 1,
-    temperature: 0,
-    messages: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: prompt
-          }
-        ]
-      }
-    ]
-  });
-
-  const sysPromptTokens: number = msg.usage.input_tokens;
-  saveSysPromptTokenCount(promptHash, modelUsed, sysPromptTokens);
-
-  return sysPromptTokens;
-}
-
-async function getStoredPromptTokenCount(promptHash: string, model: string): Promise<number | null> {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get('savedResults', (data: { savedResults?: SysPromptTokenCache[] }) => {
-      if (Array.isArray(data.savedResults)) {
-        const storedPrompt = data.savedResults.find(
-          (result) => result.hash === promptHash && result.model === model
-        );
-        if (storedPrompt) {
-          return resolve(storedPrompt.tokens);
-        }
-      }
-      resolve(null);
-    });
-  });
-}
-
-function saveSysPromptTokenCount(promptHash: string, model: string, tokens: number): void {
-  chrome.storage.sync.get('savedResults', (data: { savedResults?: SysPromptTokenCache[] }) => {
-    const savedResults = data.savedResults || [];
-    savedResults.push({ hash: promptHash, model, tokens });
-    chrome.storage.sync.set({ savedResults });
-  });
-}
 // Async worker for API call
 // TODO: try to get this to take and return objects of the class WebPageDiacritizationData
 async function processDiacritizationBatches(method: string, cache: ProcessorResponse[], diacritizationBatches: DiacritizationRequestBatch[]): Promise<ProcessorResponse[]> {
