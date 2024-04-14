@@ -8,6 +8,11 @@ import { Model, Models, Prompt, ProcessorResponse, TextElement, SysPromptTokenCa
 
 
 // ----------------- Event Listeners ----------------- //
+import Bottleneck from 'bottleneck'
+import { calculateHash } from './utils';  
+import { Model, Models, Prompt, ProcessorResponse, DiacritizationElement, SysPromptTokenCache, TransliterationDict, DiacritizationRequestBatch } from './types';
+import { DiacritizationDataManager } from './datamanager';
+
 const dataManager = DiacritizationDataManager.getInstance();
 
 
@@ -162,7 +167,7 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
   
   const texts = diacritizationBatches.map((batch) => batch.text);
   
-  // Replace the caching logic with TranslationDataManager methods
+  // Replace the caching logic with DiacritizationDataManager methods
   const pageUrl = await getCurrentPageUrl(); // Implement this function to get the current page URL
   const webPageData = await dataManager.getWebPageData(pageUrl);
   
@@ -199,6 +204,33 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
       diacritizedTextArray = arabicToArabizi(diacritizeArray)
     }
   }
+
+  // Store the diacritized results using DiacritizationDataManager methods
+  const diacritizedResults = diacritizationBatches.map((batch, index) => {
+    const diacritizedTexts = diacritizedTextArray[index].split(delimiter);
+    const rawResult = diacritizedTextArray[index];
+
+    batch.elements.forEach((element, elementIndex) => {
+      const diacritizationElement: DiacritizationElement = {
+        originalText: element.originalText,
+        diacritizedText: diacritizedTexts[elementIndex],
+        xPaths: [], // Implement the logic to generate XPaths for the element
+        lastDiacritized: new Date(),
+        attributes: {
+          // TODO: haven't added these yet, TextElement should have these properties
+          tagName: "",
+          // tagName: element.tagName,
+          className: "",
+          // className: element.className,
+          id: ""
+          // id: element.id
+        }
+      };
+      dataManager.updateElementData(pageUrl, element.elementId, diacritizationElement);
+    });
+
+    return { elements: batch.elements, diacritizedTexts, rawResult };
+  });
   
   return diacritizationBatches.map((batch, index) => {
     const diacritizedTexts = diacritizedTextArray[index].split(delimiter);
