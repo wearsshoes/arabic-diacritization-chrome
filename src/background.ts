@@ -10,7 +10,7 @@ import { Model, Models, Prompt, ProcessorResponse, TextElement, SysPromptTokenCa
 // ----------------- Event Listeners ----------------- //
 import Bottleneck from 'bottleneck'
 import { calculateHash } from './utils';  
-import { Model, Models, Prompt, ProcessorResponse, DiacritizationElement, SysPromptTokenCache, TransliterationDict, DiacritizationRequestBatch } from './types';
+import { Model, Models, Prompt, ProcessorResponse, DiacritizationElement, SysPromptTokenCache, TransliterationDict, DiacritizationRequestBatch, WebPageDiacritizationData } from './types';
 import { DiacritizationDataManager } from './datamanager';
 
 const dataManager = DiacritizationDataManager.getInstance();
@@ -170,7 +170,21 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
   // Replace the caching logic with DiacritizationDataManager methods
   const pageUrl = await getCurrentPageUrl(); // Implement this function to get the current page URL
   const webPageData = await dataManager.getWebPageData(pageUrl);
+  // these seem like slightly redundant calls, might be able to refactor them later
+  const contentSignature = await dataManager.calculateContentSignature(document.body.querySelectorAll('*'));
+  const structuralMetadata = dataManager.serializeStructureMetadata(document.body.querySelectorAll('*'));
+
+  const webPageDiacritizationData = new WebPageDiacritizationData(
+    pageUrl,
+    new Date(),
+    contentSignature,
+    structuralMetadata,
+    {}
+  );
+  await dataManager.updateWebPageData(pageUrl, webPageDiacritizationData);
   
+  // probably making a bunch of unnecessary calls to the database here
+
   let diacritizedTextArray: string[] = [];
 
   // If the method is 'diacritize' and saved data exists for the current webpage, return the saved results
@@ -209,7 +223,7 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
   const diacritizedResults = diacritizationBatches.map((batch, index) => {
     const diacritizedTexts = diacritizedTextArray[index].split(delimiter);
     const rawResult = diacritizedTextArray[index];
-
+    
     batch.elements.forEach((element, elementIndex) => {
       const diacritizationElement: DiacritizationElement = {
         originalText: element.originalText,
@@ -231,10 +245,7 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
 
     return { elements: batch.elements, diacritizedTexts, rawResult };
   });
-  
 
-
-  
   return diacritizedResults;
 }
 
