@@ -237,22 +237,56 @@ function createAPIBatches(textElementBatches: TextElement[][]): DiacritizationRe
 }
 
 // DOM Manipulation
+// function replaceTextWithDiacritizedText(textElements: TextElement[], diacritizedTexts: string[]): void {
+//   try {
+//     for (let i = 0; i < textElements.length; i++) {
+//       const textElement = textElements[i];
+//       const diacritizedText = diacritizedTexts[i];
+//       const element = document.querySelector(`[data-element-id="${textElement.elementId}"]`);
+//       if (element) {
+//         element.childNodes[textElement.index].textContent = diacritizedText;
+//       } else {
+//         console.warn(`Warning: elementId ${textElement.elementId} did not map to any element.`);
+//       }
+//     }
+//     console.log('Replaced text with diacritized text:', diacritizedTexts);
+//   } catch (error) {
+//     console.error('Error replacing text with diacritized text:', error);
+//   }
+// }
+
 function replaceTextWithDiacritizedText(textElements: TextElement[], diacritizedTexts: string[]): void {
-  try {
+  if (!Array.isArray(textElements) || !Array.isArray(diacritizedTexts)) {
+    throw new Error('Both textElements and diacritizedTexts should be arrays.');
+  }
+
+  if (textElements.length !== diacritizedTexts.length) {
+    throw new Error('textElements and diacritizedTexts should have the same length.');
+  }
+
     for (let i = 0; i < textElements.length; i++) {
       const textElement = textElements[i];
       const diacritizedText = diacritizedTexts[i];
+
+    if (typeof textElement.elementId !== 'string' || typeof textElement.index !== 'number') {
+      throw new Error(`Invalid textElement at index ${i}: ${JSON.stringify(textElement)}`);
+    }
+
       const element = document.querySelector(`[data-element-id="${textElement.elementId}"]`);
+
       if (element) {
+      if (element.childNodes[textElement.index]) {
         element.childNodes[textElement.index].textContent = diacritizedText;
       } else {
-        console.warn(`Warning: elementId ${textElement.elementId} did not map to any element.`);
+        console.warn(`Warning: childNode at index ${textElement.index} does not exist in element with id ${textElement.elementId}.`);
+        continue;
       }
+    } else {
+      console.warn(`Warning: elementId ${textElement.elementId} did not map to any element.`);
     }
-    console.log('Replaced text with diacritized text:', diacritizedTexts);
-  } catch (error) {
-    console.error('Error replacing text with diacritized text:', error);
   }
+
+  console.log('Replaced text with diacritized text:', diacritizedTexts);
 }
 
 // Forces LTR. Only gets called for Arabizi
