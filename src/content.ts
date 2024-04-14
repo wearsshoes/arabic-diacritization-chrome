@@ -48,29 +48,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// starts the batch preparer
-function main() {
-  try {
-    const mainNode = document.querySelector('main') || document.body;
-    console.log('Main node:', mainNode);
-    // textElementBatches = createTextElementBatches(recurseDOM(mainNode).textElements, 500);
-    textElementBatches = createTextElementBatches(newRecurseDOM(mainNode), 500);
-    APIBatches = createAPIBatches(textElementBatches);
-  } catch (error) {
-    console.error('Error during initialization:', error);
-  }
-}
-
-// Run on script load 
-// should maybe set to only run on lang="ar"?
-if (document.readyState === "loading") {
-  // Wait for loading to finish, otherwise number of elements tends not to converge
-  document.addEventListener('DOMContentLoaded', main);
-} else {
-  // But often, `DOMContentLoaded` has already fired
-  main();
-}
-
 // -------------- Functions -------------- //
 
 // Global Variables
@@ -322,3 +299,29 @@ function directionLTR() {
   style.textContent = `body * {direction: ltr;}`;
   document.head.appendChild(style);
 }    
+
+
+// starts the batch preparer
+function main() {
+  try {
+    const mainNode = document.querySelector('main') || document.body;
+    console.log('Main node:', mainNode);
+    // textElementBatches = createTextElementBatches(recurseDOM(mainNode).textElements, 500);
+    textElementBatches = createTextElementBatches(newRecurseDOM(mainNode), 500);
+    APIBatches = createAPIBatches(textElementBatches);
+  } catch (error) {
+    console.error('Error during initialization:', error);
+  }
+}
+
+// -------------- Runtime -------------- //
+
+// Run on script load 
+// should maybe set to only run on lang="ar"?
+if (document.readyState === "loading") {
+  // Wait for loading to finish, otherwise number of elements tends not to converge
+  document.addEventListener('DOMContentLoaded', main);
+} else {
+  // But often, `DOMContentLoaded` has already fired
+  main();
+}
