@@ -232,10 +232,10 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
     return { elements: batch.elements, diacritizedTexts, rawResult };
   });
   
-  return diacritizationBatches.map((batch, index) => {
-    const diacritizedTexts = diacritizedTextArray[index].split(delimiter);
-    return { elements: batch.elements, diacritizedTexts, rawResult: diacritizedTextArray[index]};
-  });
+
+
+  
+  return diacritizedResults;
 }
 
 // Get the current page URL
