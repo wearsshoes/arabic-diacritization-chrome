@@ -58,13 +58,9 @@ let APIBatches: DiacritizationRequestBatch[];
 // TODO: save cache to local storage.
 let cachedResponse: ProcessorResponse[];
 
-// TODO: check page hash to see if we've already diacritized this page.
 
 // TODO: if cached, try to align page with diacritizations by hash and xpath.
 
-// TODO: update page hash with new diacritizations.
-
-// TODO: hash the page url (what data structure to put this in?)
 
 // Utility Functions
 
@@ -120,7 +116,6 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
 function generateUniqueId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
-
 
 // Splits text into sentences.
 // possible additions to function:
@@ -211,14 +206,11 @@ function createTextElementBatches(textElements: TextElement[], maxChars: number)
             currentBatchLength = 0
           }
         }
-      } else {
-        // console.log(textElement, ' is empty');
-      }
+      } 
     });
     console.log("batches created:", textElementBatches.length);
     console.log(batchLengths);
   textElementBatches.forEach(batch => {
-    // console.log(batch);
   });
   return textElementBatches;
 }
@@ -274,7 +266,6 @@ function main() {
   try {
     const mainNode = document.querySelector('main') || document.body;
     console.log('Main node:', mainNode);
-    // textElementBatches = createTextElementBatches(recurseDOM(mainNode).textElements, 500);
     textElementBatches = createTextElementBatches(newRecurseDOM(mainNode).textElements, 750);
     APIBatches = createAPIBatches(textElementBatches);
   } catch (error) {
