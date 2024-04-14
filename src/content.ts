@@ -2,6 +2,8 @@
 import { TextElement, DiacritizationRequestBatch, ProcessorResponse } from "./types";
 import { calculateHash } from "./utils";
 
+// -------------- Event Listeners -------------- //
+
 // when queried by popup, returns the language of the page
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getWebsiteLanguage') {
@@ -16,6 +18,59 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+// Diacritize listener - waits for popup click, then sends batches to worker.
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "sendToDiacritize") {
+    (async () => {
+      // Send diacritization batches to background script
+      chrome.runtime.sendMessage({action: "diacritize", method: request.method, cache:cachedResponse, data: APIBatches}, (response) => {
+        // Handle the diacritized text here
+        if (response.type === 'diacritizationResult') {
+          cachedResponse = response.data;
+          console.log('Cached result:', cachedResponse);
+
+          response.data.forEach((batch: { elements: TextElement[]; diacritizedTexts: string[] }) => {
+            // console.log('Diacritized texts:', batch.diacritizedTexts);
+            if (batch.diacritizedTexts.length !== batch.elements.length) {
+              console.error('Mismatch in number of diacritized texts and text elements');
+            }
+            replaceTextWithDiacritizedText(batch.elements, batch.diacritizedTexts);
+          });
+        } else if (response.type === 'error') {
+          console.error("Diacritization error:", response.message);
+        }
+        if(request.method === 'arabizi'){
+          directionLTR();
+        }
+      });
+    })();
+    return true;
+  }
+});
+
+// starts the batch preparer
+function main() {
+  try {
+    const mainNode = document.querySelector('main');
+    console.log('Main node:', mainNode);
+    textElementBatches = createTextElementBatches(recurseDOM(mainNode ?? document.body), 500);
+    APIBatches = createAPIBatches(textElementBatches);
+  } catch (error) {
+    console.error('Error during initialization:', error);
+  }
+}
+
+// Run on script load 
+// should maybe set to only run on lang="ar"?
+if (document.readyState === "loading") {
+  // Wait for loading to finish, otherwise number of elements tends not to converge
+  document.addEventListener('DOMContentLoaded', main);
+} else {
+  // But often, `DOMContentLoaded` has already fired
+  main();
+}
+
+// -------------- Functions -------------- //
 
 // Global Variables
 const delimiter:string = '|'
@@ -270,55 +325,3 @@ function directionLTR() {
   style.textContent = `body * {direction: ltr;}`;
   document.head.appendChild(style);
 }    
-
-// Diacritize listener - waits for popup click, then sends batches to worker.
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "sendToDiacritize") {
-    (async () => {
-      // Send diacritization batches to background script
-      chrome.runtime.sendMessage({action: "diacritize", method: request.method, cache:cachedResponse, data: APIBatches}, (response) => {
-        // Handle the diacritized text here
-        if (response.type === 'diacritizationResult') {
-          cachedResponse = response.data;
-          console.log('Cached result:', cachedResponse);
-
-          response.data.forEach((batch: { elements: TextElement[]; diacritizedTexts: string[] }) => {
-            // console.log('Diacritized texts:', batch.diacritizedTexts);
-            if (batch.diacritizedTexts.length !== batch.elements.length) {
-              console.error('Mismatch in number of diacritized texts and text elements');
-            }
-            replaceTextWithDiacritizedText(batch.elements, batch.diacritizedTexts);
-          });
-        } else if (response.type === 'error') {
-          console.error("Diacritization error:", response.message);
-        }
-        if(request.method === 'arabizi'){
-          directionLTR();
-        }
-      });
-    })();
-    return true;
-  }
-});
-
-// starts the batch preparer
-function main() {
-  try {
-    const mainNode = document.querySelector('main');
-    console.log('Main node:', mainNode);
-    textElementBatches = createTextElementBatches(recurseDOM(mainNode ?? document.body), 500);
-    APIBatches = createAPIBatches(textElementBatches);
-  } catch (error) {
-    console.error('Error during initialization:', error);
-  }
-}
-
-// Run on script load 
-// should maybe set to only run on lang="ar"?
-if (document.readyState === "loading") {
-  // Wait for loading to finish, otherwise number of elements tends not to converge
-  document.addEventListener('DOMContentLoaded', main);
-} else {
-  // But often, `DOMContentLoaded` has already fired
-  main();
-}
