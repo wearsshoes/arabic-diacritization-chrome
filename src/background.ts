@@ -7,17 +7,6 @@ import { defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel } f
 import { DiacritizationDataManager } from './datamanager';
 
 // ----------------- Event Listeners ----------------- //
-const dataManager = DiacritizationDataManager.getInstance();
-
-
-// Rewriting control flow of the diacritization service
-// Placeholder for the diacritization service
-class DiacritizationService {
-  // async checkAndUpdateCache(pageId, elementHash, text) { /* ... */ }
-  // async fetchDiacritization(text) { /* ... */ }
-  // async saveDiacritization(pageId, elementData) { /* ... */ }
-  // async getDiacritization(pageId, elementHash) { /* ... */ }
-}
 
 // Check whether new version is installed
 chrome.runtime.onInstalled.addListener(function(details){
@@ -73,7 +62,6 @@ async function getPrompt(): Promise<Prompt> {
 // Async worker for API call
 // TODO: try to get this to take and return objects of the class WebPageDiacritizationData
 async function processDiacritizationBatches(method: string, cache: ProcessorResponse[], diacritizationBatches: DiacritizationRequestBatch[]): Promise<ProcessorResponse[]> {
-  
   
   const texts = diacritizationBatches.map((batch) => batch.text);
   
