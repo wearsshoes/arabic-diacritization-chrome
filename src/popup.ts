@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', async() => {
   });
 
   const diacritizeBtn = document.getElementById('diacritizeBtn');
+  // this should go to background script instead.
   diacritizeBtn?.addEventListener('click', () => sendMessageToContentScript('diacritize'));
 
   const arabiziBtn = document.getElementById('arabiziBtn');
@@ -25,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async() => {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (tab.id === undefined) throw new Error('No active tab found');
-      const response = await chrome.tabs.sendMessage(tab.id, { action: 'sendToTranslate', method });
+      const response = await chrome.tabs.sendMessage(tab.id, { action: 'sendToDiacritize', method });
       console.log(`${method} response:`, response);
     } catch (error) {
       console.error(`Error in ${method}:`, error);
