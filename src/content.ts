@@ -51,9 +51,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // starts the batch preparer
 function main() {
   try {
-    const mainNode = document.querySelector('main');
+    const mainNode = document.querySelector('main') || document.body;
     console.log('Main node:', mainNode);
-    textElementBatches = createTextElementBatches(recurseDOM(mainNode ?? document.body), 500);
+    textElementBatches = createTextElementBatches(recurseDOM(mainNode).textElements, 500);
     APIBatches = createAPIBatches(textElementBatches);
   } catch (error) {
     console.error('Error during initialization:', error);
@@ -92,7 +92,7 @@ let cachedResponse: ProcessorResponse[];
 
 // Builds element list according to interface. Recurses through DOM and put the in the right order. 
 
-function recurseDOM(node:Node=document.body, index:number=0, elementId:string='', iterator:number=0): {textElements:TextElement[], iterator:number=0} {
+function recurseDOM(node:Node=document.body, index:number=0, elementId:string='', iterator:number=0): {textElements:TextElement[], iterator:number} {
   const textElements: TextElement[] = [];
   // if we're on an element node, record elementId and pass to children.
   if (node.nodeType === Node.ELEMENT_NODE) {
