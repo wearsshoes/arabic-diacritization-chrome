@@ -37,9 +37,13 @@ export class DiacritizationDataManager {
         }
     }
   
-    // async updateWebPageData(url: string, data: WebPageDiacritizationData): Promise<void> {
-    //     // Implementation to update data in IndexedDB
-    // }
+    async updateWebPageData(url: string, data: WebPageDiacritizationData): Promise<void> {
+        // Implementation to update data in IndexedDB
+        if (!this.db) {
+            throw new Error("Database not initialized");
+        }
+        await saveData(this.db, "diacritizations_msa", data);
+    }
   
     // async getElementData(pageId: string, elementHash: string): Promise<DiacritizationElement | undefined> {
     //     // Retrieve specific element data
