@@ -5,20 +5,19 @@ import { calculateHash, getAPIKey } from './utils';
 import { Model, Models, Prompt, ProcessorResponse, TextElement, SysPromptTokenCache, TransliterationDict, DiacritizationRequestBatch } from './types';
 import { DiacritizationDataManager } from './datamanager';
 
-const dataManager = DiacritizationDataManager.getInstance();
 
+
+// ----------------- Event Listeners ----------------- //
 
 // Check whether new version is installed
 chrome.runtime.onInstalled.addListener(function(details){
   if(details.reason == "install"){
-      console.log("ArabEasy successfully installed! Thank you for using this app.");
+    console.log("ArabEasy successfully installed! Thank you for using this app.");
   }else if(details.reason == "update"){
-      var thisVersion = chrome.runtime.getManifest().version;
-      console.log("Updated from " + details.previousVersion + " to " + thisVersion + "!");
+    var thisVersion = chrome.runtime.getManifest().version;
+    console.log("Updated from " + details.previousVersion + " to " + thisVersion + "!");
   }
 });
-
-const delimiter = '|';
 
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -27,21 +26,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     countSysPromptTokens(prompt).then((tokens) => sendResponse(tokens));
     return true;
   }
-  if (request.action === "diacritize" && request.data) {
-    // Process the diacritization batches received from the content script
-    processDiacritizationBatches(request.method, request.cache, request.data)
-      .then(diacritizedBatches => {
-        sendResponse({type: 'diacritizationResult', data: diacritizedBatches});
-      })
-      .catch(error => {
-        console.error('Error processing diacritization batches:', error);
-        sendResponse({type: 'error', message: 'Failed to process diacritization batches'});
-      });
+  if (request.action === "translate" && request.data) {
+    // Process the translation batches received from the content script
+    processTranslationBatches(request.method, request.cache, request.data)
+    .then(translatedBatches => {
+      sendResponse({type: 'translationResult', data: translatedBatches});
+    })
+    .catch(error => {
+      console.error('Error processing translation batches:', error);
+      sendResponse({type: 'error', message: 'Failed to process translation batches'});
+    });
     // Return true to indicate that sendResponse will be called asynchronously
     return true;
   }
 });
 
+// ----------------- Functions ----------------- //
+
+const dataManager = DiacritizationDataManager.getInstance();
+const delimiter = '|';
 const defaultPrompt: Prompt = prompts[0];
 
 async function getPrompt(): Promise<Prompt> {
