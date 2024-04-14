@@ -24,14 +24,15 @@ document.addEventListener('DOMContentLoaded', async() => {
 
   const sendMessageToContentScript = async (method: string) => {
     try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab.id === undefined) throw new Error('No active tab found');
-      const response = await chrome.tabs.sendMessage(tab.id, { action: 'sendToDiacritize', method });
+      const response = chrome.tabs.sendMessage(tabId as number, { action: 'sendToDiacritize', method});
       console.log(`${method} response:`, response);
     } catch (error) {
       console.error(`Error in ${method}:`, error);
     }
   };
+
+  // get active tab
+  const tabId = await chrome.tabs.query({ active: true, currentWindow: true })?.then(tabs => tabs[0].id).catch(console.error);
 
   // Get the website language
   const diacritizeMessage = document.getElementById('diacritizeMessage');
