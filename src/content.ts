@@ -133,7 +133,7 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
   const textElements: TextElement[] = [];
 
   if (node.nodeType === Node.ELEMENT_NODE) {
-    elementId = 'element-' + ();
+    elementId = 'element-' + (generateUniqueId);
     const element = node as Element;
     element.setAttribute('data-element-id', elementId);
 
@@ -171,9 +171,9 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
   return textElements;
 }
 
-// function generateUniqueId(): string {
-//   return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-// }
+function generateUniqueId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
 
 function splitTextIntoSentences(text: string): string[] {
   const abbreviations = ['Mr', 'Mrs', 'Ms', 'Dr', 'Prof', 'Sr', 'Jr', 'Mt', 'St'];
