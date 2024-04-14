@@ -110,7 +110,8 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
   if (node.nodeType === Node.ELEMENT_NODE) {
     
     const element = node as Element;
-    elementId = 'element-' + index + '-' + calculateHash(element.tagName + element.id + element.className);
+    // elementId = 'element-' + iterator + '-' + element.tagName + '-' + element.id + '-' + element.className;
+    elementId = 'element-' + iterator + '-' + element.tagName;
     element.setAttribute('data-element-id', elementId);
 
     if (element.hasChildNodes() && isVisible(element)) {
@@ -129,7 +130,11 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
     sentences.forEach((sentence, sentenceIndex) => {
       const textNodeId = `text-${calculateHash(sentence)}`;
       const textNode = document.createTextNode(sentence);
+      // if (sentenceIndex > 0) {
+      //   console.log('will split', node.textContent, "and create", sentence)
+      // }
       fragment.appendChild(textNode);
+      console.log(elementId, index + sentenceIndex, sentence)
       
       const cleanText = sentence.replace(delimiter, '');
       const textElement: TextElement = {
