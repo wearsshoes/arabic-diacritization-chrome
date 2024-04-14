@@ -66,20 +66,23 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
   const texts = diacritizationBatches.map((batch) => batch.text);
   
   // Replace the caching logic with DiacritizationDataManager methods
-  const pageUrl = await getCurrentPageUrl(); // Implement this function to get the current page URL
-  const webPageData = await dataManager.getWebPageData(pageUrl);
-  // these seem like slightly redundant calls, might be able to refactor them later
-  const contentSignature = await dataManager.calculateContentSignature(document.body.querySelectorAll('*'));
-  const structuralMetadata = dataManager.serializeStructureMetadata(document.body.querySelectorAll('*'));
+  // const pageUrl = await getCurrentPageUrl(); // Implement this function to get the current page URL
+  // const webPageData = await dataManager.getWebPageData(pageUrl);
+  // // these seem like slightly redundant calls, might be able to refactor them later
+  // // need to live in content script.
+  // // const contentSignature = await dataManager.calculateContentSignature(document.body.querySelectorAll('*'));
+  // const contentSignature = '';
+  // // const structuralMetadata = dataManager.serializeStructureMetadata(document.body.querySelectorAll('*'));
+  // const structuralMetadata = '';
 
-  const webPageDiacritizationData = new WebPageDiacritizationData(
-    pageUrl,
-    new Date(),
-    contentSignature,
-    structuralMetadata,
-    {}
-  );
-  await dataManager.updateWebPageData(pageUrl, webPageDiacritizationData);
+  // const webPageDiacritizationData = new WebPageDiacritizationData(
+  //   pageUrl,
+  //   new Date(),
+  //   contentSignature,
+  //   structuralMetadata,
+  //   {}
+  // );
+  // await dataManager.updateWebPageData(pageUrl, webPageDiacritizationData);
   
   // probably making a bunch of unnecessary calls to the database here
 
@@ -87,14 +90,14 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
 
   // If the method is 'diacritize' and saved data exists for the current webpage, return the saved results
   if (method === 'diacritize') {
-    if (webPageData) {
-      // If saved data exists for the current webpage and the method is 'diacritize'
-      const savedResults = Object.values(webPageData.elements).map(element => element.diacritizedText);
-      return diacritizationBatches.map((batch, index) => {
-        const diacritizedTexts = savedResults[index].split(delimiter);
-        return { elements: batch.elements, diacritizedTexts: diacritizedTexts, rawResult: savedResults[index] };
-      });
-    }
+  //   if (webPageData) {
+  //     // If saved data exists for the current webpage and the method is 'diacritize'
+  //     const savedResults = Object.values(webPageData.elements).map(element => element.diacritizedText);
+  //     return diacritizationBatches.map((batch, index) => {
+  //       const diacritizedTexts = savedResults[index].split(delimiter);
+  //       return { elements: batch.elements, diacritizedTexts: diacritizedTexts, rawResult: savedResults[index] };
+  //     });
+  //   }
 
     // could be fun to have claude run with figuring out the dialect, and then feeding that as an argument to the prompt
     // partial diacritization... just build out a lot of options...
@@ -122,24 +125,24 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
     const diacritizedTexts = diacritizedTextArray[index].split(delimiter);
     const rawResult = diacritizedTextArray[index];
     
-    batch.elements.forEach((element, elementIndex) => {
-      const diacritizationElement: DiacritizationElement = {
-        originalText: element.originalText,
-        diacritizedText: diacritizedTexts[elementIndex],
-        xPaths: [], // Implement the logic to generate XPaths for the element
-        lastDiacritized: new Date(),
-        attributes: {
-          // TODO: haven't added these yet, TextElement should have these properties
-          tagName: "",
-          // tagName: element.tagName,
-          className: "",
-          // className: element.className,
-          id: ""
-          // id: element.id
-        }
-      };
-      dataManager.updateElementData(pageUrl, element.elementId, diacritizationElement);
-    });
+    // batch.elements.forEach((element, elementIndex) => {
+    //   const diacritizationElement: DiacritizationElement = {
+    //     originalText: element.originalText,
+    //     diacritizedText: diacritizedTexts[elementIndex],
+    //     xPaths: [], // Implement the logic to generate XPaths for the element
+    //     lastDiacritized: new Date(),
+    //     attributes: {
+    //       // TODO: haven't added these yet, TextElement should have these properties
+    //       tagName: "",
+    //       // tagName: element.tagName,
+    //       className: "",
+    //       // className: element.className,
+    //       id: ""
+    //       // id: element.id
+    //     }
+    //   };
+    //   dataManager.updateElementData(pageUrl, element.elementId, diacritizationElement);
+    // });
 
     return { elements: batch.elements, diacritizedTexts, rawResult };
   });
