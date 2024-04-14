@@ -62,7 +62,7 @@ interface DiacritizationElement {
 }
 
 export interface ElementAttributes {
-  className?: string;
-  id?: string;
   tagName: string;
+  id?: string;
+  classList?: string[];
 }

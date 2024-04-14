@@ -1,4 +1,4 @@
-import { WebPageDiacritizationData, DiacritizationElement } from "./types";
+import { WebPageDiacritizationData, DiacritizationElement, ElementAttributes } from "./types";
 import { openDatabase, saveData, loadData } from "./database";
 import { calculateHash } from "./utils";
 
@@ -77,8 +77,16 @@ export class DiacritizationDataManager {
         
     }
   
-    // serializeStructureMetadata(elements: NodeListOf<Element>): string {
-    //     // Serialize page structure metadata
-    //     return "";
-    // }
+    serializeStructureMetadata(elements: NodeListOf<Element>): string {
+        // Serialize page structure metadata
+        // This can be done by converting the elements to a JSON string without the text content
+        const serialized: ElementAttributes[] = Array.from(elements).map((element) => {
+            return {
+                tagName: element.tagName,
+                id: element.id,
+                classList: Array.from(element.classList),
+            };
+        });
+        return JSON.stringify(serialized);
+    }
   }
