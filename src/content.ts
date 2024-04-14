@@ -53,7 +53,8 @@ function main() {
   try {
     const mainNode = document.querySelector('main') || document.body;
     console.log('Main node:', mainNode);
-    textElementBatches = createTextElementBatches(recurseDOM(mainNode).textElements, 500);
+    // textElementBatches = createTextElementBatches(recurseDOM(mainNode).textElements, 500);
+    textElementBatches = createTextElementBatches(newRecurseDOM(mainNode), 500);
     APIBatches = createAPIBatches(textElementBatches);
   } catch (error) {
     console.error('Error during initialization:', error);
@@ -94,33 +95,30 @@ let cachedResponse: ProcessorResponse[];
 
 function recurseDOM(node:Node=document.body, index:number=0, elementId:string='', iterator:number=0): {textElements:TextElement[], iterator:number} {
   const textElements: TextElement[] = [];
-  // if we're on an element node, record elementId and pass to children.
+
   if (node.nodeType === Node.ELEMENT_NODE) {
     const element = node as Element;
-    // this elementid generator is still bad. but whatever.
-    elementId = 'element-' + iterator + '-' + calculateHash(iterator + element.tagName + element.id + element.className); // Generate a unique ID for the element
-    element.setAttribute('data-element-id', elementId); // Set the ID as a data attribute on the element
-    if (node.hasChildNodes() && isVisible(element)) {
-      let innerIndex = 0;
-      for (const childNode of node.childNodes) {
-        // TODO: it's not insane to split DOM nodes and modify the DOM at sentence breaks on '. '; 
-        // this might make for better sentence and paragraph control.
-        const result = recurseDOM(childNode, innerIndex, elementId, iterator++) // Maybe there's an easier, non-recursing way to do this?
+    elementId = 'element-' + iterator + '-' + calculateHash(iterator + element.tagName + element.id + element.className);
+    element.setAttribute('data-element-id', elementId); 
+    
+  if (node.hasChildNodes() && isVisible(element)) {
+    let innerIndex = 0;
+    for (const childNode of node.childNodes) {
+        const result = recurseDOM(childNode, innerIndex, elementId, iterator++)
         const innerText = result.textElements;
         innerText.forEach(innerElement => {
           textElements.push(innerElement)
         });
         iterator = result.iterator;
         innerIndex++;
-     }
-    }
+      }
+    };
   } else if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) { // if we've reached a text node, push it with its parent's elementId.
-    const cleanText = node.textContent.replace(delimiter,'') // so we don't have any of the delimiter character confusing us later. this is a bit jank...
+    const cleanText = node.textContent.replace(delimiter,'')
     const textElement:TextElement = {
       elementId: elementId,
-      originalText: node.textContent,
+      originalText: cleanText,
       index: index,
-      // TODO: add a hash here to avoid sending the same text to the API
     }
     textElements.push(textElement)
   };
@@ -133,13 +131,14 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
   const textElements: TextElement[] = [];
 
   if (node.nodeType === Node.ELEMENT_NODE) {
-    elementId = 'element-' + (generateUniqueId);
+    
     const element = node as Element;
+    elementId = 'element-' + index + '-' + calculateHash(element.tagName + element.id + element.className);
     element.setAttribute('data-element-id', elementId);
 
-    if (node.hasChildNodes() && isVisible(element)) {
+    if (element.hasChildNodes() && isVisible(element)) {
       let innerIndex = 0;
-      for (const childNode of Array.from(node.childNodes)) {
+      for (const childNode of Array.from(element.childNodes)) {
         const innerText = newRecurseDOM(childNode, innerIndex, elementId);
         textElements.push(...innerText);
         innerIndex += innerText.length;
@@ -150,13 +149,11 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
     const fragment = document.createDocumentFragment();
 
     sentences.forEach((sentence, sentenceIndex) => {
-      const cleanText = sentence.replace(delimiter, '');
-      const textNodeId = `text-${calculateHash(cleanText)}`;
-      const textNode = document.createTextNode(cleanText);
-      textNode.nodeValue = cleanText;
-      textNode.textContent = cleanText;
+      const textNodeId = `text-${calculateHash(sentence)}`;
+      const textNode = document.createTextNode(sentence);
       fragment.appendChild(textNode);
-
+      
+      const cleanText = sentence.replace(delimiter, '');
       const textElement: TextElement = {
         elementId: textNodeId,
         originalText: cleanText,

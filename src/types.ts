@@ -1,3 +1,6 @@
+// Definition of types used in the application
+
+// this should be renamed regularizedTextNode or something.
 export interface TextElement {
   elementId: string;
   originalText: string;
