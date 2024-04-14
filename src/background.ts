@@ -220,7 +220,7 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
           // TODO: haven't added these yet, TextElement should have these properties
           tagName: "",
           // tagName: element.tagName,
-          className: "",
+          classList: [],
           // className: element.className,
           id: ""
           // id: element.id
