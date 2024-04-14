@@ -156,41 +156,15 @@ function generateUniqueId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
 
-// function splitTextIntoSentences(text: string): string[] {
-//   const abbreviations = ['Mr', 'Mrs', 'Ms', 'Dr', 'Prof', 'Sr', 'Jr', 'Mt', 'St'];
-//   const abbreviationRegex = new RegExp(`\\b(?:${abbreviations.join('|')})\\.`, 'g');
-//   const sentenceRegex = new RegExp(`(?:${abbreviationRegex.source})?[^.!?](?:\\s+|\\n|$)`, 'g');
-  
-//   const matches = text.match(sentenceRegex) || [];
-//   return matches.map(sentence => sentence.trim());
-// }
 
-
+// Splits text into sentences.
+// possible additions to function:
+//   // const abbreviations = ['Mr', 'Mrs', 'Ms', 'Dr', 'Prof', 'Sr', 'Jr', 'Mt', 'St'];
+//   // const sentenceEndings = ['.', '!', '?', '؟',];
 function splitTextIntoSentences(text: string): string[] {
   const sentenceRegex = /[.!?]+\s*\n*/g; 
   return text.replace(sentenceRegex, '$&|').split('|').filter(sentence => sentence.trim() !== '');
 }
-
-// function splitTextIntoSentences(text: string): string[] {
-//   const sentenceRegEx = new RegExp (`(?<=[.?!](\\w))`, 'g');
-//   return text.split(sentenceRegex);
-
-//   // const abbreviations = ['Mr', 'Mrs', 'Ms', 'Dr', 'Prof', 'Sr', 'Jr', 'Mt', 'St'];
-//   // const sentenceEndings = ['.', '!', '?', '؟',];
-
-//   // const abbreviationRegex = new RegExp(`\\b(?:${abbreviations.join('|')})\\.\\s`, 'g');
-//   // const sentenceRegex = new RegExp(`(?<!${abbreviationRegex.source})[${sentenceEndings.join('')}](?!,\\w\\))`, 'g');
-
-//   // return text.split(sentenceRegex).reduce((result, sentence) => {
-//   // return text.split(/(?=[$sentenceEndings.join''][\s\n]*)/).reduce((result, sentence) => {
-//   // if (sentence.trim().match(new RegExp(`^[${sentenceEndings.join('')}]+$`))) {
-//   //     result[result.length - 1] += sentence;
-//   //   } else {
-//   //     result.push(sentence);
-//     // }
-//     // return result;
-//   // }, [] as string[]);
-// }
 
 // Checks if node is visible
 function isVisible(element: Element): boolean {
