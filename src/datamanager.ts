@@ -88,7 +88,7 @@ export class DiacritizationDataManager {
             return {
                 tagName: element.tagName,
                 id: element.id,
-                classList: Array.from(element.classList),
+                className: element.className,
             };
         });
         return JSON.stringify(serialized);

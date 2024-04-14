@@ -64,5 +64,5 @@ export interface DiacritizationElement {
 export interface ElementAttributes {
   tagName: string;
   id?: string;
-  className: string; // space separated list of classes, not an array
+  className?: string; // space separated list of classes, not an array
 }
