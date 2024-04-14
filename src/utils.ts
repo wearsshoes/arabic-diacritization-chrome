@@ -19,7 +19,6 @@ export async function calculateHash(input: string | string[]): Promise<string | 
     const hash64Hex = hasher.h64ToString(input);
     return hash64Hex;
   }
-
 }
 
 // Get API Key 
@@ -28,7 +27,6 @@ export async function getAPIKey(): Promise<string> {
     chrome.storage.sync.get(['apiKey'], (data: { apiKey?: string }) => {
       if (chrome.runtime.lastError) {
         reject(chrome.runtime.lastError);
-        alert('ArabEasy: Please set your API key in the options page.');
       } else {
         const apiKey: string = data.apiKey || '';
         resolve(apiKey);
