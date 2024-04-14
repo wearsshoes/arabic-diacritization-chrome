@@ -145,7 +145,7 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
       textElements.push(textElement);
       iterator++;
     });
-
+    
     node.parentNode?.replaceChild(fragment, node);
   }
 
@@ -274,17 +274,17 @@ function createTextElementBatches(textElements: TextElement[], maxChars: number)
         }
         // handle paragraph breaks as new batch
         // } else if (text.substring(text.length - 1) === "\n") {
-        //   console.log(currentBatchLength, 'end of paragraph');
-        //   textElementBatches.push(currentBatch);
-        //   currentBatch = [];
-        //   currentBatchLength = 0 
-        // }
-      }
-    } else {
+          //   console.log(currentBatchLength, 'end of paragraph');
+          //   textElementBatches.push(currentBatch);
+          //   currentBatch = [];
+          //   currentBatchLength = 0 
+          // }
+        }
+      } else {
         // console.log(textElement, ' is empty');
-    }
-  });
-  console.log("batches created:", textElementBatches.length);
+      }
+    });
+    console.log("batches created:", textElementBatches.length);
     console.log(batchLengths);
   textElementBatches.forEach(batch => {
     // console.log(batch);
@@ -293,7 +293,7 @@ function createTextElementBatches(textElements: TextElement[], maxChars: number)
 }
 
 // Prepare batches for API by extracting the text with delimiters.
-function createAPIBatches(textElementBatches: TextElement[][]): { text: string; elements: TextElement[] }[] {
+function createAPIBatches(textElementBatches: TextElement[][]): DiacritizationRequestBatch[] {
   console.log('beginning api batching')
   const diacritizationBatches: { text: string; elements: TextElement[] }[] = [];
 
