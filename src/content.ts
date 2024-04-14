@@ -89,6 +89,7 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
     const fragment = document.createDocumentFragment();
 
     sentences.forEach((sentence, sentenceIndex) => {
+      // NOTE: This calls several hundred new wasm instances!!! we should calculate it in a cheaper way.
       const textNodeId = `text-${calculateHash(sentence)}`;
       const textNode = document.createTextNode(sentence);
       // if (sentenceIndex > 0) {
@@ -97,6 +98,7 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
       fragment.appendChild(textNode);
       console.log(elementId, index + sentenceIndex, sentence)
       
+      // it would be a lot more stateful to do this in replaceTextWithDiacritizedText
       const cleanText = sentence.replace(delimiter, '');
       const textElement: TextElement = {
         elementId: textNodeId,
@@ -104,6 +106,8 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
         index: index + sentenceIndex,
       };
       textElements.push(textElement);
+
+      // instead of an iterator maybe we could use xPath? not sure how that works with text nodes.
       iterator++;
     });
     
@@ -259,7 +263,6 @@ function directionLTR() {
   style.textContent = `body * {direction: ltr;}`;
   document.head.appendChild(style);
 }    
-
 
 // starts the batch preparer
 function main() {
