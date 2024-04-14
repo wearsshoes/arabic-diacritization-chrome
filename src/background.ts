@@ -3,7 +3,7 @@ import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
 import Bottleneck from 'bottleneck'
 import { calculateHash } from './utils';  
-import { Model, Models, Prompt, TransliterationDict, ProcessorResponse, TextElement, sysPromptTokenCache } from './types';
+import { Model, Models, Prompt, TransliterationDict, ProcessorResponse, TextElement, SysPromptTokenCache } from './types';
 
 // Check whether new version is installed
 chrome.runtime.onInstalled.addListener(function(details){
@@ -159,7 +159,7 @@ async function countSysPromptTokens(prompt: string, model?: string): Promise<num
 
 async function getStoredPromptTokenCount(promptHash: string, model: string): Promise<number | null> {
   return new Promise((resolve) => {
-    chrome.storage.sync.get('savedResults', (data: { savedResults?: sysPromptTokenCache[] }) => {
+    chrome.storage.sync.get('savedResults', (data: { savedResults?: SysPromptTokenCache[] }) => {
       if (Array.isArray(data.savedResults)) {
         const storedPrompt = data.savedResults.find(
           (result) => result.hash === promptHash && result.model === model
@@ -174,7 +174,7 @@ async function getStoredPromptTokenCount(promptHash: string, model: string): Pro
 }
 
 function saveSysPromptTokenCount(promptHash: string, model: string, tokens: number): void {
-  chrome.storage.sync.get('savedResults', (data: { savedResults?: sysPromptTokenCache[] }) => {
+  chrome.storage.sync.get('savedResults', (data: { savedResults?: SysPromptTokenCache[] }) => {
     const savedResults = data.savedResults || [];
     savedResults.push({ hash: promptHash, model, tokens });
     chrome.storage.sync.set({ savedResults });
