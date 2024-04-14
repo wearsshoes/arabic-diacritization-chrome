@@ -58,7 +58,7 @@ export class DiacritizationDataManager {
         if (pageData) {
             pageData.elements[elementHash] = data;
             // eventually will want to rewrite to do multiple updates at once.
-            await saveData(this.db, "diacritizations_msa", pageData);
+            await saveData(this.db, "diacritizations_msa", pageData.elements);
         } else {        
             throw new Error("Page data not found");
         }
