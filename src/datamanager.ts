@@ -1,5 +1,6 @@
 import { WebPageDiacritizationData, DiacritizationElement } from "./types";
 import { openDatabase, saveData, loadData } from "./database";
+import { calculateHash } from "./utils";
 
 export class DiacritizationDataManager {
     private static instance: DiacritizationDataManager;
@@ -68,10 +69,13 @@ export class DiacritizationDataManager {
     //     // Remove all data related to a webpage
     // }
   
-    // calculateContentSignature(elements: NodeListOf<Element>): string {
-    //     // Calculate a content signature
-    //     return "";
-    // }
+    async calculateContentSignature(elements: NodeListOf<Element>): Promise<string> {
+        // Calculate a content signature by hashing
+        const textContent = Array.from(elements).map((element) => element.textContent).join("");
+        const signature = await calculateHash(textContent);
+        return signature;
+        
+    }
   
     // serializeStructureMetadata(elements: NodeListOf<Element>): string {
     //     // Serialize page structure metadata
