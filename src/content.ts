@@ -72,47 +72,49 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
     
     const element = node as Element;
     // elementId = 'element-' + iterator + '-' + element.tagName + '-' + element.id + '-' + element.className;
-    elementId = 'element-' + iterator + '-' + element.tagName;
-    element.setAttribute('data-element-id', elementId);
-
     if (element.hasChildNodes() && isVisible(element)) {
       let innerIndex = 0;
+      elementId = 'element-' + iterator + '-' + element.tagName;
+      element.setAttribute('data-element-id', elementId);
       for (const childNode of Array.from(element.childNodes)) {
         const innerText = newRecurseDOM(childNode, innerIndex, elementId, iterator++);
         textElements.push(...innerText.textElements);
         innerIndex += innerText.textElements.length;
         iterator = innerText.iterator;
       }
+      index += innerIndex;
     }
+
   } else if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
     const sentences = splitTextIntoSentences(node.textContent);
     const fragment = document.createDocumentFragment();
 
     sentences.forEach((sentence, sentenceIndex) => {
       // NOTE: This calls several hundred new wasm instances!!! we should calculate it in a cheaper way.
-      const textNodeId = `text-${calculateHash(sentence)}`;
+      // const textNodeId = `text-${calculateHash(sentence)}`;
       const textNode = document.createTextNode(sentence);
-      // if (sentenceIndex > 0) {
-      //   console.log('will split', node.textContent, "and create", sentence)
-      // }
       fragment.appendChild(textNode);
-      console.log(elementId, index + sentenceIndex, sentence)
+      // const parentIterator = Number(elementId.split('-')[1]);
+      // console.log(elementId, index, sentenceIndex, iterator, sentence);
+      // if (parentIterator + index + sentenceIndex != iterator) {
+      //   console.error('Element index mismatch');
+      // }
       
       // it would be a lot more stateful to do this in replaceTextWithDiacritizedText
       const cleanText = sentence.replace(delimiter, '');
       const textElement: TextElement = {
-        elementId: textNodeId,
+        elementId: elementId,
         originalText: cleanText,
         index: index + sentenceIndex,
       };
       textElements.push(textElement);
+      iterator++;
 
       // instead of an iterator maybe we could use xPath? not sure how that works with text nodes.
-      iterator++;
     });
     
     node.parentNode?.replaceChild(fragment, node);
-  }
+  };
 
   return {textElements, iterator};
 }
