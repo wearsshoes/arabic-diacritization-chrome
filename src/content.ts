@@ -70,8 +70,8 @@ let cachedResponse: ProcessorResponse[];
 
 // Builds element list according to interface. Recurses through DOM and put the in the right order. 
 
-function recurseDOM(node:Node=document.body, index:number=0, elementId:string='', iterator:number=0): {textElements:TextElement[], iterator:number} {
-  const textElements: TextElement[] = [];
+// function recurseDOM(node:Node=document.body, index:number=0, elementId:string='', iterator:number=0): {textElements:TextElement[], iterator:number} {
+//   const textElements: TextElement[] = [];
 
   if (node.nodeType === Node.ELEMENT_NODE) {
     const element = node as Element;
@@ -104,7 +104,7 @@ function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''
 }
 
 // NOT CALLED OR TESTED. STRAIGHT UP AI CODE. THIS BE SUSSY
-function newRecurseDOM(node: Node = document.body, index: number = 0, elementId: string = ''): TextElement[] {
+function newRecurseDOM(node: Node = document.body, index: number = 0, elementId: string = '', iterator: number = 0): {textElements: TextElement[], iterator: number} {
   const textElements: TextElement[] = [];
 
   if (node.nodeType === Node.ELEMENT_NODE) {
@@ -116,9 +116,10 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
     if (element.hasChildNodes() && isVisible(element)) {
       let innerIndex = 0;
       for (const childNode of Array.from(element.childNodes)) {
-        const innerText = newRecurseDOM(childNode, innerIndex, elementId);
-        textElements.push(...innerText);
-        innerIndex += innerText.length;
+        const innerText = newRecurseDOM(childNode, innerIndex, elementId, iterator++);
+        textElements.push(...innerText.textElements);
+        innerIndex += innerText.textElements.length;
+        iterator = innerText.iterator;
       }
     }
   } else if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
@@ -137,12 +138,13 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
         index: index + sentenceIndex,
       };
       textElements.push(textElement);
+      iterator++;
     });
 
     node.parentNode?.replaceChild(fragment, node);
   }
 
-  return textElements;
+  return {textElements, iterator};
 }
 
 function generateUniqueId(): string {
@@ -307,7 +309,7 @@ function main() {
     const mainNode = document.querySelector('main') || document.body;
     console.log('Main node:', mainNode);
     // textElementBatches = createTextElementBatches(recurseDOM(mainNode).textElements, 500);
-    textElementBatches = createTextElementBatches(newRecurseDOM(mainNode), 500);
+    textElementBatches = createTextElementBatches(newRecurseDOM(mainNode).textElements, 750);
     APIBatches = createAPIBatches(textElementBatches);
   } catch (error) {
     console.error('Error during initialization:', error);
