@@ -21,3 +21,18 @@ export async function calculateHash(input: string | string[]): Promise<string | 
   }
 
 }
+
+// Get API Key 
+export async function getAPIKey(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    chrome.storage.sync.get(['apiKey'], (data: { apiKey?: string }) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+        alert('ArabEasy: Please set your API key in the options page.');
+      } else {
+        const apiKey: string = data.apiKey || '';
+        resolve(apiKey);
+      }
+    });
+  });
+}

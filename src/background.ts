@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
 import Bottleneck from 'bottleneck'
-import { calculateHash } from './utils';  
+import { calculateHash, getAPIKey } from './utils';  
 import { Model, Models, Prompt, TransliterationDict, ProcessorResponse, TextElement, SysPromptTokenCache } from './types';
 
 // Check whether new version is installed
@@ -39,20 +39,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Get API Key 
-async function getAPIKey(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    chrome.storage.sync.get(['apiKey'], (data: { apiKey?: string }) => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-        alert('ArabEasy: Please set your API key in the options page.');
-      } else {
-        const apiKey: string = data.apiKey || '';
-        resolve(apiKey);
-      }
-    });
-  });
-}
+// Moved to utils.ts
+// // Get API Key 
+// async function getAPIKey(): Promise<string> {
+//   return new Promise((resolve, reject) => {
+//     chrome.storage.sync.get(['apiKey'], (data: { apiKey?: string }) => {
+//       if (chrome.runtime.lastError) {
+//         reject(chrome.runtime.lastError);
+//         alert('ArabEasy: Please set your API key in the options page.');
+//       } else {
+//         const apiKey: string = data.apiKey || '';
+//         resolve(apiKey);
+//       }
+//     });
+//   });
+// }
 
 const claude: Models = {
   haiku: {
