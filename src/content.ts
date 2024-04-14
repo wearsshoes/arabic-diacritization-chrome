@@ -226,33 +226,25 @@ function createTextElementBatches(textElements: TextElement[], maxChars: number)
     // once we have better batch management with sentences paragraphs etc, we can then address this.
       const textLength = text.length;
 
-      if ((currentBatchLength + textLength) > maxChars) {
-        if (currentBatch.length > 0) {
-          batchLengths.push([currentBatchLength, 'maxChars', currentBatch]);
-          textElementBatches.push(currentBatch);
-        }
-        currentBatch = [textElement];
-        currentBatchLength = textLength;
-      } else {
-        currentBatch.push(textElement);
-        currentBatchLength += textLength;
-        
-        // handle sentence breaks as new batch        
-        // often fails due to periods being not at the end of the node
-        const sentenceRegex = /[.!?]+\s*\n./g;
-        if (text.match(sentenceRegex) && (currentBatchLength > (maxChars * 2 / 3))){
-          batchLengths.push([currentBatchLength, 'end of sentence', currentBatch]);
-          textElementBatches.push(currentBatch);
-          currentBatch = [];
-          currentBatchLength = 0
-        }
-        // handle paragraph breaks as new batch
-        // } else if (text.substring(text.length - 1) === "\n") {
-          //   console.log(currentBatchLength, 'end of paragraph');
-          //   textElementBatches.push(currentBatch);
-          //   currentBatch = [];
-          //   currentBatchLength = 0 
-          // }
+        if ((currentBatchLength + textLength) > maxChars) {
+          if (currentBatch.length > 0) {
+            batchLengths.push([currentBatchLength, 'maxChars', currentBatch]);
+            textElementBatches.push(currentBatch);
+          }
+          currentBatch = [textElement];
+          currentBatchLength = textLength;
+        } else {
+          currentBatch.push(textElement);
+          currentBatchLength += textLength;
+          
+          // handle sentence breaks as new batch        
+          const sentenceRegex = /[.!?]+\s*\n./g;
+          if (text.match(sentenceRegex) && (currentBatchLength > (maxChars * 2 / 3))){
+            batchLengths.push([currentBatchLength, 'end of sentence', currentBatch]);
+            textElementBatches.push(currentBatch);
+            currentBatch = [];
+            currentBatchLength = 0
+          }
         }
       } else {
         // console.log(textElement, ' is empty');
