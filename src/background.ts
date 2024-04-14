@@ -51,22 +51,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Moved to utils.ts
-// // Get API Key 
-// async function getAPIKey(): Promise<string> {
-//   return new Promise((resolve, reject) => {
-//     chrome.storage.sync.get(['apiKey'], (data: { apiKey?: string }) => {
-//       if (chrome.runtime.lastError) {
-//         reject(chrome.runtime.lastError);
-//         alert('ArabEasy: Please set your API key in the options page.');
-//       } else {
-//         const apiKey: string = data.apiKey || '';
-//         resolve(apiKey);
-//       }
-//     });
-//   });
-// }
-
 const claude: Models = {
   haiku: {
     currentVersion: "claude-3-haiku-20240307",
