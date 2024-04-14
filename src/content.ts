@@ -242,6 +242,7 @@ function createTextElementBatches(textElements: TextElement[], maxChars: number)
   const textElementBatches: TextElement[][] = [];
   let currentBatch: TextElement[] = [];
   let currentBatchLength = 0;
+  let batchLengths: [number, string, TextElement[]][] = []
 
   textElements.forEach((textElement) => {
     const text = textElement.originalText
@@ -253,7 +254,7 @@ function createTextElementBatches(textElements: TextElement[], maxChars: number)
 
       if ((currentBatchLength + textLength) > maxChars) {
         if (currentBatch.length > 0) {
-          console.log(currentBatchLength, 'maxChars');
+          batchLengths.push([currentBatchLength, 'maxChars', currentBatch]);
           textElementBatches.push(currentBatch);
         }
         currentBatch = [textElement];
@@ -264,8 +265,9 @@ function createTextElementBatches(textElements: TextElement[], maxChars: number)
         
         // handle sentence breaks as new batch        
         // often fails due to periods being not at the end of the node
-        if (text.substring(text.length - 1 ) === "." && (currentBatchLength > (maxChars / 2))){
-          console.log(currentBatchLength, 'end of sentence');
+        const sentenceRegex = /[.!?]+\s*\n./g;
+        if (text.match(sentenceRegex) && (currentBatchLength > (maxChars * 2 / 3))){
+          batchLengths.push([currentBatchLength, 'end of sentence', currentBatch]);
           textElementBatches.push(currentBatch);
           currentBatch = [];
           currentBatchLength = 0
@@ -279,12 +281,13 @@ function createTextElementBatches(textElements: TextElement[], maxChars: number)
         // }
       }
     } else {
-      console.log(textElement, ' is empty');
+        // console.log(textElement, ' is empty');
     }
   });
   console.log("batches created:", textElementBatches.length);
+    console.log(batchLengths);
   textElementBatches.forEach(batch => {
-    console.log(batch);
+    // console.log(batch);
   });
   return textElementBatches;
 }
