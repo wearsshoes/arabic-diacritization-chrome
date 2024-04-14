@@ -1,5 +1,6 @@
 // content.ts
 import { TextElement, DiacritizationRequestBatch, ProcessorResponse } from "./types";
+import { calculateHash } from "./utils";
 
 // when queried by popup, returns the language of the page
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -35,23 +36,26 @@ let cachedResponse: ProcessorResponse[];
 // Utility Functions
 
 // Builds element list according to interface. Recurses through DOM and put the in the right order. 
-function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''): TextElement[] {
+
+function recurseDOM(node:Node=document.body, index:number=0, elementId:string='', iterator:number=0): {textElements:TextElement[], iterator:number=0} {
   const textElements: TextElement[] = [];
   // if we're on an element node, record elementId and pass to children.
   if (node.nodeType === Node.ELEMENT_NODE) {
-    // TODO: replace with xxhash
-    elementId = 'element-' + Math.random().toString(36).substring(2, 11); // Generate a unique ID for the element
     const element = node as Element;
+    // this elementid generator is still bad. but whatever.
+    elementId = 'element-' + iterator + '-' + calculateHash(iterator + element.tagName + element.id + element.className); // Generate a unique ID for the element
     element.setAttribute('data-element-id', elementId); // Set the ID as a data attribute on the element
     if (node.hasChildNodes() && isVisible(element)) {
       let innerIndex = 0;
       for (const childNode of node.childNodes) {
         // TODO: it's not insane to split DOM nodes and modify the DOM at sentence breaks on '. '; 
         // this might make for better sentence and paragraph control.
-        const innerText = recurseDOM(childNode, innerIndex, elementId) // Maybe there's an easier, non-recursing way to do this?
+        const result = recurseDOM(childNode, innerIndex, elementId, iterator++) // Maybe there's an easier, non-recursing way to do this?
+        const innerText = result.textElements;
         innerText.forEach(innerElement => {
           textElements.push(innerElement)
         });
+        iterator = result.iterator;
         innerIndex++;
      }
     }
@@ -66,7 +70,7 @@ function recurseDOM(node:Node=document.body, index:number=0, elementId:string=''
     textElements.push(textElement)
   };
   
-  return textElements;
+  return {textElements, iterator};
 }
 
 // NOT CALLED OR TESTED. STRAIGHT UP AI CODE. THIS BE SUSSY
@@ -74,7 +78,7 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
   const textElements: TextElement[] = [];
 
   if (node.nodeType === Node.ELEMENT_NODE) {
-    elementId = 'element-' + generateUniqueId();
+    elementId = 'element-' + ();
     const element = node as Element;
     element.setAttribute('data-element-id', elementId);
 
@@ -92,7 +96,7 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
 
     sentences.forEach((sentence, sentenceIndex) => {
       const cleanText = sentence.replace(delimiter, '');
-      const textNodeId = `text-${generateUniqueId()}`;
+      const textNodeId = `text-${calculateHash(cleanText)}`;
       const textNode = document.createTextNode(cleanText);
       textNode.nodeValue = cleanText;
       textNode.textContent = cleanText;
@@ -112,9 +116,9 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
   return textElements;
 }
 
-function generateUniqueId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-}
+// function generateUniqueId(): string {
+//   return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+// }
 
 function splitTextIntoSentences(text: string): string[] {
   const abbreviations = ['Mr', 'Mrs', 'Ms', 'Dr', 'Prof', 'Sr', 'Jr', 'Mt', 'St'];
