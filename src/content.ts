@@ -10,6 +10,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const language = document.documentElement.lang;
     sendResponse(language);
   }
+  
   // when website text length is requested, returns apibatches details
   if (request.action === 'getWebsiteCharacterCount') {
     const totalTextLength = APIBatches.map(element => element.text.length).reduce((acc, curr) => acc + curr, 0);
@@ -139,39 +140,12 @@ function splitTextIntoSentences(text: string): string[] {
 
 // Checks if node is visible
 function isVisible(element: Element): boolean {
-  if (!element.getBoundingClientRect) {
-    return false;
-  }
-
-  // const rect = element.getBoundingClientRect();
-  // const viewHeight = Math.max(document.documentElement.clientHeight, window.innerHeight);
-  // const viewWidth = Math.max(document.documentElement.clientWidth, window.innerWidth);
-
-  // // Check if the element has dimensions and is within the viewport
-  // const isInViewport = (
-  //   rect.top >= 0 &&
-  //   rect.left >= 0 &&
-  //   rect.bottom <= viewHeight &&
-  //   rect.right <= viewWidth
-  // );
-
-  // // Check if the element has a visible size
-  // const hasSize = (
-  //   rect.width > 0 &&
-  //   rect.height > 0
-  // );
-
-  // // Check if the element's opacity is greater than 0
-  // const opacity = parseFloat(window.getComputedStyle(element).getPropertyValue('opacity'));
-  // const isOpaque = opacity > 0;
-
-  // Check if the element or any of its ancestors have display: none or visibility: hidden
+  
   const isDisplayed = (
     window.getComputedStyle(element).display !== 'none' &&
     window.getComputedStyle(element).visibility !== 'hidden'
   );
 
-  // return isInViewport && hasSize && isOpaque && isDisplayed;
   return isDisplayed
 }
 
