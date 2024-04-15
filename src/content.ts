@@ -9,9 +9,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Get the website language (called by popup.ts)
   if (request.action === 'getWebsiteData') {
     const language = document.documentElement.lang;
-    const totalTextLength = APIBatches.map(element => element.text.length).reduce((acc, curr) => acc + curr, 0);
-    const numBatches = APIBatches.length;
-    sendResponse({language, chars: totalTextLength, batches: numBatches});
+    
+    // this is stupid and I should consider passing it differently
+    const totalTextLength = textElementBatches
+      .map(element => element
+        .map(node => node.text.length)
+        .reduce((acc, curr) => acc + curr, 0))
+      .reduce((acc, curr) => acc + curr, 0);
+    sendResponse({language, chars: totalTextLength});
   }
   
   // Get metadata about the website (called by background.ts)
