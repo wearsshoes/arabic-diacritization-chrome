@@ -1,5 +1,5 @@
 // content.ts
-import { TextElement, DiacritizationRequestBatch, ProcessorResponse, WebPageDiacritizationData } from "./types";
+import { DiacritizationElement, DiacritizationElement, DiacritizationRequestBatch, ProcessorResponse, TempProcessorResponse, WebPageDiacritizationData } from "./types";
 
 // -------------- Event Listeners -------------- //
 
@@ -41,7 +41,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // Updates website when told to.
   if (request.action === "updateWebsiteText") {
-    const result: ProcessorResponse[] = request.data;
+    const result: TempProcessorResponse[] = request.data;
     const method = request.method;
     if (textElementBatches.length ===result.length) {
       textElementBatches.forEach((batch, batchIndex) => {
@@ -62,12 +62,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Global Variables
 const delimiter:string = '|'
 const sentenceRegex = /[.!?؟]+\s*\n*/g; 
-let textElementBatches: TextElement[][];
+let textElementBatches: DiacritizationElement[][];
 let APIBatches: DiacritizationRequestBatch[];
 
 // Builds element list according to interface. Recurses through DOM and put the in the right order. 
-function newRecurseDOM(node: Node = document.body, index: number = 0, elementId: string = '', iterator: number = 0): {textElements: TextElement[], iterator: number} {
-  const textElements: TextElement[] = [];
+function newRecurseDOM(node: Node = document.body, index: number = 0, elementId: string = '', iterator: number = 0): {textElements: DiacritizationElement[], iterator: number} {
+  const textElements: DiacritizationElement[] = [];
 
   if (node.nodeType === Node.ELEMENT_NODE) {
     
@@ -92,7 +92,7 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
 
     sentences.forEach((sentence, sentenceIndex) => {
 
-      const textElement: TextElement = {
+      const textElement: DiacritizationElement = {
         elementId: elementId,
         originalText: sentence,
         index: index + sentenceIndex,
@@ -136,12 +136,12 @@ function containsArabicCharacters(text: string): boolean {
 }
 
 // Create batches of elements according to sentence boundaries and API character limit.
-function createTextElementBatches(textElements: TextElement[], maxChars: number): TextElement[][] {
+function createDiacritizationElementBatches(textElements: DiacritizationElement[], maxChars: number): DiacritizationElement[][] {
   console.log('starting batching on', textElements.length, 'elements')
-  const textElementBatches: TextElement[][] = [];
-  let currentBatch: TextElement[] = [];
+  const textElementBatches: DiacritizationElement[][] = [];
+  let currentBatch: DiacritizationElement[] = [];
   let currentBatchLength = 0;
-  let batchLengths: [number, string, TextElement[]][] = []
+  let batchLengths: [number, string, DiacritizationElement[]][] = []
 
   textElements.forEach((textElement) => {
     const text = textElement.originalText
@@ -180,9 +180,9 @@ function createTextElementBatches(textElements: TextElement[], maxChars: number)
 }
 
 // Prepare batches for API by extracting the text with delimiters.
-function createAPIBatches(textElementBatches: TextElement[][]): DiacritizationRequestBatch[] {
+function createAPIBatches(textElementBatches: DiacritizationElement[][]): DiacritizationRequestBatch[] {
   console.log('beginning api batching')
-  const diacritizationBatches: { text: string; elements: TextElement[] }[] = [];
+  const diacritizationBatches: { text: string; elements: DiacritizationElement[] }[] = [];
 
   textElementBatches.forEach((batch) => {
     const batchText = batch.map((textElement) => textElement.originalText.replace(delimiter, ''))
@@ -198,7 +198,7 @@ function createAPIBatches(textElementBatches: TextElement[][]): DiacritizationRe
 }
 
 // DOM Manipulation
-function replaceTextWithDiacritizedText(textElements: TextElement[], diacritizedTexts: string[], method: string): void {
+function replaceTextWithDiacritizedText(textElements: DiacritizationElement[], diacritizedTexts: string[], method: string): void {
   
   if (!Array.isArray(textElements) || !Array.isArray(diacritizedTexts)) {
     throw new Error('Both textElements and diacritizedTexts should be arrays.');
@@ -249,7 +249,7 @@ function main() {
   try {
     const mainNode = document.querySelector('main') || document.body;
     console.log('Main node:', mainNode);
-    textElementBatches = createTextElementBatches(newRecurseDOM(mainNode).textElements, 750);
+    textElementBatches = createDiacritizationElementBatches(newRecurseDOM(mainNode).textElements, 750);
     APIBatches = createAPIBatches(textElementBatches);
   } catch (error) {
     console.error('Error during initialization:', error);
