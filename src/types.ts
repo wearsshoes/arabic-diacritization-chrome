@@ -1,5 +1,7 @@
 // Definition of types used in the application
 
+import { calculateHash } from "./utils";
+
 // this should be renamed regularizedTextNode or something.
 export interface TextElement {
   elementId: string;
@@ -54,6 +56,28 @@ export class WebPageDiacritizationData {
   updateLastVisited(date: Date): void {
       this.lastVisited = date;
   }
+
+  async calculateContentSignature(elements: NodeListOf<Element>): Promise<string> {
+    // Calculate a content signature by hashing
+    const textContent = Array.from(elements).map((element) => element.textContent).join("");
+    const signature = await calculateHash(textContent);
+    return signature;
+    
+  }
+
+  serializeStructureMetadata(elements: NodeListOf<Element>): string {
+      // Serialize page structure metadata
+      // This can be done by converting the elements to a JSON string without the text content
+      const serialized: ElementAttributes[] = Array.from(elements).map((element) => {
+          return {
+              tagName: element.tagName,
+              id: element.id,
+              className: element.className,
+          };
+      });
+      return JSON.stringify(serialized);
+}
+
 }
 
 export interface DiacritizationElement {

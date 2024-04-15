@@ -1,28 +1,45 @@
 // content.ts
-import { TextElement, DiacritizationRequestBatch, ProcessorResponse } from "./types";
+import { TextElement, DiacritizationRequestBatch, ProcessorResponse, WebPageDiacritizationData } from "./types";
 
 // -------------- Event Listeners -------------- //
 
 // when queried by popup, returns the language of the page
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'getWebsiteLanguage') {
-    const language = document.documentElement.lang;
-    sendResponse(language);
-  }
   
-  // when website text length is requested, returns apibatches details
-  if (request.action === 'getWebsiteCharacterCount') {
+  // Get the website language (called by popup.ts)
+  if (request.action === 'getWebsiteData') {
+    const language = document.documentElement.lang;
     const totalTextLength = APIBatches.map(element => element.text.length).reduce((acc, curr) => acc + curr, 0);
     const numBatches = APIBatches.length;
-    sendResponse({chars: totalTextLength, batches: numBatches});
+    sendResponse({language, chars: totalTextLength, batches: numBatches});
+  }
+  
+  // Get metadata about the website (called by background.ts)
+    if (request.action === 'getWebsiteMetadata') {
+    const pageUrl = request.pageUrl;
+    const contentSignature = '';
+    const structuralMetadata = '';
+    
+    const webPageDiacritizationData = new WebPageDiacritizationData(
+      pageUrl,
+      new Date(),
+      contentSignature,
+      structuralMetadata,
+      {}
+    );
+
+    webPageDiacritizationData.calculateContentSignature(document.body.querySelectorAll('*'));
+    webPageDiacritizationData.serializeStructureMetadata(document.body.querySelectorAll('*'));
+
+    sendResponse({webPageDiacritizationData});
   }
 
-  // when diacritization is requested, returns the apibatches
+  // When diacritization is requested, returns the APIBatches
   if (request.action === "getWebsiteText") {
     sendResponse({data: APIBatches});
   }
 
-  // updates website when told to.
+  // Updates website when told to.
   if (request.action === "updateWebsiteText") {
     const result: ProcessorResponse[] = request.data;
     const method = request.method;
