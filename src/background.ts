@@ -34,15 +34,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     (async () => {
       try {
-        const tabId = await getTabId;
-        if (typeof tabId !== 'number') throw new Error('No active tab found');
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab.id === undefined) throw new Error('No active tab found');
 
-        const websiteText = await chrome.tabs.sendMessage(tabId, { action: 'getWebsiteText' });
+        const websiteText = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteText' });
         console.log('Website text received:', websiteText);
   
         const diacritizedText = await processDiacritizationBatches(method, cache, websiteText);
   
-        await chrome.tabs.sendMessage(tabId, {action: 'updateWebsiteText', data: diacritizedText});  
+        await chrome.tabs.sendMessage(tab.id, {action: 'updateWebsiteText', data: diacritizedText});  
         sendResponse({ message: 'Completed.' });
 
       } catch (error) {
@@ -108,12 +108,6 @@ async function getPrompt(): Promise<Prompt> {
     });
   });
 }
-
-// get active tab
-const getTabId  = chrome.tabs.query({ active: true, currentWindow: true })
-  ?.then(tabs => tabs[0].id)
-  .catch(console.error);
-
 
 // Async worker for API call
 // TODO: try to get this to take and return objects of the class WebPageDiacritizationData
