@@ -1,17 +1,20 @@
+// Definition of types used in the application
+
+// this should be renamed regularizedTextNode or something.
 export interface TextElement {
   elementId: string;
   originalText: string;
   index: number;
 }
   
-export interface TranslationRequestBatch {
+export interface DiacritizationRequestBatch {
   text: string;
   elements: TextElement[];
 }
   
 export interface ProcessorResponse {
   elements: TextElement[]; 
-  translatedTexts: string[];
+  diacritizedTexts: string[];
   rawResult: string
 } 
  
@@ -37,4 +40,32 @@ export interface SysPromptTokenCache {
   hash: string;
   model: string;
   tokens: number;
+}
+
+export class WebPageDiacritizationData {
+  constructor(
+      public pageId: string,
+      public lastVisited: Date,
+      public contentSignature: string,
+      public structuralMetadata: string,
+      public elements: { [elementHash: string]: DiacritizationElement }
+  ) { }
+
+  updateLastVisited(date: Date): void {
+      this.lastVisited = date;
+  }
+}
+
+export interface DiacritizationElement {
+  originalText: string;
+  diacritizedText: string;
+  xPaths: string[];
+  lastDiacritized: Date;
+  attributes: ElementAttributes;
+}
+
+export interface ElementAttributes {
+  tagName: string;
+  id?: string;
+  className?: string; // space separated list of classes, not an array
 }

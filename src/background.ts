@@ -2,45 +2,64 @@ import Anthropic from '@anthropic-ai/sdk';
 import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
 import { calculateHash, getAPIKey } from './utils';  
-import { Prompt, TransliterationDict, ProcessorResponse, TextElement } from './types';
+import { Prompt, TransliterationDict, ProcessorResponse, WebPageDiacritizationData, DiacritizationElement, DiacritizationRequestBatch } from './types';
 import { defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel } from './anthropicCaller'
+import { DiacritizationDataManager } from './datamanager';
 
 // ----------------- Event Listeners ----------------- //
 
 // Check whether new version is installed
 chrome.runtime.onInstalled.addListener(function(details){
   if(details.reason == "install"){
-      console.log("ArabEasy successfully installed! Thank you for using this app.");
+    console.log("ArabEasy successfully installed! Thank you for using this app.");
   }else if(details.reason == "update"){
-      var thisVersion = chrome.runtime.getManifest().version;
-      console.log("Updated from " + details.previousVersion + " to " + thisVersion + "!");
+    var thisVersion = chrome.runtime.getManifest().version;
+    console.log("Updated from " + details.previousVersion + " to " + thisVersion + "!");
   }
 });
 
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  
+  // Get the system prompt length
   if (request.action === "getSystemPromptLength") {
     const prompt = request.prompt;
     countSysPromptTokens(prompt).then((tokens) => sendResponse(tokens));
     return true;
   }
-  if (request.action === "translate" && request.data) {
-    // Process the translation batches received from the content script
-    processTranslationBatches(request.method, request.cache, request.data)
-    .then(translatedBatches => {
-      sendResponse({type: 'translationResult', data: translatedBatches});
-    })
-    .catch(error => {
-      console.error('Error processing translation batches:', error);
-      sendResponse({type: 'error', message: 'Failed to process translation batches'});
-    });
-    // Return true to indicate that sendResponse will be called asynchronously
+  
+  // Handle the diacritization request
+  if (request.action === "sendToDiacritize" && request.method) {
+    const { method, cache } = request;
+
+    (async () => {
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab.id === undefined) throw new Error('No active tab found');
+
+        const websiteText = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteText' });
+        const diacritizationBatches = websiteText.data;
+        console.log('Website text received:', diacritizationBatches);
+  
+        const diacritizedText = await processDiacritizationBatches(method, cache, diacritizationBatches);
+  
+        await chrome.tabs.sendMessage(tab.id, {action: 'updateWebsiteText', data: diacritizedText, method});  
+        sendResponse({ message: 'Completed.' });
+
+      } catch (error) {
+        console.error('Error processing diacritization:', error);
+        sendResponse({ error: 'Failed to process diacritization.' });
+      }
+    })();
+  
     return true;
   }
+
 });
 
 // ----------------- Functions ----------------- //
 
+const dataManager = DiacritizationDataManager.getInstance();
 const delimiter = '|';
 const defaultPrompt: Prompt = prompts[0];
 
@@ -58,31 +77,113 @@ async function getPrompt(): Promise<Prompt> {
 }
 
 // Async worker for API call
-async function processTranslationBatches(method: string, cache: ProcessorResponse[], translationBatches: { text: string; elements: TextElement[] }[]): Promise<ProcessorResponse[]> {
-  const texts = translationBatches.map((batch) => batch.text);
-  let translatedTextArray: string[] = [];
+// TODO: try to get this to take and return objects of the class WebPageDiacritizationData
+async function processDiacritizationBatches(method: string, cache: ProcessorResponse[], diacritizationBatches: DiacritizationRequestBatch[]): Promise<ProcessorResponse[]> {
+  
+  const texts = diacritizationBatches.map((batch) => batch.text);
+  
+  // // Replace the caching logic with DiacritizationDataManager methods
+  // const pageUrl = await getCurrentPageUrl(); // Implement this function to get the current page URL
+  // const webPageData = await dataManager.getWebPageData(pageUrl);
+  // if (!webPageData) {
+  //   console.log('No saved data found for the current webpage');
+  // }
+  // // these seem like slightly redundant calls, might be able to refactor them later
+  // // need to live in content script.
+  // // const contentSignature = await dataManager.calculateContentSignature(document.body.querySelectorAll('*'));
+  // const contentSignature = '';
+  // // const structuralMetadata = dataManager.serializeStructureMetadata(document.body.querySelectorAll('*'));
+  // const structuralMetadata = '';
+
+  // const webPageDiacritizationData = new WebPageDiacritizationData(
+  //   pageUrl,
+  //   new Date(),
+  //   contentSignature,
+  //   structuralMetadata,
+  //   {}
+  // );
+  // await dataManager.updateWebPageData(pageUrl, webPageDiacritizationData)
+  //   .catch((error) => console.error('Failed to update web page data:', error))
+  //   .then(() => console.log('Web page data updated:', webPageDiacritizationData));
+
+  // throw new Error('Not implemented yet');
+  
+  // probably making a bunch of unnecessary calls to the database here
+
+  let diacritizedTextArray: string[] = [];
+
+  // If the method is 'diacritize' and saved data exists for the current webpage, return the saved results
   if (method === 'diacritize') {
+  //   if (webPageData) {
+  //     // If saved data exists for the current webpage and the method is 'diacritize'
+  //     const savedResults = Object.values(webPageData.elements).map(element => element.diacritizedText);
+  //     return diacritizationBatches.map((batch, index) => {
+  //       const diacritizedTexts = savedResults[index].split(delimiter);
+  //       return { elements: batch.elements, diacritizedTexts: diacritizedTexts, rawResult: savedResults[index] };
+  //     });
+  //   }
+
     // could be fun to have claude run with figuring out the dialect, and then feeding that as an argument to the prompt
     // partial diacritization... just build out a lot of options...
+    
     console.log('Received diacritization request and data, processing');
     const diacritizeArray = await diacritizeTexts(texts);
-    translatedTextArray = diacritizeArray
+    diacritizedTextArray = diacritizeArray
+  
   } else if (method === 'arabizi') {
-  // honestly, this could just be generated automatically and toggled on/off back to full arabic cache state
-  // could also be fun to do a "wubi" version on alternating lines?
+    // honestly, this could just be generated automatically and toggled on/off back to full arabic cache state
+    // could also be fun to do a "wubi" version on alternating lines?
     console.log('Received arabizi request and data, processing');
      if (cache && cache.length) {
       console.log('Diacritization inferred to exist, transliterating')
-      translatedTextArray = arabicToArabizi(cache.map((batch) => batch.rawResult));
+      diacritizedTextArray = arabicToArabizi(cache.map((batch) => batch.rawResult));
     } else {
       console.log('Diacritizing text first')
       const diacritizeArray = await diacritizeTexts(texts);
-      translatedTextArray = arabicToArabizi(diacritizeArray)
+      diacritizedTextArray = arabicToArabizi(diacritizeArray)
     }
   }
-  return translationBatches.map((batch, index) => {
-    const translatedTexts = translatedTextArray[index].split(delimiter);
-    return { elements: batch.elements, translatedTexts, rawResult: translatedTextArray[index]};
+
+  // Store the diacritized results using DiacritizationDataManager methods
+  const diacritizedResults = diacritizationBatches.map((batch, index) => {
+    const diacritizedTexts = diacritizedTextArray[index].split(delimiter);
+    const rawResult = diacritizedTextArray[index];
+    
+    // batch.elements.forEach((element, elementIndex) => {
+    //   const diacritizationElement: DiacritizationElement = {
+    //     originalText: element.originalText,
+    //     diacritizedText: diacritizedTexts[elementIndex],
+    //     xPaths: [], // Implement the logic to generate XPaths for the element
+    //     lastDiacritized: new Date(),
+    //     attributes: {
+    //       // TODO: haven't added these yet, TextElement should have these properties
+    //       tagName: "",
+    //       // tagName: element.tagName,
+    //       className: "",
+    //       // className: element.className,
+    //       id: ""
+    //       // id: element.id
+    //     }
+    //   };
+    //   dataManager.updateElementData(pageUrl, element.elementId, diacritizationElement);
+    // });
+
+    return { elements: batch.elements, diacritizedTexts, rawResult };
+  });
+
+  return diacritizedResults;
+}
+
+// Get the current page URL
+async function getCurrentPageUrl(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs.length > 0) {
+        resolve(tabs[0].url as string);
+      } else {
+        reject('No active tabs found');
+      }
+    });
   });
 }
 
@@ -160,7 +261,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
   return diacritizedTexts;
 }
 
-// Arabizi transliteration
+// Arabizi diacritization
 // still need to do a lot of things: sun/moon transformation
 // fii instead of fiy, etc
 // man, maybe there's even different pronunciation choices for dialects...? too much to consider...
@@ -177,7 +278,7 @@ function arabicToArabizi(texts: string[], transliterationDict: TransliterationDi
   );
 }
 
-// ALLCAPS translation function <for fun>
+// ALLCAPS diacritization function <for fun>
 function ALLCAPS(str: string): string {
   return str.replace(/[a-z]/g, (char) => {
     const charCode = char.charCodeAt(0);
