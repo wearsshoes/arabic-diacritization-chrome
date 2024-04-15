@@ -83,25 +83,18 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
   const texts = diacritizationBatches.map((batch) => batch.text);
   
   // Replace the caching logic with DiacritizationDataManager methods
+
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (tab.id === undefined) throw new Error('No active tab found');
   const pageUrl = await getCurrentPageUrl(); // Implement this function to get the current page URL
   const webPageData = await dataManager.getWebPageData(pageUrl);
   if (!webPageData) {
     console.log('No saved data found for the current webpage');
   }
-  // these seem like slightly redundant calls, might be able to refactor them later
-  // need to live in content script.
-  const contentSignature = await dataManager.calculateContentSignature(document.body.querySelectorAll('*'));
-  // const contentSignature = '';
-  const structuralMetadata = dataManager.serializeStructureMetadata(document.body.querySelectorAll('*'));
-  // const structuralMetadata = '';
 
-  const webPageDiacritizationData = new WebPageDiacritizationData(
-    pageUrl,
-    new Date(),
-    contentSignature,
-    structuralMetadata,
-    {}
-  );
+  // Get the site metadata
+  const webPageDiacritizationData:WebPageDiacritizationData = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteMetadata', pageUrl })
+
   await dataManager.updateWebPageData(pageUrl, webPageDiacritizationData)
     .catch((error) => console.error('Failed to update web page data:', error))
     .then(() => console.log('Web page data updated:', webPageDiacritizationData));

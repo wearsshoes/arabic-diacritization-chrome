@@ -1,5 +1,5 @@
 // content.ts
-import { TextElement, DiacritizationRequestBatch, ProcessorResponse } from "./types";
+import { TextElement, DiacritizationRequestBatch, ProcessorResponse, WebPageDiacritizationData } from "./types";
 
 // -------------- Event Listeners -------------- //
 
@@ -12,6 +12,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse(language);
   }
   
+  // Get metadata about the website
+    if (request.action === 'getWebsiteMetadata') {
+    const pageUrl = request.pageUrl;
+    // const contentSignature = calculateContentSignature(document.body.querySelectorAll('*'));
+    const contentSignature = '';
+    // const structuralMetadata = serializeStructureMetadata(document.body.querySelectorAll('*'));
+    const structuralMetadata = '';
+
+    const webPageDiacritizationData = new WebPageDiacritizationData(
+      pageUrl,
+      new Date(),
+      contentSignature,
+      structuralMetadata,
+      {}
+    );
+
+    sendResponse({webPageDiacritizationData});
+  }
 
   // When website text length is requested, returns metadata from APIBatches.
   if (request.action === 'getWebsiteCharacterCount') {
