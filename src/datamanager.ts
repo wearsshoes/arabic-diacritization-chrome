@@ -1,9 +1,10 @@
 import { WebPageDiacritizationData, DiacritizationElement } from "./types";
+import { chromeStorageGet, chromeStorageSet } from "./utils";
 
 export class DiacritizationDataManager {
     private static instance: DiacritizationDataManager;
     private db: IDBDatabase | null = null;
-    
+
     private constructor() {
         // Initialize the database
         openDatabase("WebpageDiacritizations", "diacritizations_msa", 1)
@@ -88,7 +89,7 @@ export class DiacritizationDataManager {
             throw new Error(`Error updating storage size: ${error}`);
         }
     }
-  
+
     // async removeElement(pageId: string, elementHash: string): Promise<void> {
     //     // Remove an element from storage
     // }
@@ -129,37 +130,37 @@ function openDatabase(dbName: string, storeName: string, version: number): Promi
     });
   }
 
-  function saveData(db: IDBDatabase, storeName: string, data: any): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(storeName, 'readwrite');
-      const store = transaction.objectStore(storeName);
-      const request = store.put(data);
-  
-      request.onerror = () => {
-        reject(request.error);
-      };
-  
-      request.onsuccess = () => {
-        resolve();
-      };
-    });
-  }
-  
-  function loadData(db: IDBDatabase, storeName: string, id: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(storeName, 'readonly');
-      const store = transaction.objectStore(storeName);
-      const request = store.get(id);
-  
-      request.onerror = () => {
-        reject(request.error);
-      };
-  
-      request.onsuccess = () => {
-        resolve(request.result);
-      };
-    });
-  }
+function saveData(db: IDBDatabase, storeName: string, data: any): Promise<void> {
+return new Promise((resolve, reject) => {
+    const transaction = db.transaction(storeName, 'readwrite');
+    const store = transaction.objectStore(storeName);
+    const request = store.put(data);
+
+    request.onerror = () => {
+    reject(request.error);
+    };
+
+    request.onsuccess = () => {
+    resolve();
+    };
+});
+}
+
+function loadData(db: IDBDatabase, storeName: string, id: string): Promise<any> {
+return new Promise((resolve, reject) => {
+    const transaction = db.transaction(storeName, 'readonly');
+    const store = transaction.objectStore(storeName);
+    const request = store.get(id);
+
+    request.onerror = () => {
+    reject(request.error);
+    };
+
+    request.onsuccess = () => {
+    resolve(request.result);
+    };
+});
+}
 
 function getSizeInBytes(obj: Object) {
     return new Blob([JSON.stringify(obj)]).size;
