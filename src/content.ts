@@ -262,7 +262,7 @@ function createAPIBatches(textElementBatches: TextElement[][]): DiacritizationRe
 //   }
 // }
 
-function replaceTextWithDiacritizedText(textElements: TextElement[], diacritizedTexts: string[]): void {
+function replaceTextWithDiacritizedText(textElements: TextElement[], diacritizedTexts: string[], method: string): void {
   if (!Array.isArray(textElements) || !Array.isArray(diacritizedTexts)) {
     throw new Error('Both textElements and diacritizedTexts should be arrays.');
   }
@@ -292,7 +292,9 @@ function replaceTextWithDiacritizedText(textElements: TextElement[], diacritized
       console.warn(`Warning: elementId ${textElement.elementId} did not map to any element.`);
     }
   }
-
+  if(method === 'arabizi'){
+    directionLTR();
+  }
   console.log('Replaced text with diacritized text:', diacritizedTexts);
 }
 
