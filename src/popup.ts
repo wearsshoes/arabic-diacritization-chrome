@@ -34,27 +34,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   };
 
-  const getWebsiteLanguage = async () => {
-    if (!languageDisplayElement) return;
-  
-    languageDisplayElement.textContent = 'Loading...';
-  
+  const getWebsiteData = async () => {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (tab.id === undefined) throw new Error('No active tab found');
   
-      const response = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteLanguage' });
-      console.log('Website language:', response);
+      const response = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteData' });
+      console.log('Website data:', response);
   
+      // Update language display
+      updateLanguageDisplay(response.language);
+  
+      // Update character count and token estimate
+      updateCharacterCount(response.characterCount, response.batches);
+    } catch (error) {
+      console.error('Failed to get complete website data:', error);
+      updateLanguageDisplay(null);
+      updateCharacterCount(NaN, NaN);
+    }
+  };
+
+  const updateLanguageDisplay = (language: string | null) => {
+    if (!languageDisplayElement) return;
+  
+    languageDisplayElement.textContent = 'Loading...';
+  
+    if (language) {
       const languageNamesInEnglish = new Intl.DisplayNames(['en'], { type: 'language' });
       const languageNamesInArabic = new Intl.DisplayNames(['ar'], { type: 'language' });
-      const lang = languageNamesInEnglish.of(response);
-      const lang_ar = languageNamesInArabic.of(response);
+      const lang = languageNamesInEnglish.of(language);
+      const lang_ar = languageNamesInArabic.of(language);
       languageDisplayElement.textContent = `Language: ${lang} (${lang_ar})`;
   
-      updateDiacritizeMessage(response);
-    } catch (error) {
-      console.error('Failed to get website language:', error);
+      updateDiacritizeMessage(language);
+    } else {
+      console.error('Failed to get website language.');
       languageDisplayElement.textContent = 'Language: Unknown';
       updateDiacritizeMessage(null);
     }
@@ -78,30 +92,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  const getWebsiteCharacterCount = async () => {
-    if (characterCountElement) {
-      characterCountElement.textContent = 'Loading...';
-      try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab.id === undefined) throw new Error('No active tab found');
-
-        console.log('Sending message to get text length');
-        const response = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteCharacterCount' });
-        console.log('Text length:', response.chars);
-        a.chars = response.chars;
-        a.batches = response.batches;
-        characterCountElement.textContent = `Character Count: ${response.chars}`;
-
-        if (outputTokenCountElement) {
-          const outputTokens = (response.chars * 2.3).toFixed(0);
-          outputTokenCountElement.textContent = `Estimated output token count: ${outputTokens}`;
-        }
-      } catch (error) {
-        console.error('Failed to get text length:', error);
-        characterCountElement.textContent = 'Character Count: Unknown';
-      }
+  const updateCharacterCount = (chars: number, batches: number) => {
+    if (!characterCountElement || !outputTokenCountElement) return;
+      characterCountElement.textContent = `Character Count: ${chars}`;
+      const outputTokens = (chars * 2.3).toFixed(0);
+      outputTokenCountElement.textContent = `Estimated output token count: ${outputTokens}`;
+      a.chars = chars;
+      a.batches = batches;
     }
-  };
 
   const getSelectedPrompt = () => {
     if (promptDisplayElement && promptLengthElement) {
@@ -152,8 +150,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   calculateBtn?.addEventListener('click', calculateCost);
 
   checkApiKey();
-  getWebsiteLanguage();
-  getWebsiteCharacterCount();
+  getWebsiteData();
   getSelectedPrompt();
   updateModelDisplay();
 });
