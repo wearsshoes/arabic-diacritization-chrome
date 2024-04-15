@@ -172,19 +172,6 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
   return diacritizedResults;
 }
 
-// Get the current page URL
-async function getCurrentPageUrl(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs.length > 0) {
-        resolve(tabs[0].url as string);
-      } else {
-        reject('No active tabs found');
-      }
-    });
-  });
-}
-
 // API Call for Diacritization
 async function diacritizeTexts(texts: string[]): Promise<string[]> {
   
