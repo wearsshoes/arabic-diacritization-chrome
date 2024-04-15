@@ -47,15 +47,6 @@ const delimiter:string = '|'
 const sentenceRegex = /[.!?؟]+\s*\n*/g; 
 let textElementBatches: TextElement[][];
 let APIBatches: DiacritizationRequestBatch[];
-// maybe this cache should go to the local storage, to have the option to reuse after page reload.
-// TODO: save cache to local storage.
-let cachedResponse: ProcessorResponse[];
-
-
-// TODO: if cached, try to align page with diacritizations by hash and xpath.
-
-
-// Utility Functions
 
 // Builds element list according to interface. Recurses through DOM and put the in the right order. 
 function newRecurseDOM(node: Node = document.body, index: number = 0, elementId: string = '', iterator: number = 0): {textElements: TextElement[], iterator: number} {
@@ -83,17 +74,7 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
     const fragment = document.createDocumentFragment();
 
     sentences.forEach((sentence, sentenceIndex) => {
-      // NOTE: This calls several hundred new wasm instances!!! we should calculate it in a cheaper way.
-      // const textNodeId = `text-${calculateHash(sentence)}`;
-      const textNode = document.createTextNode(sentence);
-      fragment.appendChild(textNode);
-      // const parentIterator = Number(elementId.split('-')[1]);
-      // console.log(elementId, index, sentenceIndex, iterator, sentence);
-      // if (parentIterator + index + sentenceIndex != iterator) {
-      //   console.error('Element index mismatch');
-      // }
-      
-      // it would be a lot more stateful to do this in replaceTextWithDiacritizedText
+
       const cleanText = sentence.replace(delimiter, '');
       const textElement: TextElement = {
         elementId: elementId,
@@ -102,24 +83,20 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
       };
       textElements.push(textElement);
       iterator++;
+      
+      // it would be a lot more stateful to do this in replaceTextWithDiacritizedText
+      const textNode = document.createTextNode(sentence);
+      fragment.appendChild(textNode);
 
-      // instead of an iterator maybe we could use xPath? not sure how that works with text nodes.
     });
     
+    // again, do this later.
     node.parentNode?.replaceChild(fragment, node);
   };
-
+  
   return {textElements, iterator};
 }
 
-function generateUniqueId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-}
-
-// Splits text into sentences.
-// possible additions to function:
-//   // const abbreviations = ['Mr', 'Mrs', 'Ms', 'Dr', 'Prof', 'Sr', 'Jr', 'Mt', 'St'];
-//   // const sentenceEndings = ['.', '!', '?', '؟',];
 function splitTextIntoSentences(text: string): string[] {
   return text.replace(sentenceRegex, '$&|').split('|').filter(sentence => sentence.trim() !== '');
 }
@@ -203,24 +180,6 @@ function createAPIBatches(textElementBatches: TextElement[][]): DiacritizationRe
 }
 
 // DOM Manipulation
-// function replaceTextWithDiacritizedText(textElements: TextElement[], diacritizedTexts: string[]): void {
-//   try {
-//     for (let i = 0; i < textElements.length; i++) {
-//       const textElement = textElements[i];
-//       const diacritizedText = diacritizedTexts[i];
-//       const element = document.querySelector(`[data-element-id="${textElement.elementId}"]`);
-//       if (element) {
-//         element.childNodes[textElement.index].textContent = diacritizedText;
-//       } else {
-//         console.warn(`Warning: elementId ${textElement.elementId} did not map to any element.`);
-//       }
-//     }
-//     console.log('Replaced text with diacritized text:', diacritizedTexts);
-//   } catch (error) {
-//     console.error('Error replacing text with diacritized text:', error);
-//   }
-// }
-
 function replaceTextWithDiacritizedText(textElements: TextElement[], diacritizedTexts: string[], method: string): void {
   if (!Array.isArray(textElements) || !Array.isArray(diacritizedTexts)) {
     throw new Error('Both textElements and diacritizedTexts should be arrays.');
