@@ -36,9 +36,10 @@ optionsForm?.addEventListener('submit', (event: Event) => {
 const clearCacheBtn = document.getElementById('clearCacheBtn');
 clearCacheBtn?.addEventListener('click', () => {
     if (confirm('Are you sure you want to clear the cache?')) {
-        chrome.storage.sync.remove(['cache'], () => {
-            alert('Cache cleared!');
-        });
+        alert('jk, lol: Cache clearing is disabled in this version.');
+        // chrome.storage.sync.remove(['cache'], () => {
+        //     alert('Cache cleared!');
+        // });
     }
 });
 
@@ -46,9 +47,10 @@ clearCacheBtn?.addEventListener('click', () => {
 const clearDatabaseBtn = document.getElementById('clearDatabaseBtn');
 clearDatabaseBtn?.addEventListener('click', () => {
     if (confirm('Are you sure you want to clear the database?')) {
-        chrome.runtime.sendMessage({ action: 'clearDatabase' }, () => {
-        alert('Database cleared!');
-        });
+        alert('jk, lol: Database clearing is disabled in this version.');
+        // chrome.runtime.sendMessage({ action: 'clearDatabase' }, () => {
+        // alert('Database cleared!');
+        // });
     }
 });
 
