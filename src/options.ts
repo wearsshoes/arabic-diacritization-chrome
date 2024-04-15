@@ -1,6 +1,7 @@
 import defaultPrompts from './defaultPrompts.json';
 import { Prompt } from './types';
 
+document.addEventListener('DOMContentLoaded', async () => {
 let allPrompts:Prompt[] = defaultPrompts;
 
 const apiKeyInput = document.getElementById('apiKey') as HTMLInputElement;
@@ -51,16 +52,6 @@ clearDatabaseBtn?.addEventListener('click', () => {
         // chrome.runtime.sendMessage({ action: 'clearDatabase' }, () => {
         // alert('Database cleared!');
         // });
-    }
-});
-
-// clear the API key
-const clearBtn = document.getElementById('clearBtn');
-clearBtn?.addEventListener('click', () => {
-    if (confirm('Are you sure you want to remove the API Key?')) {
-        chrome.storage.sync.remove(['apiKey', 'savedAt'], () => {
-            chrome.runtime.reload();
-        });
     }
 });
 
@@ -199,4 +190,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+});
 });
