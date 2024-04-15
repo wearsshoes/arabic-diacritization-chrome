@@ -77,6 +77,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  if (request.action === "clearDatabase") {
+    // Clear the database
+    dataManager.clearAllData();
+    sendResponse({ message: 'Database cleared.' });
+    return true;
+  }
+
 });
 
 // ----------------- Functions ----------------- //
