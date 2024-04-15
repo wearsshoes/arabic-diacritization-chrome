@@ -3,38 +3,29 @@
 import { calculateHash } from "./utils";
 
 // should be replaced with DiacritizationElement.
-export interface TextElement {
+export interface TextNode {
   elementId: string;
-  originalText: string;
-  index: number;
+  index: number
+  text: string;
 }
 
-export interface DiacritizationElement {
-  originalText: string;
-  diacritizedText: string;
-  index: number;
-  lastDiacritized: Date;
-  attributes: ElementAttributes;
+export interface ElementAttributes {
+  tagName: string;
+  id?: string;
+  className?: string; // space separated list of classes, not an array
 }
+
 
 // Roll this into WebPageDiacritizationData
 export interface DiacritizationRequestBatch {
   text: string;
-  elements: TextElement[];
+  elements: TextNode[];
 }
-
-export 
 
 // Roll this into WebPageDiacritizationData
 // Will be even easier to do if you move all the text serialize/deserialize into background.ts
 export interface ProcessorResponse {
-  elements: TextElement[]; 
-  diacritizedTexts: string[];
-  rawResult: string
-} 
-
-export interface TempProcessorResponse {
-  elements: DiacritizationElement[]; 
+  elements: TextNode[]; 
   diacritizedTexts: string[];
   rawResult: string 
 }
@@ -70,7 +61,7 @@ export class WebPageDiacritizationData {
       public lastVisited: Date,
       public contentSignature: string,
       public structuralMetadata: string,
-      public elements: { [elementHash: string]: DiacritizationElement }
+      public elements: { [nodeHash: string]: TextNode }
   ) { }
 
   updateLastVisited(date: Date): void {
@@ -97,10 +88,4 @@ export class WebPageDiacritizationData {
       });
       return JSON.stringify(serialized);
   }
-}
-
-export interface ElementAttributes {
-  tagName: string;
-  id?: string;
-  className?: string; // space separated list of classes, not an array
 }
