@@ -38,9 +38,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (tab.id === undefined) throw new Error('No active tab found');
 
         const websiteText = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteText' });
-        console.log('Website text received:', websiteText);
+        const diacritizationBatches = websiteText.data;
+        console.log('Website text received:', diacritizationBatches);
   
-        const diacritizedText = await processDiacritizationBatches(method, cache, websiteText);
+        const diacritizedText = await processDiacritizationBatches(method, cache, diacritizationBatches);
   
         await chrome.tabs.sendMessage(tab.id, {action: 'updateWebsiteText', data: diacritizedText});  
         sendResponse({ message: 'Completed.' });
