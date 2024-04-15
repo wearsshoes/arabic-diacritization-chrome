@@ -20,24 +20,74 @@ chrome.runtime.onInstalled.addListener(function(details){
 
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  
+  // Get the system prompt length
   if (request.action === "getSystemPromptLength") {
     const prompt = request.prompt;
     countSysPromptTokens(prompt).then((tokens) => sendResponse(tokens));
     return true;
   }
-  if (request.action === "diacritize" && request.data) {
-    // Process the diacritization batches received from the content script
-    processDiacritizationBatches(request.method, request.cache, request.data)
-      .then(diacritizedBatches => {
-        sendResponse({type: 'diacritizationResult', data: diacritizedBatches});
-      })
-      .catch(error => {
-        console.error('Error processing diacritization batches:', error);
-        sendResponse({type: 'error', message: 'Failed to process diacritization batches'});
-      });
-    // Return true to indicate that sendResponse will be called asynchronously
+  
+  // Handle the diacritization request
+  if (request.action === "sendToDiacritize" && request.method) {
+    const { method, cache } = request;
+
+    (async () => {
+      try {
+        const tabId = await getTabId;
+        if (typeof tabId !== 'number') throw new Error('No active tab found');
+
+        const websiteText = await chrome.tabs.sendMessage(tabId, { action: 'getWebsiteText' });
+        console.log('Website text received:', websiteText);
+  
+        const diacritizedText = await processDiacritizationBatches(method, cache, websiteText);
+  
+        await chrome.tabs.sendMessage(tabId, {action: 'updateWebsiteText', data: diacritizedText});  
+        sendResponse({ message: 'Completed.' });
+
+      } catch (error) {
+        console.error('Error processing diacritization:', error);
+        sendResponse({ error: 'Failed to process diacritization.' });
+      }
+    })();
+  
     return true;
   }
+  
+//   if (request.action === "sendToDiacritize", request.method, request.tabId) {
+//     const { method, tabId } = request;
+    
+//     // Send the diacritization request to the content script
+//     (async () => {
+//       await chrome.tabs.sendMessage(tabId, { action: 'getWebsiteText', method: method})
+//       .then(response => {
+//         console.log('Website text received:', response);
+        
+//         // Process the diacritization batches received from the content script
+//         processDiacritizationBatches(method, request.cache, response)
+//           .then(diacritizedBatches => {
+            
+//             // Send the diacritized results to the content script
+//             sendResponse({type: 'diacritizationResult', data: diacritizedBatches});
+//             chrome.tabs.sendMessage(request.tabId, { action: 'updateWebsiteText', method, cache: request.cache, data: request.data});
+            
+//           })
+//           .catch(error => {
+//             console.error('Error processing diacritization batches:', error);
+//             sendResponse({type: 'error', message: 'Failed to process diacritization batches'});
+
+//           });
+//         })
+//       .catch(error => {
+//         console.error('Error retrieving website text:', error);
+//         sendResponse({type: 'error', message: `Error in ${method}:`, error});
+//       });
+//     })();
+
+//     // Return true to indicate that sendResponse will be called asynchronously
+//     return true;
+
+//   }
 });
 
 // ----------------- Functions ----------------- //
