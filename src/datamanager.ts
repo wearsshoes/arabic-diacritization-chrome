@@ -99,16 +99,26 @@ export class DiacritizationDataManager {
     // } 
 
     async clearAllData(): Promise<void> {
-        if (!this.db) {
-            throw new Error("Database not initialized");
-        }
-        const transaction = this.db.transaction("diacritizations_msa", "readwrite");
-        const store = transaction.objectStore("diacritizations_msa");
-        store.clear();
-    }
-
-  }
-
+        return new Promise((resolve, reject) => {
+          if (!this.db) {
+            reject(new Error("Database not initialized"));
+            return;
+          }
+      
+          const transaction = this.db.transaction("diacritizations_msa", "readwrite");
+          const store = transaction.objectStore("diacritizations_msa");
+      
+          const clearRequest = store.clear();
+      
+          clearRequest.onerror = () => {
+            reject(new Error("Failed to clear the database"));
+          };
+      
+          clearRequest.onsuccess = () => {
+            resolve();
+          };
+        });
+      }
 // Generic indexedDB functions as suggested by Claude.
 
 function openDatabase(dbName: string, storeName: string, version: number): Promise<IDBDatabase> {
