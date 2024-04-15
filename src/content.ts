@@ -1,6 +1,5 @@
 // content.ts
 import { TextElement, DiacritizationRequestBatch, ProcessorResponse } from "./types";
-import { calculateHash } from "./utils";
 
 // -------------- Event Listeners -------------- //
 
