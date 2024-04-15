@@ -37,13 +37,14 @@ export class DiacritizationDataManager {
         }
     }
   
-    async updateWebPageData(url: string, data: WebPageDiacritizationData): Promise<void> {
+    async updateWebPageData(id: string, data: WebPageDiacritizationData): Promise<void> {
         // Implementation to update data in IndexedDB
         if (this.db) {
             try {
-                await saveData(this.db, "diacritizations_msa", data);
+                await saveData(this.db, "diacritizations_msa", {id, data});
             } catch (error) {
-                throw new Error("Failed to save data");
+                console.error(error);
+                throw new Error("Failed to save data" + error);
             }
         } else {
             throw new Error("Database not initialized")
