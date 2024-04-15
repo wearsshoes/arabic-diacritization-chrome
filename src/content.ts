@@ -75,19 +75,18 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
 
     sentences.forEach((sentence, sentenceIndex) => {
 
-      const cleanText = sentence.replace(delimiter, '');
       const textElement: TextElement = {
         elementId: elementId,
-        originalText: cleanText,
+        originalText: sentence,
         index: index + sentenceIndex,
       };
       textElements.push(textElement);
-      iterator++;
       
       // it would be a lot more stateful to do this in replaceTextWithDiacritizedText
       const textNode = document.createTextNode(sentence);
       fragment.appendChild(textNode);
-
+      
+      iterator++;
     });
     
     // again, do this later.
@@ -168,7 +167,8 @@ function createAPIBatches(textElementBatches: TextElement[][]): DiacritizationRe
   const diacritizationBatches: { text: string; elements: TextElement[] }[] = [];
 
   textElementBatches.forEach((batch) => {
-    const batchText = batch.map((textElement) => textElement.originalText).join(delimiter);
+    const batchText = batch.map((textElement) => textElement.originalText.replace(delimiter, ''))
+    .join(delimiter);
     console.log(batchText)
     diacritizationBatches.push({ 
       text: batchText, 
