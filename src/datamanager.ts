@@ -67,6 +67,20 @@ export class DiacritizationDataManager {
             throw new Error("Page data not found");
         }
  
+    };
+  
+    // when called by an add/remove function, update storage size in chrome storage
+    async updateStorageSize(obj: Object, action: 'add' | 'remove'): Promise<void> {
+        const objectSize = getSizeInBytes(obj);
+    
+        try {
+            const { storageSize = 0 } = await chromeStorageGet('storageSize');
+            const updatedSize = action === 'add' ? storageSize + objectSize : storageSize - objectSize;
+            await chromeStorageSet({ storageSize: updatedSize });
+        } catch (error) {
+            console.error(error);
+            throw new Error(`Error updating storage size: ${error}`);
+        }
     }
   
     // async removeElement(pageId: string, elementHash: string): Promise<void> {
@@ -131,3 +145,7 @@ function openDatabase(dbName: string, storeName: string, version: number): Promi
       };
     });
   }
+
+function getSizeInBytes(obj: Object) {
+    return new Blob([JSON.stringify(obj)]).size;
+}
