@@ -2,23 +2,42 @@
 
 import { calculateHash } from "./utils";
 
-// this should be renamed regularizedTextNode or something.
+// should be replaced with DiacritizationElement.
 export interface TextElement {
   elementId: string;
   originalText: string;
   index: number;
 }
-  
+
+export interface DiacritizationElement {
+  originalText: string;
+  diacritizedText: string;
+  index: number;
+  lastDiacritized: Date;
+  attributes: ElementAttributes;
+}
+
+// Roll this into WebPageDiacritizationData
 export interface DiacritizationRequestBatch {
   text: string;
   elements: TextElement[];
 }
-  
+
+export 
+
+// Roll this into WebPageDiacritizationData
+// Will be even easier to do if you move all the text serialize/deserialize into background.ts
 export interface ProcessorResponse {
   elements: TextElement[]; 
   diacritizedTexts: string[];
   rawResult: string
 } 
+
+export interface TempProcessorResponse {
+  elements: DiacritizationElement[]; 
+  diacritizedTexts: string[];
+  rawResult: string 
+}
  
 export interface Prompt {
   name: string;
@@ -44,6 +63,7 @@ export interface SysPromptTokenCache {
   tokens: number;
 }
 
+// it's like, not inconvceivable that you just transmit the entire webpage into background.ts
 export class WebPageDiacritizationData {
   constructor(
       public pageId: string,
@@ -76,16 +96,7 @@ export class WebPageDiacritizationData {
           };
       });
       return JSON.stringify(serialized);
-}
-
-}
-
-export interface DiacritizationElement {
-  originalText: string;
-  diacritizedText: string;
-  xPaths: string[];
-  lastDiacritized: Date;
-  attributes: ElementAttributes;
+  }
 }
 
 export interface ElementAttributes {
