@@ -20,55 +20,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     const clearDatabaseBtn = document.getElementById('clearDatabaseBtn');
     const clearCacheBtn = document.getElementById('clearCacheBtn');
     
-
-    // save value of llmChoice
-    llmChoice?.addEventListener('change', (event: Event) => {
-        const target = event.target as HTMLInputElement;
-        chrome.storage.sync.set({ llmChoice: target.value });
+    // load the API key
+    chrome.storage.sync.get(['apiKey', 'savedAt'], (data: { apiKey?: string; savedAt?: string }) => {
+        if (apiKeyInput && savedKeyDisplay && savedTimeDisplay) {
+            apiKeyInput.value = data.apiKey || '';
+            savedKeyDisplay.textContent = `Current saved key: ${data.apiKey || 'None'}`;
+            savedTimeDisplay.textContent = `Last saved at: ${data.savedAt || 'Never'}`;
+        }
     });
-
-    // save the API key
-    optionsForm?.addEventListener('submit', (event: Event) => {
-        event.preventDefault();
-        if (apiKeyInput) {
-            const apiKey = apiKeyInput.value;
-            const apiKeySavedAt = new Date().toLocaleString();
-            chrome.storage.sync.set({ apiKey, apiKeySavedAt: apiKeySavedAt }, () => {
-                alert('API Key saved!');
-                if (savedKeyDisplay && savedTimeDisplay) {
-                    savedKeyDisplay.textContent = `Current saved key: ${apiKey}`;
-                    savedTimeDisplay.textContent = `Last saved at: ${apiKeySavedAt}`;
+    // load llm choice
+    chrome.storage.sync.get(['llmChoice'], (data: { llmChoice?: string }) => {
+        if (llmChoice) {
+            llmChoice.value = data.llmChoice || 'haiku';
+        }
+    });
+    // load the last selected prompt
+    chrome.storage.sync.get(['selectedPrompt'], (data: { selectedPrompt?:Prompt}) => {
+        if (promptInput) {
+            promptInput.style.color = 'grey';
+            const selected = data.selectedPrompt?.name;
+            promptInput.value = allPrompts[0].text || '';
+            if (selected) {
+                for (const prompt of allPrompts) {
+                    if (prompt.name === selected) {
+                        promptInput.value = prompt.text;
+                        if(promptSelect) {
+                            promptSelect.value = prompt.name;
+                        }
+                    }
                 }
-            });
-        }
-    });
-
-    // clear cache content
-    clearCacheBtn?.addEventListener('click', () => {
-        if (confirm('Are you sure you want to clear the cache?')) {
-            alert('jk, lol: Cache clearing is disabled in this version.');
-            // chrome.storage.sync.remove(['cache'], () => {
-            //     alert('Cache cleared!');
-            // });
-        }
-    });
-
-    // clear database content
-    clearDatabaseBtn?.addEventListener('click', () => {
-        if (confirm('Are you sure you want to clear the database?')) {
-            alert('jk, lol: Database clearing is disabled in this version.');
-            // chrome.runtime.sendMessage({ action: 'clearDatabase' }, () => {
-            // alert('Database cleared!');
-            // });
-        }
-    });
-
-    // clear the API key
-    clearBtn?.addEventListener('click', () => {
-        if (confirm('Are you sure you want to remove the API Key?')) {
-            chrome.storage.sync.remove(['apiKey', 'savedAt'], () => {
-                chrome.runtime.reload();
-            });
+            }
         }
     });
 
@@ -92,6 +73,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // save value of llmChoice
+    llmChoice?.addEventListener('change', (event: Event) => {
+        const target = event.target as HTMLInputElement;
+        chrome.storage.sync.set({ llmChoice: target.value });
+    });
+
     // based on which prompt is selected, populate the custom prompt textarea with the selected prompt.
     promptSelect?.addEventListener('change', () => {
         if (promptInput) {
@@ -107,27 +94,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-
     // make the text color gray unless the prompt is edited.
     promptInput?.addEventListener('input', () => {
         if (promptInput) {
             promptInput.style.color = 'black';
-        }
-    });
-    // delete current prompt from saved prompts list and remove it from options.
-    deletePromptBtn?.addEventListener('click', () => {
-        if (promptSelect && promptInput) {
-            const selected = promptSelect.selectedOptions[0].value;
-            chrome.storage.sync.get(['savedPrompts'], (data: { savedPrompts?: Prompt[] }) => {
-                const newPrompts = data.savedPrompts?.filter((prompt) => prompt.name !== selected);
-                allPrompts = allPrompts.filter((prompt) => prompt.name !== selected);
-                chrome.storage.sync.set({ savedPrompts: newPrompts }, () => {
-                    alert('Prompt deleted!');
-                    promptInput.value = '';
-                    promptInput.style.color = 'grey';
-                    promptSelect.remove(promptSelect.selectedIndex);
-                });
-            });
         }
     });
 
@@ -168,38 +138,67 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // load the API key
-    chrome.storage.sync.get(['apiKey', 'savedAt'], (data: { apiKey?: string; savedAt?: string }) => {
-        if (apiKeyInput && savedKeyDisplay && savedTimeDisplay) {
-            apiKeyInput.value = data.apiKey || '';
-            savedKeyDisplay.textContent = `Current saved key: ${data.apiKey || 'None'}`;
-            savedTimeDisplay.textContent = `Last saved at: ${data.savedAt || 'Never'}`;
+    // delete current prompt from saved prompts list and remove it from options.
+    deletePromptBtn?.addEventListener('click', () => {
+        if (promptSelect && promptInput) {
+            const selected = promptSelect.selectedOptions[0].value;
+            chrome.storage.sync.get(['savedPrompts'], (data: { savedPrompts?: Prompt[] }) => {
+                const newPrompts = data.savedPrompts?.filter((prompt) => prompt.name !== selected);
+                allPrompts = allPrompts.filter((prompt) => prompt.name !== selected);
+                chrome.storage.sync.set({ savedPrompts: newPrompts }, () => {
+                    alert('Prompt deleted!');
+                    promptInput.value = '';
+                    promptInput.style.color = 'grey';
+                    promptSelect.remove(promptSelect.selectedIndex);
+                });
+            });
         }
     });
-    // load llm choice
-    chrome.storage.sync.get(['llmChoice'], (data: { llmChoice?: string }) => {
-        if (llmChoice) {
-            llmChoice.value = data.llmChoice || 'haiku';
-        }
-    });
-    // load the last selected prompt
-    chrome.storage.sync.get(['selectedPrompt'], (data: { selectedPrompt?:Prompt}) => {
-        if (promptInput) {
-            promptInput.style.color = 'grey';
-            const selected = data.selectedPrompt?.name;
-            promptInput.value = allPrompts[0].text || '';
-            if (selected) {
-                for (const prompt of allPrompts) {
-                    if (prompt.name === selected) {
-                        promptInput.value = prompt.text;
-                        if(promptSelect) {
-                            promptSelect.value = prompt.name;
-                        }
-                    }
+
+    // save the API key
+    optionsForm?.addEventListener('submit', (event: Event) => {
+        event.preventDefault();
+        if (apiKeyInput) {
+            const apiKey = apiKeyInput.value;
+            const apiKeySavedAt = new Date().toLocaleString();
+            chrome.storage.sync.set({ apiKey, apiKeySavedAt: apiKeySavedAt }, () => {
+                alert('API Key saved!');
+                if (savedKeyDisplay && savedTimeDisplay) {
+                    savedKeyDisplay.textContent = `Current saved key: ${apiKey}`;
+                    savedTimeDisplay.textContent = `Last saved at: ${apiKeySavedAt}`;
                 }
-            }
+            });
         }
     });
+
+    // clear the API key
+    clearBtn?.addEventListener('click', () => {
+        if (confirm('Are you sure you want to remove the API Key?')) {
+            chrome.storage.sync.remove(['apiKey', 'savedAt'], () => {
+                chrome.runtime.reload();
+            });
+        }
+    });
+
+    // clear cache content
+    clearCacheBtn?.addEventListener('click', () => {
+    if (confirm('Are you sure you want to clear the cache?')) {
+        alert('jk, lol: Cache clearing is disabled in this version.');
+        // chrome.storage.sync.remove(['cache'], () => {
+        //     alert('Cache cleared!');
+        // });
+    }
+    });
+
+    // clear database content
+    clearDatabaseBtn?.addEventListener('click', () => {
+        if (confirm('Are you sure you want to clear the database?')) {
+            alert('jk, lol: Database clearing is disabled in this version.');
+            // chrome.runtime.sendMessage({ action: 'clearDatabase' }, () => {
+            // alert('Database cleared!');
+            // });
+        }
+    });    
 
 });
 
