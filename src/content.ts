@@ -83,6 +83,7 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
       textElements.push(textElement);
       
       // it would be a lot more stateful to do this in replaceTextWithDiacritizedText
+      // we can move it when we handle serialization/deserialization better.
       const textNode = document.createTextNode(sentence);
       fragment.appendChild(textNode);
       
@@ -181,6 +182,7 @@ function createAPIBatches(textElementBatches: TextElement[][]): DiacritizationRe
 
 // DOM Manipulation
 function replaceTextWithDiacritizedText(textElements: TextElement[], diacritizedTexts: string[], method: string): void {
+  
   if (!Array.isArray(textElements) || !Array.isArray(diacritizedTexts)) {
     throw new Error('Both textElements and diacritizedTexts should be arrays.');
   }
