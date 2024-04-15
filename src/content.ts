@@ -44,6 +44,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Global Variables
 const delimiter:string = '|'
+const sentenceRegex = /[.!?؟]+\s*\n*/g; 
 let textElementBatches: TextElement[][];
 let APIBatches: DiacritizationRequestBatch[];
 // maybe this cache should go to the local storage, to have the option to reuse after page reload.
@@ -120,7 +121,6 @@ function generateUniqueId(): string {
 //   // const abbreviations = ['Mr', 'Mrs', 'Ms', 'Dr', 'Prof', 'Sr', 'Jr', 'Mt', 'St'];
 //   // const sentenceEndings = ['.', '!', '?', '؟',];
 function splitTextIntoSentences(text: string): string[] {
-  const sentenceRegex = /[.!?]+\s*\n*/g; 
   return text.replace(sentenceRegex, '$&|').split('|').filter(sentence => sentence.trim() !== '');
 }
 
@@ -169,7 +169,6 @@ function createTextElementBatches(textElements: TextElement[], maxChars: number)
           currentBatchLength += textLength;
           
           // handle sentence breaks as new batch        
-          const sentenceRegex = /[.!?]+\s*\n*/g;
           if (text.match(sentenceRegex) && (currentBatchLength > (maxChars * 2 / 3))){
             batchLengths.push([currentBatchLength, 'end of sentence', currentBatch]);
             textElementBatches.push(currentBatch);
