@@ -82,31 +82,31 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
   
   const texts = diacritizationBatches.map((batch) => batch.text);
   
-  // Replace the caching logic with DiacritizationDataManager methods
-  const pageUrl = await getCurrentPageUrl(); // Implement this function to get the current page URL
-  const webPageData = await dataManager.getWebPageData(pageUrl);
-  if (!webPageData) {
-    console.log('No saved data found for the current webpage');
-  }
-  // these seem like slightly redundant calls, might be able to refactor them later
-  // need to live in content script.
-  // const contentSignature = await dataManager.calculateContentSignature(document.body.querySelectorAll('*'));
-  const contentSignature = '';
-  // const structuralMetadata = dataManager.serializeStructureMetadata(document.body.querySelectorAll('*'));
-  const structuralMetadata = '';
+  // // Replace the caching logic with DiacritizationDataManager methods
+  // const pageUrl = await getCurrentPageUrl(); // Implement this function to get the current page URL
+  // const webPageData = await dataManager.getWebPageData(pageUrl);
+  // if (!webPageData) {
+  //   console.log('No saved data found for the current webpage');
+  // }
+  // // these seem like slightly redundant calls, might be able to refactor them later
+  // // need to live in content script.
+  // // const contentSignature = await dataManager.calculateContentSignature(document.body.querySelectorAll('*'));
+  // const contentSignature = '';
+  // // const structuralMetadata = dataManager.serializeStructureMetadata(document.body.querySelectorAll('*'));
+  // const structuralMetadata = '';
 
-  const webPageDiacritizationData = new WebPageDiacritizationData(
-    pageUrl,
-    new Date(),
-    contentSignature,
-    structuralMetadata,
-    {}
-  );
-  await dataManager.updateWebPageData(pageUrl, webPageDiacritizationData)
-    .catch((error) => console.error('Failed to update web page data:', error))
-    .then(() => console.log('Web page data updated:', webPageDiacritizationData));
+  // const webPageDiacritizationData = new WebPageDiacritizationData(
+  //   pageUrl,
+  //   new Date(),
+  //   contentSignature,
+  //   structuralMetadata,
+  //   {}
+  // );
+  // await dataManager.updateWebPageData(pageUrl, webPageDiacritizationData)
+  //   .catch((error) => console.error('Failed to update web page data:', error))
+  //   .then(() => console.log('Web page data updated:', webPageDiacritizationData));
 
-  throw new Error('Not implemented yet');
+  // throw new Error('Not implemented yet');
   
   // probably making a bunch of unnecessary calls to the database here
 
