@@ -59,6 +59,12 @@ async function getPrompt(): Promise<Prompt> {
   });
 }
 
+// get active tab
+const getTabId  = chrome.tabs.query({ active: true, currentWindow: true })
+  ?.then(tabs => tabs[0].id)
+  .catch(console.error);
+
+
 // Async worker for API call
 // TODO: try to get this to take and return objects of the class WebPageDiacritizationData
 async function processDiacritizationBatches(method: string, cache: ProcessorResponse[], diacritizationBatches: DiacritizationRequestBatch[]): Promise<ProcessorResponse[]> {

@@ -24,15 +24,12 @@ document.addEventListener('DOMContentLoaded', async() => {
 
   const sendMessage = async (method: string) => {
     try {
-      const response = chrome.runtime.sendMessage({ action: 'sendToDiacritize',  method, tabId});
+      const response = chrome.runtime.sendMessage({ action: 'sendToDiacritize',  method});
       console.log(`${method} response:`, response);
     } catch (error) {
       console.error(`Error in ${method}:`, error);
     }
   };
-
-  // get active tab
-  const tabId = await chrome.tabs.query({ active: true, currentWindow: true })?.then(tabs => tabs[0].id).catch(console.error);
 
   // Get the website language
   const diacritizeMessage = document.getElementById('diacritizeMessage');
