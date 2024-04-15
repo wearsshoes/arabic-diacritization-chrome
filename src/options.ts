@@ -31,6 +31,17 @@ optionsForm?.addEventListener('submit', (event: Event) => {
         });
     }
 });
+
+// clear cache content
+const clearCacheBtn = document.getElementById('clearCacheBtn');
+clearCacheBtn?.addEventListener('click', () => {
+    if (confirm('Are you sure you want to clear the cache?')) {
+        chrome.storage.sync.remove(['cache'], () => {
+            alert('Cache cleared!');
+        });
+    }
+});
+
 // clear database content
 const clearDatabaseBtn = document.getElementById('clearDatabaseBtn');
 clearDatabaseBtn?.addEventListener('click', () => {
