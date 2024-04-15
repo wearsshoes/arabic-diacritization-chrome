@@ -204,7 +204,7 @@ function createTextElementBatches(textElements: TextElement[], maxChars: number)
           currentBatchLength += textLength;
           
           // handle sentence breaks as new batch        
-          const sentenceRegex = /[.!?]+\s*\n./g;
+          const sentenceRegex = /[.!?]+\s*\n*/g;
           if (text.match(sentenceRegex) && (currentBatchLength > (maxChars * 2 / 3))){
             batchLengths.push([currentBatchLength, 'end of sentence', currentBatch]);
             textElementBatches.push(currentBatch);
