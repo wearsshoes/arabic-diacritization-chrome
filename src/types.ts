@@ -54,38 +54,62 @@ export interface SysPromptTokenCache {
   tokens: number;
 }
 
+export interface PageMetadata {
+  lastVisited: Date,
+  contentSignature: string,
+  structuralMetadata: string,
+}
+
 // it's like, not inconvceivable that you just transmit the entire webpage into background.ts
 export class WebPageDiacritizationData {
   constructor(
       public pageId: string,
-      public lastVisited: Date,
-      public contentSignature: string,
-      public structuralMetadata: string,
+      public metadata: PageMetadata,
       public elements: { [nodeHash: string]: TextNode }
   ) { }
 
   updateLastVisited(date: Date): void {
-      this.lastVisited = date;
+      this.metadata.lastVisited = date
   }
 
-  async calculateContentSignature(elements: NodeListOf<Element>): Promise<string> {
-    // Calculate a content signature by hashing
-    const textContent = Array.from(elements).map((element) => element.textContent).join("");
-    const signature = await calculateHash(textContent);
-    return signature;
-    
-  }
+  // async calculateContentSignature(elements: NodeListOf<Element>): Promise<string> {
+  //   // Calculate a content signature by hashing
+  //   const textContent = Array.from(elements).map((element) => element.textContent).join("");
+  //   const signature = await calculateHash(textContent);
+  //   return signature;
+  // }
 
-  serializeStructureMetadata(elements: NodeListOf<Element>): string {
-      // Serialize page structure metadata
-      // This can be done by converting the elements to a JSON string without the text content
-      const serialized: ElementAttributes[] = Array.from(elements).map((element) => {
-          return {
-              tagName: element.tagName,
-              id: element.id,
-              className: element.className,
-          };
-      });
-      return JSON.stringify(serialized);
-  }
+  // serializeStructureMetadata(elements: NodeListOf<Element>): string {
+  //     // Serialize page structure metadata
+  //     // This can be done by converting the elements to a JSON string without the text content
+  //     const serialized: ElementAttributes[] = Array.from(elements).map((element) => {
+  //         return {
+  //             tagName: element.tagName,
+  //             id: element.id,
+  //             className: element.className,
+  //         };
+  //     });
+  //     return JSON.stringify(serialized);
+  // }
+}
+
+// only here for the time being.
+export async function calculateContentSignature(elements: NodeListOf<Element>): Promise<string> {
+  // Calculate a content signature by hashing
+  const textContent = Array.from(elements).map((element) => element.textContent).join("");
+  const signature = await calculateHash(textContent);
+  return signature;
+}
+
+export function serializeStructureMetadata(elements: NodeListOf<Element>): string {
+    // Serialize page structure metadata
+    // This can be done by converting the elements to a JSON string without the text content
+    const serialized: ElementAttributes[] = Array.from(elements).map((element) => {
+        return {
+            tagName: element.tagName,
+            id: element.id,
+            className: element.className,
+        };
+    });
+    return JSON.stringify(serialized);
 }
