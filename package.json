@@ -2,34 +2,38 @@
   "name": "arabic-diacritization-chrome",
   "version": "0.1.0",
   "description": "This extension adds full diacritics (tashkeel) to Arabic text using an LLM API.",
-  "main": "manifest.json",
-  "scripts": {
-    "build": "webpack --mode=production",
-    "watch": "webpack --mode=development --watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/wearsshoes/arabic-diacritization-chrome.git"
-  },
   "keywords": [
     "arabic"
   ],
   "author": "Rachel Shu",
   "license": "ISC",
+  "main": "manifest.json",
+  "scripts": {
+    "build": "webpack --mode=production",
+    "watch": "webpack --mode=development --watch",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wearsshoes/arabic-diacritization-chrome.git"
+  },
   "bugs": {
     "url": "https://github.com/wearsshoes/arabic-diacritization-chrome/issues"
   },
   "homepage": "https://github.com/wearsshoes/arabic-diacritization-chrome#readme",
+
   "devDependencies": {
     "@types/chrome": "^0.0.266",
-    "@types/lodash": "^4.17.0",
-    "lodash": "^4.17.21",
-    "typescript": "^5.4.4",
+    "@types/jest": "^29.5.12",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.4.5",
     "webpack": "^5.91.0",
     "webpack-cli": "^5.1.4",
     "webpack-ext-reloader": "^1.1.12"
   },
+
   "dependencies": {
     "@anthropic-ai/sdk": "^0.20.2",
     "bottleneck": "^2.19.5",
