@@ -15,11 +15,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Get metadata about the website
     if (request.action === 'getWebsiteMetadata') {
     const pageUrl = request.pageUrl;
-    // const contentSignature = calculateContentSignature(document.body.querySelectorAll('*'));
     const contentSignature = '';
-    // const structuralMetadata = serializeStructureMetadata(document.body.querySelectorAll('*'));
     const structuralMetadata = '';
-
+    
     const webPageDiacritizationData = new WebPageDiacritizationData(
       pageUrl,
       new Date(),
@@ -27,6 +25,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       structuralMetadata,
       {}
     );
+    
+    webPageDiacritizationData.calculateContentSignature(document.body.querySelectorAll('*'));
+    webPageDiacritizationData.serializeStructureMetadata(document.body.querySelectorAll('*'));
 
     sendResponse({webPageDiacritizationData});
   }
