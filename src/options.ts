@@ -55,6 +55,16 @@ clearDatabaseBtn?.addEventListener('click', () => {
     }
 });
 
+// clear the API key
+const clearBtn = document.getElementById('clearBtn');
+clearBtn?.addEventListener('click', () => {
+    if (confirm('Are you sure you want to remove the API Key?')) {
+        chrome.storage.sync.remove(['apiKey', 'savedAt'], () => {
+            chrome.runtime.reload();
+        });
+    }
+});
+
 // add the names of all the default prompts to the dropdown from defaultPrompts.json, and all the custom prompts from savedPrompts.
 const promptSelect = document.getElementById('loadPrompt') as HTMLSelectElement;
 chrome.storage.sync.get(['savedPrompts'], (data: { savedPrompts?:Prompt[] }) => {
