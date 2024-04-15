@@ -34,3 +34,19 @@ export async function getAPIKey(): Promise<string> {
     });
   });
 }
+
+export function chromeStorageGet(key: string): Promise<{ [key: string]: any }> {
+  return new Promise((resolve, reject) => {
+      chrome.storage.sync.get([key], result => {
+          chrome.runtime.lastError ? reject(chrome.runtime.lastError) : resolve(result);
+      });
+  });
+}
+
+export function chromeStorageSet(items: { [key: string]: any }): Promise<void> {
+  return new Promise((resolve, reject) => {
+      chrome.storage.sync.set(items, () => {
+          chrome.runtime.lastError ? reject(chrome.runtime.lastError) : resolve();
+      });
+  });
+}
