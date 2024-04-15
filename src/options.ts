@@ -31,6 +31,15 @@ optionsForm?.addEventListener('submit', (event: Event) => {
         });
     }
 });
+// clear database content
+const clearDatabaseBtn = document.getElementById('clearDatabaseBtn');
+clearDatabaseBtn?.addEventListener('click', () => {
+    if (confirm('Are you sure you want to clear the database?')) {
+        chrome.runtime.sendMessage({ action: 'clearDatabase' }, () => {
+        alert('Database cleared!');
+        });
+    }
+});
 
 // clear the API key
 const clearBtn = document.getElementById('clearBtn');
