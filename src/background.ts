@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
 import { calculateHash, getAPIKey } from './utils';
-import { Prompt, TransliterationDict, ProcessorResponse, WebPageDiacritizationData, DiacritizationElement, DiacritizationRequestBatch } from './types';
+import { Prompt, TransliterationDict, ProcessorResponse, WebPageDiacritizationData, TextNode, DiacritizationRequestBatch } from './types';
 import { defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel } from './anthropicCaller'
 import { DiacritizationDataManager } from './datamanager';
 
@@ -57,8 +57,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           .then(() => console.log('Web page data updated:', webPageDiacritizationData));
 
         // Get the website text
-        const websiteText = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteText' });
-        const diacritizationBatches = websiteText.data;
+        const websiteText: TextNode[][] = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteText' });
+        const diacritizationBatches = createAPIBatches(websiteText);
         console.log('Website text received:', diacritizationBatches);
 
         // Process the diacritization batches
@@ -182,6 +182,24 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
   });
 
   return diacritizedResults;
+}
+
+// Prepare batches for API by extracting the text with delimiters.
+function createAPIBatches(textElementBatches: TextNode[][]): DiacritizationRequestBatch[] {
+  console.log('beginning api batching')
+  const diacritizationBatches: { text: string; elements: TextNode[] }[] = [];
+
+  textElementBatches.forEach((batch) => {
+    const batchText = batch.map((textElement) => textElement.text.replace(delimiter, ''))
+    .join(delimiter);
+    console.log(batchText)
+    diacritizationBatches.push({ 
+      text: batchText, 
+      elements: batch 
+    });
+  });
+  
+  return diacritizationBatches;
 }
 
 // API Call for Diacritization

@@ -21,14 +21,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   
   // Get metadata about the website (called by background.ts)
-    if (request.action === 'getWebsiteMetadata') {
+  if (request.action === 'getWebsiteMetadata') {
     const pageUrl = request.pageUrl;
     const structuralMetadata = serializeStructureMetadata(document.body.querySelectorAll('*'));
     const contentSignature = calculateContentSignature(document.body.querySelectorAll('*'));
     if (typeof contentSignature === 'string') {
       const pageMetadata: PageMetadata = {
         lastVisited: new Date,
-      contentSignature,
+        contentSignature,
         structuralMetadata
       }
       sendResponse({pageMetadata});
@@ -65,7 +65,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 const delimiter:string = '|'
 const sentenceRegex = /[.!?؟]+\s*\n*/g; 
 let textElementBatches: TextNode[][];
-let APIBatches: DiacritizationRequestBatch[];
 
 // Builds element list according to interface. Recurses through DOM and put the in the right order. 
 function newRecurseDOM(node: Node = document.body, index: number = 0, elementId: string = '', iterator: number = 0): {textElements: TextNode[], iterator: number} {
@@ -183,24 +182,6 @@ function createDiacritizationElementBatches(textElements: TextNode[], maxChars: 
   return textElementBatches;
 }
 
-// Prepare batches for API by extracting the text with delimiters.
-function createAPIBatches(textElementBatches: TextNode[][]): DiacritizationRequestBatch[] {
-  console.log('beginning api batching')
-  const diacritizationBatches: { text: string; elements: TextNode[] }[] = [];
-
-  textElementBatches.forEach((batch) => {
-    const batchText = batch.map((textElement) => textElement.text.replace(delimiter, ''))
-    .join(delimiter);
-    console.log(batchText)
-    diacritizationBatches.push({ 
-      text: batchText, 
-      elements: batch 
-    });
-  });
-  
-  return diacritizationBatches;
-}
-
 // DOM Manipulation
 function replaceTextWithDiacritizedText(textElements: TextNode[], diacritizedTexts: string[], method: string): void {
   
@@ -254,7 +235,6 @@ function main() {
     const mainNode = document.querySelector('main') || document.body;
     console.log('Main node:', mainNode);
     textElementBatches = createDiacritizationElementBatches(newRecurseDOM(mainNode).textElements, 750);
-    APIBatches = createAPIBatches(textElementBatches);
   } catch (error) {
     console.error('Error during initialization:', error);
   }
