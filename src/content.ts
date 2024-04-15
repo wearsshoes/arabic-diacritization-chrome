@@ -1,5 +1,6 @@
 // content.ts
-import { TextNode, DiacritizationRequestBatch, ProcessorResponse, ProcessorResponse, WebPageDiacritizationData, ElementAttributes } from "./types";
+import { TextNode, PageMetadata, DiacritizationRequestBatch, ProcessorResponse, WebPageDiacritizationData, ElementAttributes } from "./types";
+import { calculateContentSignature, serializeStructureMetadata } from "./types";
 
 // -------------- Event Listeners -------------- //
 
@@ -22,26 +23,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Get metadata about the website (called by background.ts)
     if (request.action === 'getWebsiteMetadata') {
     const pageUrl = request.pageUrl;
-    const contentSignature = '';
-    const structuralMetadata = '';
-    
-    const webPageDiacritizationData = new WebPageDiacritizationData(
-      pageUrl,
-      new Date(),
+    const structuralMetadata = serializeStructureMetadata(document.body.querySelectorAll('*'));
+    const contentSignature = calculateContentSignature(document.body.querySelectorAll('*'));
+    if (typeof contentSignature === 'string') {
+      const pageMetadata: PageMetadata = {
+        lastVisited: new Date,
       contentSignature,
-      structuralMetadata,
-      {}
-    );
-
-    webPageDiacritizationData.calculateContentSignature(document.body.querySelectorAll('*'));
-    webPageDiacritizationData.serializeStructureMetadata(document.body.querySelectorAll('*'));
-
-    sendResponse({webPageDiacritizationData});
+        structuralMetadata
+      }
+      sendResponse({pageMetadata});
+    };
+    return true;
   }
 
   // When diacritization is requested, returns the APIBatches
   if (request.action === "getWebsiteText") {
-    sendResponse({data: APIBatches});
+    sendResponse({data: textElementBatches});
   }
 
   // Updates website when told to.
