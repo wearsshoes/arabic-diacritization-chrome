@@ -16,38 +16,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const numBatches = APIBatches.length;
     sendResponse({chars: totalTextLength, batches: numBatches});
   }
-  // when diacritization is requested, returns the apibatches and the cache
-  if (request.action === "getWebsiteText") {
-    sendResponse({action: request.method, data: APIBatches, cache: cachedResponse, });
-    // (async () => {
-    //   // Send diacritization batches to background script
-    //   chrome.runtime.sendMessage({action: "diacritize", method: request.method, cache:cachedResponse, data: APIBatches}, (response) => {
-    //     // Handle the diacritized text here
-    //     if (response.type === 'diacritizationResult') {
-    //       cachedResponse = response.data;
-    //       console.log('Cached result:', cachedResponse);
-    //       response.data.forEach((batch: { elements: TextElement[]; diacritizedTexts: string[] }) => {
-    //         // console.log('Diacritized texts:', batch.diacritizedTexts);
-    //         if (batch.diacritizedTexts.length !== batch.elements.length) {
-    //           console.error('Mismatch in number of diacritized texts and text elements');
-    //         }
-    //         replaceTextWithDiacritizedText(batch.elements, batch.diacritizedTexts, request.method);
-    //       });
-    //     } else if (response.type === 'error') {
-    //       console.error("Diacritization error:", response.message);
-    //     }
 
-    //   });
-    // })();
-    return true;
+  // when diacritization is requested, returns the apibatches
+  if (request.action === "getWebsiteText") {
+    sendResponse({data: APIBatches});
   }
 
-  if (request.action === "updateWebsiteText" && request.textElements && request.diacritizedTexts && request.method) {
-    textElementBatches.forEach((batch, batchIndex) => {
-      const replacement = request.diacritizedTexts[batchIndex];
-      replaceTextWithDiacritizedText(batch, replacement, request.method);
-    });
-    
+  // updates website when told to.
+  if (request.action === "updateWebsiteText") {
+    const result: ProcessorResponse[] = request.data;
+    const method = request.method;
+    if (textElementBatches.length ===result.length) {
+      textElementBatches.forEach((batch, batchIndex) => {
+        console.log('Replacing text with diacritized text:', method);
+        const diacritizedTexts = result[batchIndex].diacritizedTexts;
+        replaceTextWithDiacritizedText(batch, diacritizedTexts, method);
+      });
+    } else {
+      sendResponse({error: 'Mismatch between textElementBatches and result length.'});
+    }
     return true;
   }
 
@@ -139,7 +126,7 @@ function splitTextIntoSentences(text: string): string[] {
 
 // Checks if node is visible
 function isVisible(element: Element): boolean {
-  
+
   const isDisplayed = (
     window.getComputedStyle(element).display !== 'none' &&
     window.getComputedStyle(element).visibility !== 'hidden'

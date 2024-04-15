@@ -43,7 +43,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
         const diacritizedText = await processDiacritizationBatches(method, cache, diacritizationBatches);
   
-        await chrome.tabs.sendMessage(tab.id, {action: 'updateWebsiteText', data: diacritizedText});  
+        await chrome.tabs.sendMessage(tab.id, {action: 'updateWebsiteText', data: diacritizedText, method});  
         sendResponse({ message: 'Completed.' });
 
       } catch (error) {
@@ -54,41 +54,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
     return true;
   }
-  
-//   if (request.action === "sendToDiacritize", request.method, request.tabId) {
-//     const { method, tabId } = request;
-    
-//     // Send the diacritization request to the content script
-//     (async () => {
-//       await chrome.tabs.sendMessage(tabId, { action: 'getWebsiteText', method: method})
-//       .then(response => {
-//         console.log('Website text received:', response);
-        
-//         // Process the diacritization batches received from the content script
-//         processDiacritizationBatches(method, request.cache, response)
-//           .then(diacritizedBatches => {
-            
-//             // Send the diacritized results to the content script
-//             sendResponse({type: 'diacritizationResult', data: diacritizedBatches});
-//             chrome.tabs.sendMessage(request.tabId, { action: 'updateWebsiteText', method, cache: request.cache, data: request.data});
-            
-//           })
-//           .catch(error => {
-//             console.error('Error processing diacritization batches:', error);
-//             sendResponse({type: 'error', message: 'Failed to process diacritization batches'});
 
-//           });
-//         })
-//       .catch(error => {
-//         console.error('Error retrieving website text:', error);
-//         sendResponse({type: 'error', message: `Error in ${method}:`, error});
-//       });
-//     })();
-
-//     // Return true to indicate that sendResponse will be called asynchronously
-//     return true;
-
-//   }
 });
 
 // ----------------- Functions ----------------- //
