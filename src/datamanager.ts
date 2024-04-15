@@ -37,15 +37,18 @@ export class DiacritizationDataManager {
   
     async updateWebPageData(id: string, data: WebPageDiacritizationData): Promise<void> {
         // Implementation to update data in IndexedDB
-        if (this.db) {
+        if (!this.db) {
+            throw new Error("Database not initialized")
+        } else {
             try {
+                const pageData = await this.getWebPageData(id);
                 await saveData(this.db, "diacritizations_msa", {id, data});
+                this.updateStorageSize(pageData ?? '', 'remove');
+                this.updateStorageSize(data, 'add');
             } catch (error) {
                 console.error(error);
                 throw new Error("Failed to save data" + error);
             }
-        } else {
-            throw new Error("Database not initialized")
         };
     }
   
@@ -59,10 +62,13 @@ export class DiacritizationDataManager {
             throw new Error("Database not initialized");
         }
         const pageData = await this.getWebPageData(pageId);
+        // will want try/catch later
         if (pageData) {
             pageData.elements[elementHash] = data;
             // eventually will want to rewrite to do multiple updates at once.
             await saveData(this.db, "diacritizations_msa", pageData.elements);
+            this.updateStorageSize(pageData?.elements, 'remove');
+            this.updateStorageSize(data, 'add');
         } else {        
             throw new Error("Page data not found");
         }
