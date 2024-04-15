@@ -91,6 +91,15 @@ export class DiacritizationDataManager {
     //     // Remove all data related to a webpage
     // } 
 
+    async clearAllData(): Promise<void> {
+        if (!this.db) {
+            throw new Error("Database not initialized");
+        }
+        const transaction = this.db.transaction("diacritizations_msa", "readwrite");
+        const store = transaction.objectStore("diacritizations_msa");
+        store.clear();
+    }
+
   }
 
 // Generic indexedDB functions as suggested by Claude.
