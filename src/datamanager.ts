@@ -1,4 +1,4 @@
-import { WebPageDiacritizationData, DiacritizationElement } from "./types";
+import { WebPageDiacritizationData, TextNode } from "./types";
 import { chromeStorageGet, chromeStorageSet } from "./utils";
 
 export class DiacritizationDataManager {
@@ -57,7 +57,7 @@ export class DiacritizationDataManager {
     //     // Retrieve specific element data
     // }
 
-    async updateElementData(pageId: string, elementHash: string, data: DiacritizationElement): Promise<void> {
+    async updateElementData(pageId: string, elementHash: string, data: TextNode): Promise<void> {
         // Update element data in the database
         if (!this.db) {
             throw new Error("Database not initialized");
