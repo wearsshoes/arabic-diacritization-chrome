@@ -6,13 +6,15 @@ import { TextElement, DiacritizationRequestBatch, ProcessorResponse, WebPageDiac
 // when queried by popup, returns the language of the page
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
-  // Get the website language
-  if (request.action === 'getWebsiteLanguage') {
+  // Get the website language (called by popup.ts)
+  if (request.action === 'getWebsiteData') {
     const language = document.documentElement.lang;
-    sendResponse(language);
+    const totalTextLength = APIBatches.map(element => element.text.length).reduce((acc, curr) => acc + curr, 0);
+    const numBatches = APIBatches.length;
+    sendResponse({language, chars: totalTextLength, batches: numBatches});
   }
   
-  // Get metadata about the website
+  // Get metadata about the website (called by background.ts)
     if (request.action === 'getWebsiteMetadata') {
     const pageUrl = request.pageUrl;
     const contentSignature = '';
@@ -25,18 +27,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       structuralMetadata,
       {}
     );
-    
+
     webPageDiacritizationData.calculateContentSignature(document.body.querySelectorAll('*'));
     webPageDiacritizationData.serializeStructureMetadata(document.body.querySelectorAll('*'));
 
     sendResponse({webPageDiacritizationData});
-  }
-
-  // When website text length is requested, returns metadata from APIBatches.
-  if (request.action === 'getWebsiteCharacterCount') {
-    const totalTextLength = APIBatches.map(element => element.text.length).reduce((acc, curr) => acc + curr, 0);
-    const numBatches = APIBatches.length;
-    sendResponse({chars: totalTextLength, batches: numBatches});
   }
 
   // When diacritization is requested, returns the APIBatches
