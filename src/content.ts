@@ -5,24 +5,27 @@ import { TextElement, DiacritizationRequestBatch, ProcessorResponse } from "./ty
 
 // when queried by popup, returns the language of the page
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  
+  // Get the website language
   if (request.action === 'getWebsiteLanguage') {
     const language = document.documentElement.lang;
     sendResponse(language);
   }
   
-  // when website text length is requested, returns apibatches details
+
+  // When website text length is requested, returns metadata from APIBatches.
   if (request.action === 'getWebsiteCharacterCount') {
     const totalTextLength = APIBatches.map(element => element.text.length).reduce((acc, curr) => acc + curr, 0);
     const numBatches = APIBatches.length;
     sendResponse({chars: totalTextLength, batches: numBatches});
   }
 
-  // when diacritization is requested, returns the apibatches
+  // When diacritization is requested, returns the APIBatches
   if (request.action === "getWebsiteText") {
     sendResponse({data: APIBatches});
   }
 
-  // updates website when told to.
+  // Updates website when told to.
   if (request.action === "updateWebsiteText") {
     const result: ProcessorResponse[] = request.data;
     const method = request.method;
