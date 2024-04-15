@@ -16,36 +16,41 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const numBatches = APIBatches.length;
     sendResponse({chars: totalTextLength, batches: numBatches});
   }
-});
+  // when diacritization is requested, returns the apibatches and the cache
+  if (request.action === "getWebsiteText") {
+    sendResponse({action: request.method, data: APIBatches, cache: cachedResponse, });
+    // (async () => {
+    //   // Send diacritization batches to background script
+    //   chrome.runtime.sendMessage({action: "diacritize", method: request.method, cache:cachedResponse, data: APIBatches}, (response) => {
+    //     // Handle the diacritized text here
+    //     if (response.type === 'diacritizationResult') {
+    //       cachedResponse = response.data;
+    //       console.log('Cached result:', cachedResponse);
+    //       response.data.forEach((batch: { elements: TextElement[]; diacritizedTexts: string[] }) => {
+    //         // console.log('Diacritized texts:', batch.diacritizedTexts);
+    //         if (batch.diacritizedTexts.length !== batch.elements.length) {
+    //           console.error('Mismatch in number of diacritized texts and text elements');
+    //         }
+    //         replaceTextWithDiacritizedText(batch.elements, batch.diacritizedTexts, request.method);
+    //       });
+    //     } else if (response.type === 'error') {
+    //       console.error("Diacritization error:", response.message);
+    //     }
 
-// Diacritize listener - waits for popup click, then sends batches to worker.
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "sendToDiacritize") {
-    (async () => {
-      // Send diacritization batches to background script
-      chrome.runtime.sendMessage({action: "diacritize", method: request.method, cache:cachedResponse, data: APIBatches}, (response) => {
-        // Handle the diacritized text here
-        if (response.type === 'diacritizationResult') {
-          cachedResponse = response.data;
-          console.log('Cached result:', cachedResponse);
-
-          response.data.forEach((batch: { elements: TextElement[]; diacritizedTexts: string[] }) => {
-            // console.log('Diacritized texts:', batch.diacritizedTexts);
-            if (batch.diacritizedTexts.length !== batch.elements.length) {
-              console.error('Mismatch in number of diacritized texts and text elements');
-            }
-            replaceTextWithDiacritizedText(batch.elements, batch.diacritizedTexts);
-          });
-        } else if (response.type === 'error') {
-          console.error("Diacritization error:", response.message);
-        }
-        if(request.method === 'arabizi'){
-          directionLTR();
-        }
-      });
-    })();
+    //   });
+    // })();
     return true;
   }
+
+  if (request.action === "updateWebsiteText" && request.textElements && request.diacritizedTexts && request.method) {
+    textElementBatches.forEach((batch, batchIndex) => {
+      const replacement = request.diacritizedTexts[batchIndex];
+      replaceTextWithDiacritizedText(batch, replacement, request.method);
+    });
+    
+    return true;
+  }
+
 });
 
 // -------------- Functions -------------- //
