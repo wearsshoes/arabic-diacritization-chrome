@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
 import { calculateHash, getAPIKey } from './utils';
-import { Prompt, TransliterationDict, ProcessorResponse, WebPageDiacritizationData, TextNode, DiacritizationRequestBatch } from './types';
+import { Prompt, TransliterationDict, WebPageDiacritizationData, TextNode, PageMetadata } from './types';
 import { defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel } from './anthropicCaller'
 import { DiacritizationDataManager } from './datamanager';
 
@@ -30,20 +30,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // Handle the diacritization request
   if (request.action === "sendToDiacritize" && request.method) {
-    const { method, cache } = request;
+    const { method } = request;
 
     (async () => {
       try {
-
         // Get the active tab
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab.id === undefined) throw new Error('No active tab found');
         const pageUrl = tab.url as string;
 
+        // Get the site's current metadata
+        const pageMetadata: PageMetadata = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteMetadata', pageUrl })
+
         // Load the saved data for the current webpage
         const retrievedPageData = await dataManager.getWebPageData(pageUrl);
         if (!retrievedPageData) {
           console.log('No saved data found for the current webpage');
+        } else if (retrievedPageData.metadata.contentSignature === pageMetadata.contentSignature) {
+          // will just return the saved data if the content hasn't changed
+          // sendResponse({retrievedPageData});
+        };
+
         // Get the website text
         const websiteText: TextNode[] = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteText' });
 
@@ -70,8 +77,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.error('Error processing diacritization:', error);
         sendResponse({ error: 'Failed to process diacritization.' });
       }
-    })();
-
+    });
     return true;
   }
 
@@ -93,6 +99,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 const dataManager = DiacritizationDataManager.getInstance();
 const delimiter = '|';
+const sentenceRegex = /[.!?؟]+\s*\n*/g;
 const defaultPrompt: Prompt = prompts[0];
 
 async function getPrompt(): Promise<Prompt> {
@@ -111,13 +118,13 @@ async function getPrompt(): Promise<Prompt> {
 // Async worker for API call
 async function processDiacritizationBatches(method: string, websiteText: TextNode[]): Promise<TextNode[]> {
 
-
+  
   const diacritizationBatches = createDiacritizationElementBatches(websiteText, 750);
   const texts = createAPIBatches(diacritizationBatches);
   let diacritizedTextArray: string[] = [];
-
+  
   throw new Error('Not implemented yet');
-
+  
   // If the method is 'diacritize' and saved data exists for the current webpage, return the saved results
   if (method === 'diacritize') {
 
@@ -139,7 +146,7 @@ async function processDiacritizationBatches(method: string, websiteText: TextNod
     //   }
     // }
 
-  // Store the diacritized results using DiacritizationDataManager methods
+    // Store the diacritized results using DiacritizationDataManager methods
     // x    const diacritizedTexts = diacritizedTextArray[index].split(delimiter);
     //     const rawResult = diacritizedTextArray[index];
 
@@ -176,11 +183,11 @@ function createAPIBatches(textElementBatches: TextNode[][]): string[] {
 
   textElementBatches.forEach((batch) => {
     const batchText = batch.map((textElement) => textElement.text.replace(delimiter, ''))
-    .join(delimiter);
+      .join(delimiter);
     console.log(batchText)
     diacritizationBatches.push(batchText);
   });
-  
+
   return diacritizationBatches;
 }
 
