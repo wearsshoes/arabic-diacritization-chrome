@@ -44,25 +44,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const retrievedPageData = await dataManager.getWebPageData(pageUrl);
         if (!retrievedPageData) {
           console.log('No saved data found for the current webpage');
-        }
+        // Get the website text
+        const websiteText: TextNode[] = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteText' });
 
-        // Get the site's current metadata
-        const webPageDiacritizationData: WebPageDiacritizationData = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteMetadata', pageUrl })
+        const webPageDiacritizationData = new WebPageDiacritizationData(
+          pageUrl,
+          pageMetadata,
+          websiteText,
+        );
 
-        // this should be compared
+        // Process the diacritization batches
+        const diacritizedText = await processDiacritizationBatches(method, websiteText);
+        webPageDiacritizationData.addDiacritization(diacritizedText, method);
 
         // Update the saved metadata
         await dataManager.updateWebPageData(pageUrl, webPageDiacritizationData)
           .catch((error) => console.error('Failed to update web page data:', error))
           .then(() => console.log('Web page data updated:', webPageDiacritizationData));
-
-        // Get the website text
-        const websiteText: TextNode[][] = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteText' });
-        const diacritizationBatches = createAPIBatches(websiteText);
-        console.log('Website text received:', diacritizationBatches);
-
-        // Process the diacritization batches
-        const diacritizedText = await processDiacritizationBatches(method, cache, diacritizationBatches);
 
         // Update the website text
         await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', data: diacritizedText, method });
