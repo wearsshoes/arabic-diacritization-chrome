@@ -175,28 +175,6 @@ async function processDiacritizationBatches(method: string, websiteText: TextNod
 
 };
 
-
-// Prepare batches for API by extracting the text with delimiters.
-function createAPIBatches(textElementBatches: TextNode[][]): string[] {
-  console.log('beginning api batching')
-  const diacritizationBatches: string[] = [];
-
-  textElementBatches.forEach((batch) => {
-    const batchText = batch.map((textElement) => textElement.text.replace(delimiter, ''))
-      .join(delimiter);
-    console.log(batchText)
-    diacritizationBatches.push(batchText);
-  });
-
-  return diacritizationBatches;
-}
-
-// Check whether there are any Arabic characters. Not used
-function containsArabicCharacters(text: string): boolean {
-  const arabicRegex = /[\u0600-\u06FF]/;
-  return arabicRegex.test(text);
-}
-
 // Create batches of elements according to sentence boundaries and API character limit.
 function createDiacritizationElementBatches(textElements: TextNode[], maxChars: number): TextNode[][] {
   console.log('starting batching on', textElements.length, 'elements')
@@ -240,6 +218,28 @@ function createDiacritizationElementBatches(textElements: TextNode[], maxChars: 
   });
   return textElementBatches;
 }
+
+// Check whether there are any Arabic characters. Not used
+function containsArabicCharacters(text: string): boolean {
+  const arabicRegex = /[\u0600-\u06FF]/;
+  return arabicRegex.test(text);
+}
+
+// Prepare batches for API by extracting the text with delimiters.
+function createAPIBatches(textElementBatches: TextNode[][]): string[] {
+  console.log('beginning api batching')
+  const diacritizationBatches: string[] = [];
+
+  textElementBatches.forEach((batch) => {
+    const batchText = batch.map((textElement) => textElement.text.replace(delimiter, ''))
+      .join(delimiter);
+    console.log(batchText)
+    diacritizationBatches.push(batchText);
+  });
+
+  return diacritizationBatches;
+}
+
 
 // API Call for Diacritization
 async function diacritizeTexts(texts: string[]): Promise<string[]> {
