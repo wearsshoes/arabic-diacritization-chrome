@@ -66,6 +66,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         // Get the website text
         console.log('Getting website text');
         const websiteText: TextNode[] = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteText' });
+        console.log('Website text:', websiteText);
 
         const webPageDiacritizationData = new WebPageDiacritizationData(
           pageUrl,
@@ -143,6 +144,7 @@ async function processDiacritizationBatches(method: string, websiteText: TextNod
   // If the method is 'diacritize' and saved data exists for the current webpage, return the saved results
   if (method === 'diacritize') {
 
+    throw new Error('Not implemented yet');
     console.log('Received diacritization request and data, processing');
     resultingTexts = await diacritizeTexts(texts);
 
