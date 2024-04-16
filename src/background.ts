@@ -1,11 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
-import { getAPIKey } from './utils';
 import { Prompt, TransliterationDict } from './types';
 import { PageMetadata, TextNode, WebPageDiacritizationData } from './dataClass';
 import { defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel } from './anthropicCaller'
 import { DiacritizationDataManager } from './datamanager';
+import { getAPIKey } from "./utils";
+
 
 // ----------------- Event Listeners ----------------- //
 
@@ -230,10 +231,7 @@ function createDiacritizationElementBatches(textElements: TextNode[], maxChars: 
 // API Call for Diacritization
 async function diacritizeTexts(texts: string[]): Promise<string[]> {
 
-  const apiKey = await getAPIKey() || '';
-  if (!apiKey) {
-    throw new Error('API key not set');
-  }
+  const apiKey = await getAPIKey();
 
   const diacritizePrompt = await getPrompt() || defaultPrompt;
   const promptText = diacritizePrompt.text;
