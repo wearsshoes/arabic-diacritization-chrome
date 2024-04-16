@@ -41,8 +41,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const pageUrl = tab.url as string;
 
         // Load the saved data for the current webpage
-        const webPageData = await dataManager.getWebPageData(pageUrl);
-        if (!webPageData) {
+        const retrievedPageData = await dataManager.getWebPageData(pageUrl);
+        if (!retrievedPageData) {
           console.log('No saved data found for the current webpage');
         }
 
