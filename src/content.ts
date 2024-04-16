@@ -10,8 +10,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Get the website language (called by popup.ts)
   if (request.action === 'getWebsiteData') {
     const language = document.documentElement.lang;
-    
-    // this is stupid and I should consider passing it differently
     const totalTextLength = textElements
         .map(node => node.text.length)
       .reduce((acc, curr) => acc + curr, 0);
@@ -30,6 +28,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         structuralMetadata
       }
       sendResponse({pageMetadata});
+      // should at this point send whether or not newRecurseDOM has been called successfully
     };
     return true;
   }
@@ -58,7 +57,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // -------------- Functions -------------- //
 
 // Global Variables
-const delimiter:string = '|'
 const sentenceRegex = /[.!?؟]+\s*\n*/g; 
 let textElements: TextNode[];
 
@@ -69,8 +67,6 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
   if (node.nodeType === Node.ELEMENT_NODE) {
     
     const element = node as Element;
-    // elementId = 'element-' + iterator + '-' + element.tagName + '-' + element.id + '-' + element.className;
-
     if (element.hasChildNodes() && isVisible(element)) {
       let innerIndex = 0;
       elementId = 'element-' + iterator + '-' + element.tagName;
@@ -100,13 +96,14 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
       
       // it would be a lot more stateful to do this in replaceTextWithDiacritizedText
       // we can move it when we handle serialization/deserialization better.
+      // maybe we flatmap the textElements?
       const textNode = document.createTextNode(sentence);
       fragment.appendChild(textNode);
       
       iterator++;
     });
     
-    // again, do this later.
+    // again, this should be moved to another place in the program.
     node.parentNode?.replaceChild(fragment, node);
   };
   
@@ -169,7 +166,7 @@ function directionLTR() {
 function main() {
   try {
     const mainNode = document.querySelector('main') || document.body;
-    console.log('Main node:', mainNode);
+    console.log('Main node:', mainNode); 
     textElements = newRecurseDOM(mainNode).textElements;
   } catch (error) {
     console.error('Error during initialization:', error);
@@ -178,7 +175,6 @@ function main() {
 
 // -------------- Runtime -------------- //
 
-// Run on script load 
 // should maybe set to only run on lang="ar"?
 if (document.readyState === "loading") {
   // Wait for loading to finish, otherwise number of elements tends not to converge
