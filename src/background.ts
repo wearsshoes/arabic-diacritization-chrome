@@ -258,8 +258,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
   const maxTries = 1
 
   // diacritize the texts in parallel with retries
-  const diacritizedTexts = await Promise.all(texts.map(async (arabicText) => {
-    const arabicTextHash = await calculateHash(arabicText);
+  const diacritizedTexts = await Promise.all(texts.map(async (arabicTextChunk) => {
 
     for (let tries = 0; tries < maxTries; tries++) {
       const msg: Anthropic.Messages.MessageCreateParams = {
@@ -273,7 +272,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
             content: [
               {
                 type: "text",
-                text: arabicText,
+                text: arabicTextChunk,
               }
             ]
           }
@@ -289,11 +288,11 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
         const enoughTokens = outputTokens > inputTokens;
 
         const diacritizedText: string = response.content[0].text;
-        console.log(arabicText);
+        console.log(arabicTextChunk);
         console.log(diacritizedText);
 
         // check if the diacritized text is longer than the original text
-        const separatorsInOriginal = arabicText.split(delimiter).length - 1;
+        const separatorsInOriginal = arabicTextChunk.split(delimiter).length - 1;
         const separatorsInDiacritized = diacritizedText.split(delimiter).length - 1;
         console.log('Separators in original:', separatorsInOriginal, 'Separators in diacritized:', separatorsInDiacritized);
         const rightDelimiters = separatorsInDiacritized + fudgefactor >= separatorsInOriginal;
@@ -309,7 +308,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
         break;
       }
     }
-    return arabicText;
+    return arabicTextChunk;
   }));
   console.log('Finished diacritizing.')
   return diacritizedTexts;
