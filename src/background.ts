@@ -185,18 +185,15 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
 }
 
 // Prepare batches for API by extracting the text with delimiters.
-function createAPIBatches(textElementBatches: TextNode[][]): DiacritizationRequestBatch[] {
+function createAPIBatches(textElementBatches: TextNode[][]): string[] {
   console.log('beginning api batching')
-  const diacritizationBatches: { text: string; elements: TextNode[] }[] = [];
+  const diacritizationBatches: string[] = [];
 
   textElementBatches.forEach((batch) => {
     const batchText = batch.map((textElement) => textElement.text.replace(delimiter, ''))
     .join(delimiter);
     console.log(batchText)
-    diacritizationBatches.push({ 
-      text: batchText, 
-      elements: batch 
-    });
+    diacritizationBatches.push(batchText);
   });
   
   return diacritizationBatches;
