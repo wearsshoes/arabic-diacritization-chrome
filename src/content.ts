@@ -1,5 +1,6 @@
 // content.ts
-import { ElementAttributes, TextNode, NodeHashlist, PageMetadata, WebPageDiacritizationData } from "./types";
+import { PageMetadata, TextNode, NodeHashlist, WebPageDiacritizationData } from "./dataClass";
+import { ElementAttributes } from "./types";
 import { calculateHash } from "./utils";
 
 // -------------- Event Listeners -------------- //

@@ -1,4 +1,4 @@
-import { WebPageDiacritizationData, TextNode } from "./types";
+import { WebPageDiacritizationData, TextNode } from "./dataClass";
 import { chromeStorageGet, chromeStorageSet } from "./utils";
 
 export class DiacritizationDataManager {

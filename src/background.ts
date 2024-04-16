@@ -2,7 +2,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
 import { getAPIKey } from './utils';
-import { Prompt, TransliterationDict, WebPageDiacritizationData, TextNode, PageMetadata } from './types';
+import { Prompt, TransliterationDict } from './types';
+import { PageMetadata, TextNode, WebPageDiacritizationData } from './dataClass';
 import { defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel } from './anthropicCaller'
 import { DiacritizationDataManager } from './datamanager';
 
