@@ -19,15 +19,13 @@ export interface ElementAttributes {
 // Roll this into WebPageDiacritizationData
 export interface DiacritizationRequestBatch {
   text: string;
-  elements: TextNode[];
+  elements: TextNode;
 }
 
 // Roll this into WebPageDiacritizationData
 // Will be even easier to do if you move all the text serialize/deserialize into background.ts
-export interface ProcessorResponse {
-  elements: TextNode[]; 
-  diacritizedTexts: string[];
-  rawResult: string 
+export interface NodeList {
+  [nodeHash: string]: TextNode
 }
  
 export interface Prompt {
