@@ -60,12 +60,61 @@ export interface PageMetadata {
 
 // it's like, not inconvceivable that you just transmit the entire webpage into background.ts
 export class WebPageDiacritizationData {
-  constructor(
-      public pageId: string,
-      public metadata: PageMetadata,
-      public elements: { [nodeHash: string]: TextNode }
-  ) { }
+  public original?: NodeList[];
+  public diacritizations?: {
+    [method: string]: NodeList[]
+  }[];
 
+  constructor(  
+    public pageUrl: string,
+    public metadata: PageMetadata,
+    websiteText: TextNode[]
+    ) { 
+      this.createOriginal(websiteText)
+    }
+          
+  async createOriginal(websiteText: TextNode[]) {
+    // aaa this calls calculateHash like a thousand times 
+    const nodeHashes = await Promise.all(websiteText.map( (textNode) => {
+      const hash = calculateHash(textNode.text)
+      return hash
+    }));
+
+    this.original = websiteText.map((textNode, index) => {
+      const nodeHash = nodeHashes[index]
+      return {[nodeHash]: textNode}
+    });
+  }
+
+  async addDiacritization(diacritizedText: TextNode[], method: string) {
+    if (this.original === undefined) {
+      throw new Error('Original text not created yet.');
+    } else {
+      const original = this.original;
+      const diacritization: NodeList[] = Object.keys(original).map((key, index) => (
+        {[key]: diacritizedText[index]}
+      )); 
+
+      if (this.diacritizations === undefined) {
+        this.diacritizations = [{[method]: diacritization}];
+      } else {
+        this.diacritizations.push({method: diacritization});
+      }
+    }
+  }
+
+  getDiacritization(method: string): NodeList[] {
+    if (this.diacritizations === undefined) {
+      throw new Error('Diacritizations not created yet.');
+    } else {
+      const diacritization = this.diacritizations.find((diacritization) => diacritization[method]);
+      if (diacritization === undefined) {
+        throw new Error('Diacritization method not found.');
+      } else {
+        return diacritization[method];
+      }
+    }
+  }
   updateLastVisited(date: Date): void {
       this.metadata.lastVisited = date
   }
@@ -85,5 +134,5 @@ export function serializeStructureMetadata(elements: NodeListOf<Element>): strin
             id: element.id,
             className: element.className,
         }));
-    return JSON.stringify(serialized);
+        return JSON.stringify(serialized);
 }
