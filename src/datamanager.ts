@@ -53,29 +53,6 @@ export class DiacritizationDataManager {
         };
     }
 
-    // async getElementData(pageId: string, elementHash: string): Promise<DiacritizationElement | undefined> {
-    //     // Retrieve specific element data
-    // }
-
-    async updateElementData(pageId: string, elementHash: string, data: TextNode): Promise<void> {
-        // Update element data in the database
-        if (!this.db) {
-            throw new Error("Database not initialized");
-        }
-        const pageData = await this.getWebPageData(pageId);
-        // will want try/catch later
-        if (pageData) {
-            pageData.elements[elementHash] = data;
-            // eventually will want to rewrite to do multiple updates at once.
-            await saveData(this.db, "diacritizations_msa", pageData.elements);
-            this.updateStorageSize(pageData?.elements, 'remove');
-            this.updateStorageSize(data, 'add');
-        } else {
-            throw new Error("Page data not found");
-        }
-
-    };
-
     // when called by an add/remove function, update storage size in chrome storage
     async updateStorageSize(obj: Object, action: 'add' | 'remove'): Promise<void> {
         const objectSize = getSizeInBytes(obj);
@@ -90,9 +67,6 @@ export class DiacritizationDataManager {
         }
     }
 
-    // async removeElement(pageId: string, elementHash: string): Promise<void> {
-    //     // Remove an element from storage
-    // }
 
     // async removeWebPage(url: string): Promise<void> {
     //     // Remove all data related to a webpage
