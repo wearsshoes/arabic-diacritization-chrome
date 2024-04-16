@@ -132,56 +132,6 @@ function isVisible(element: Element): boolean {
   return isDisplayed
 }
 
-// Check whether there are any Arabic characters. Not used
-function containsArabicCharacters(text: string): boolean {
-  const arabicRegex = /[\u0600-\u06FF]/;
-  return arabicRegex.test(text);
-}
-
-// Create batches of elements according to sentence boundaries and API character limit.
-function createDiacritizationElementBatches(textElements: TextNode[], maxChars: number): TextNode[][] {
-  console.log('starting batching on', textElements.length, 'elements')
-  const textElementBatches: TextNode[][] = [];
-  let currentBatch: TextNode[] = [];
-  let currentBatchLength = 0;
-  let batchLengths: [number, string, TextNode[]][] = []
-
-  textElements.forEach((textElement) => {
-    const text = textElement.text
-    if (text!='') {
-    // if (containsArabicCharacters(text)) {
-    // we want to take these out, but doing so might cause us to lose context within sentences.
-    // once we have better batch management with sentences paragraphs etc, we can then address this.
-      const textLength = text.length;
-
-        if ((currentBatchLength + textLength) > maxChars) {
-          if (currentBatch.length > 0) {
-            batchLengths.push([currentBatchLength, 'maxChars', currentBatch]);
-            textElementBatches.push(currentBatch);
-          }
-          currentBatch = [textElement];
-          currentBatchLength = textLength;
-        } else {
-          currentBatch.push(textElement);
-          currentBatchLength += textLength;
-          
-          // handle sentence breaks as new batch        
-          if (text.match(sentenceRegex) && (currentBatchLength > (maxChars * 2 / 3))){
-            batchLengths.push([currentBatchLength, 'end of sentence', currentBatch]);
-            textElementBatches.push(currentBatch);
-            currentBatch = [];
-            currentBatchLength = 0
-          }
-        }
-      } 
-    });
-    console.log("batches created:", textElementBatches.length);
-    console.log(batchLengths);
-  textElementBatches.forEach(batch => {
-  });
-  return textElementBatches;
-}
-
 // DOM Manipulation
 function replaceTextWithDiacritizedText(textElements: TextNode[], diacritizedTexts: string[], method: string): void {
   
