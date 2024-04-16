@@ -119,13 +119,8 @@ function splitTextIntoSentences(text: string): string[] {
 
 // Checks if node is visible
 function isVisible(element: Element): boolean {
-
-  const isDisplayed = (
-    window.getComputedStyle(element).display !== 'none' &&
-    window.getComputedStyle(element).visibility !== 'hidden'
-  );
-
-  return isDisplayed
+  const checkElement = window.getComputedStyle(element);
+  return checkElement.display !== 'none' && checkElement.visibility !== 'hidden'
 }
 
 // DOM Manipulation
