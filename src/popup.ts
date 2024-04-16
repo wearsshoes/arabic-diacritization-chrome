@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   const beginDiacritization = async (method: string) => {
+    console.log(`Sending ${method} request...`);
     try {
       const response = chrome.runtime.sendMessage({ action: 'sendToDiacritize', method });
       console.log(`${method} response:`, response);
