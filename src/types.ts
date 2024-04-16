@@ -104,19 +104,3 @@ export class WebPageDiacritizationData {
   }
 
 }
-
-export async function calculateContentSignature(elements: NodeListOf<Element>): Promise<string> {
-  const textContent = Array.from(elements).map((element) => element.textContent).join("");
-  const signature = await calculateHash(textContent);
-  return signature;
-}
-
-export function serializeStructureMetadata(elements: NodeListOf<Element>): string {
-    // Serialize page structure metadata
-    const serialized: ElementAttributes[] = Array.from(elements).map((element) => ({
-            tagName: element.tagName,
-            id: element.id,
-            className: element.className,
-        }));
-        return JSON.stringify(serialized);
-}
