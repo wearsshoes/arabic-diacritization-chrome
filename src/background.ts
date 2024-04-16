@@ -147,34 +147,17 @@ async function processDiacritizationBatches(method: string, websiteText: TextNod
     // }
 
     // Store the diacritized results using DiacritizationDataManager methods
-    // x    const diacritizedTexts = diacritizedTextArray[index].split(delimiter);
-    //     const rawResult = diacritizedTextArray[index];
+  const diacritizedTexts = resultingTexts.flatMap((text) => text.split(delimiter));
+  const diacritizedNodes = websiteText.map((node, index) => {
+    return {
+      ...node,
+      text: diacritizedTexts[index]
+    };
+  });
+  return diacritizedNodes ;
 
-    // batch.elements.forEach((element, elementIndex) => {
-    //   const diacritizationElement: DiacritizationElement = {
-    //     originalText: element.originalText,
-    //     diacritizedText: diacritizedTexts[elementIndex],
-    //     xPaths: [], // Implement the logic to generate XPaths for the element
-    //     lastDiacritized: new Date(),
-    //     attributes: {
-    //       // TODO: haven't added these yet, TextElement should have these properties
-    //       tagName: "",
-    //       // tagName: element.tagName,
-    //       className: "",
-    //       // className: element.className,
-    //       id: ""
-    //       // id: element.id
-    //     }
-    //   };
-    //   dataManager.updateElementData(pageUrl, element.elementId, diacritizationElement);
-    // });
+};
 
-    // return { elements: batch.elements, diacritizedTexts, rawResult };
-    // });
-
-    // return diacritizedResults;
-  }
-}
 
 // Prepare batches for API by extracting the text with delimiters.
 function createAPIBatches(textElementBatches: TextNode[][]): string[] {
