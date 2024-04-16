@@ -72,30 +72,9 @@ export class WebPageDiacritizationData {
       this.metadata.lastVisited = date
   }
 
-  // async calculateContentSignature(elements: NodeListOf<Element>): Promise<string> {
-  //   // Calculate a content signature by hashing
-  //   const textContent = Array.from(elements).map((element) => element.textContent).join("");
-  //   const signature = await calculateHash(textContent);
-  //   return signature;
-  // }
-
-  // serializeStructureMetadata(elements: NodeListOf<Element>): string {
-  //     // Serialize page structure metadata
-  //     // This can be done by converting the elements to a JSON string without the text content
-  //     const serialized: ElementAttributes[] = Array.from(elements).map((element) => {
-  //         return {
-  //             tagName: element.tagName,
-  //             id: element.id,
-  //             className: element.className,
-  //         };
-  //     });
-  //     return JSON.stringify(serialized);
-  // }
 }
 
-// only here for the time being.
 export async function calculateContentSignature(elements: NodeListOf<Element>): Promise<string> {
-  // Calculate a content signature by hashing
   const textContent = Array.from(elements).map((element) => element.textContent).join("");
   const signature = await calculateHash(textContent);
   return signature;
@@ -103,13 +82,10 @@ export async function calculateContentSignature(elements: NodeListOf<Element>): 
 
 export function serializeStructureMetadata(elements: NodeListOf<Element>): string {
     // Serialize page structure metadata
-    // This can be done by converting the elements to a JSON string without the text content
-    const serialized: ElementAttributes[] = Array.from(elements).map((element) => {
-        return {
+    const serialized: ElementAttributes[] = Array.from(elements).map((element) => ({
             tagName: element.tagName,
             id: element.id,
             className: element.className,
-        };
-    });
+        }));
     return JSON.stringify(serialized);
 }
