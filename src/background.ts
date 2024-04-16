@@ -32,20 +32,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // Handle the diacritization request
   if (request.action === "sendToDiacritize" && request.method) {
-    const { method } = request;
-
-    (async () => {
+    console.log('Received diacritization request');
+    const method = request.method;
+    
+    async function processDiacritizationRequest() {
       try {
         // Get the active tab
+        console.log('Getting active tab');
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab.id === undefined) throw new Error('No active tab found');
+        else console.log('Active tab found:', tab);
         const pageUrl = tab.url as string;
 
         // Get the site's current metadata
-        const pageMetadata: PageMetadata = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteMetadata', pageUrl })
+        console.log('Getting website metadata');
+        const pageMetadata: PageMetadata = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteMetadata' })
+        console.log('Website metadata:', pageMetadata);
 
         // Load the saved data for the current webpage
+        console.log('Checking for saved data');
         const retrievedPageData = await dataManager.getWebPageData(pageUrl);
+        console.log('Retrieved page data:', retrievedPageData);
         if (!retrievedPageData) {
           console.log('No saved data found for the current webpage, continuing');
         } else if (retrievedPageData.metadata.contentSignature === pageMetadata.contentSignature) {
@@ -57,6 +64,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
 
         // Get the website text
+        console.log('Getting website text');
         const websiteText: TextNode[] = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteText' });
 
         const webPageDiacritizationData = new WebPageDiacritizationData(
@@ -66,15 +74,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         );
 
         // Process the diacritization batches
+        console.log('Processing diacritization');
         const diacritizedText = await processDiacritizationBatches(method, websiteText);
         webPageDiacritizationData.addDiacritization(diacritizedText, method);
 
         // Update the saved metadata
+        console.log('Updating saved web page data');
         await dataManager.updateWebPageData(pageUrl, webPageDiacritizationData)
           .catch((error) => console.error('Failed to update web page data:', error))
           .then(() => console.log('Web page data updated:', webPageDiacritizationData));
 
         // Update the website text
+        console.log('Updating website text');
         await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', data: webPageDiacritizationData, method });
         sendResponse({ message: 'Completed.' });
 
@@ -82,7 +93,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.error('Error processing diacritization:', error);
         sendResponse({ error: 'Failed to process diacritization.' });
       }
-    });
+    };
+
+    processDiacritizationRequest();
     return true;
   }
 
