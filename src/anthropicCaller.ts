@@ -47,7 +47,10 @@ function escalateModel(model: Model, n: number): Model {
     }
 }
 
-async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: string, hash?: string): Promise<any> {
+async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: string): Promise<any> {
+
+    // generate a hash to identify the job
+    const hash = await calculateHash(JSON.stringify(params));
 
     // get the API key if it's not provided
     const apiKey = key || await getAPIKey();
