@@ -1,5 +1,5 @@
 // content.ts
-import { TextNode, PageMetadata, DiacritizationRequestBatch, ProcessorResponse, WebPageDiacritizationData, ElementAttributes } from "./types";
+import { TextNode, ListOfTextNodes, PageMetadata, WebPageDiacritizationData } from "./types";
 import { calculateContentSignature, serializeStructureMetadata } from "./types";
 
 // -------------- Event Listeners -------------- //
@@ -12,10 +12,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const language = document.documentElement.lang;
     
     // this is stupid and I should consider passing it differently
-    const totalTextLength = textElementBatches
-      .map(element => element
+    const totalTextLength = textElements
         .map(node => node.text.length)
-        .reduce((acc, curr) => acc + curr, 0))
       .reduce((acc, curr) => acc + curr, 0);
     sendResponse({language, chars: totalTextLength});
   }
@@ -38,21 +36,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // When diacritization is requested, returns the APIBatches
   if (request.action === "getWebsiteText") {
-    sendResponse({data: textElementBatches});
+    sendResponse({data: textElements});
   }
 
   // Updates website when told to.
   if (request.action === "updateWebsiteText") {
-    const result: ProcessorResponse[] = request.data;
+    const data: WebPageDiacritizationData = request.data;
     const method = request.method;
-    if (textElementBatches.length ===result.length) {
-      textElementBatches.forEach((batch, batchIndex) => {
-        console.log('Replacing text with diacritized text:', method);
-        const diacritizedTexts = result[batchIndex].diacritizedTexts;
-        replaceTextWithDiacritizedText(batch, diacritizedTexts, method);
-      });
+    const original = data.original;
+    const diacritization = data.getDiacritization(method);
+    if (original && diacritization) {
+        replaceTextWithDiacritizedText(original, diacritization, method);
     } else {
-      sendResponse({error: 'Mismatch between textElementBatches and result length.'});
+      sendResponse({error: 'Original or diacritization not found.'});
     }
     return true;
   }
@@ -64,7 +60,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Global Variables
 const delimiter:string = '|'
 const sentenceRegex = /[.!?؟]+\s*\n*/g; 
-let textElementBatches: TextNode[][];
+let textElements: TextNode[];
 
 // Builds element list according to interface. Recurses through DOM and put the in the right order. 
 function newRecurseDOM(node: Node = document.body, index: number = 0, elementId: string = '', iterator: number = 0): {textElements: TextNode[], iterator: number} {
@@ -133,19 +129,15 @@ function isVisible(element: Element): boolean {
 }
 
 // DOM Manipulation
-function replaceTextWithDiacritizedText(textElements: TextNode[], diacritizedTexts: string[], method: string): void {
-  
-  if (!Array.isArray(textElements) || !Array.isArray(diacritizedTexts)) {
-    throw new Error('Both textElements and diacritizedTexts should be arrays.');
-  }
+function replaceTextWithDiacritizedText(original: ListOfTextNodes[], replacement: ListOfTextNodes[], method: string): void {
 
-  if (textElements.length !== diacritizedTexts.length) {
+  if (original.length !== replacement.length) {
     throw new Error('textElements and diacritizedTexts should have the same length.');
   }
 
-    for (let i = 0; i < textElements.length; i++) {
-      const textElement = textElements[i];
-      const diacritizedText = diacritizedTexts[i];
+    for (let i = 0; i < original.length; i++) {
+      const textElement = original[i].textElement;
+      const diacritizedText = replacement[i].textElement.text;
 
     if (typeof textElement.elementId !== 'string' || typeof textElement.index !== 'number') {
       throw new Error(`Invalid textElement at index ${i}: ${JSON.stringify(textElement)}`);
@@ -167,7 +159,6 @@ function replaceTextWithDiacritizedText(textElements: TextNode[], diacritizedTex
   if(method === 'arabizi'){
     directionLTR();
   }
-  console.log('Replaced text with diacritized text:', diacritizedTexts);
 }
 
 // Forces LTR. Only gets called for Arabizi
@@ -184,7 +175,7 @@ function main() {
   try {
     const mainNode = document.querySelector('main') || document.body;
     console.log('Main node:', mainNode);
-    textElementBatches = createDiacritizationElementBatches(newRecurseDOM(mainNode).textElements, 750);
+    textElements = newRecurseDOM(mainNode).textElements;
   } catch (error) {
     console.error('Error during initialization:', error);
   }
