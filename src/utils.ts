@@ -22,17 +22,27 @@ export async function calculateHash(input: string | string[]): Promise<string | 
 }
 
 // Get API Key 
+// export async function getAPIKey(): Promise<string> {
+//   return new Promise((resolve, reject) => {
+//     chrome.storage.sync.get(['apiKey'], (data: { apiKey?: string }) => {
+//       if (chrome.runtime.lastError) {
+//         reject(chrome.runtime.lastError);
+//       } else {
+//         const apiKey: string = data.apiKey || '';
+//         resolve(apiKey);
+//       }
+//     });
+//   });
+// }
+
 export async function getAPIKey(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    chrome.storage.sync.get(['apiKey'], (data: { apiKey?: string }) => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        const apiKey: string = data.apiKey || '';
-        resolve(apiKey);
-      }
-    });
-  });
+  try {
+    const { apiKey } = await chromeStorageGet<string>('apiKey');
+    return apiKey;
+  }
+  catch (error) {
+    throw new Error(`Error getting API Key: ${error}`);
+  }
 }
 
 export function chromeStorageGet<T>(key: string): Promise<{ [key: string]: T }> {
