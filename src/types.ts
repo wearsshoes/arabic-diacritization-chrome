@@ -24,7 +24,7 @@ export interface DiacritizationRequestBatch {
 
 // Roll this into WebPageDiacritizationData
 // Will be even easier to do if you move all the text serialize/deserialize into background.ts
-export interface ListOfTextNodes {
+export interface NodeHashlist {
   [nodeHash: string]: TextNode
 }
  
@@ -60,9 +60,9 @@ export interface PageMetadata {
 
 // it's like, not inconvceivable that you just transmit the entire webpage into background.ts
 export class WebPageDiacritizationData {
-  public original?: ListOfTextNodes[];
+  public original?: NodeHashlist[];
   public diacritizations?: {
-    [method: string]: ListOfTextNodes[]
+    [method: string]: NodeHashlist[]
   }[];
 
   constructor(  
@@ -91,7 +91,7 @@ export class WebPageDiacritizationData {
       throw new Error('Original text not created yet.');
     } else {
       const original = this.original;
-      const diacritization: ListOfTextNodes[] = Object.keys(original).map((key, index) => (
+      const diacritization: NodeHashlist[] = Object.keys(original).map((key, index) => (
         {[key]: diacritizedText[index]}
       )); 
 
@@ -103,7 +103,7 @@ export class WebPageDiacritizationData {
     }
   }
 
-  getDiacritization(method: string): ListOfTextNodes[] {
+  getDiacritization(method: string): NodeHashlist[] {
     if (this.diacritizations === undefined) {
       throw new Error('Diacritizations not created yet.');
     } else {

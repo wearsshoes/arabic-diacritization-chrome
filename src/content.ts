@@ -1,5 +1,5 @@
 // content.ts
-import { TextNode, ListOfTextNodes, PageMetadata, WebPageDiacritizationData } from "./types";
+import { TextNode, NodeHashlist, PageMetadata, WebPageDiacritizationData } from "./types";
 import { calculateContentSignature, serializeStructureMetadata } from "./types";
 
 // -------------- Event Listeners -------------- //
@@ -129,7 +129,7 @@ function isVisible(element: Element): boolean {
 }
 
 // DOM Manipulation
-function replaceTextWithDiacritizedText(original: ListOfTextNodes[], replacement: ListOfTextNodes[], method: string): void {
+function replaceTextWithDiacritizedText(original: NodeHashlist[], replacement: NodeHashlist[], method: string): void {
 
   if (original.length !== replacement.length) {
     throw new Error('textElements and diacritizedTexts should have the same length.');
