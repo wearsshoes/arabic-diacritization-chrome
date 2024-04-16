@@ -109,53 +109,39 @@ async function getPrompt(): Promise<Prompt> {
 }
 
 // Async worker for API call
-// TODO: try to get this to take and return objects of the class WebPageDiacritizationData
-async function processDiacritizationBatches(method: string, cache: ProcessorResponse[], diacritizationBatches: DiacritizationRequestBatch[]): Promise<ProcessorResponse[]> {
+async function processDiacritizationBatches(method: string, websiteText: TextNode[]): Promise<TextNode[]> {
 
-  const texts = diacritizationBatches.map((batch) => batch.text);
+
+  const diacritizationBatches = createDiacritizationElementBatches(websiteText, 750);
+  const texts = createAPIBatches(diacritizationBatches);
+  let diacritizedTextArray: string[] = [];
 
   throw new Error('Not implemented yet');
 
-  // probably making a bunch of unnecessary calls to the database here
-
-  let diacritizedTextArray: string[] = [];
-
   // If the method is 'diacritize' and saved data exists for the current webpage, return the saved results
   if (method === 'diacritize') {
-    //   if (webPageData) {
-    //     // If saved data exists for the current webpage and the method is 'diacritize'
-    //     const savedResults = Object.values(webPageData.elements).map(element => element.diacritizedText);
-    //     return diacritizationBatches.map((batch, index) => {
-    //       const diacritizedTexts = savedResults[index].split(delimiter);
-    //       return { elements: batch.elements, diacritizedTexts: diacritizedTexts, rawResult: savedResults[index] };
-    //     });
-    //   }
-
-    // could be fun to have claude run with figuring out the dialect, and then feeding that as an argument to the prompt
-    // partial diacritization... just build out a lot of options...
 
     console.log('Received diacritization request and data, processing');
     const diacritizeArray = await diacritizeTexts(texts);
     diacritizedTextArray = diacritizeArray
 
-  } else if (method === 'arabizi') {
-    // honestly, this could just be generated automatically and toggled on/off back to full arabic cache state
-    // could also be fun to do a "wubi" version on alternating lines?
-    console.log('Received arabizi request and data, processing');
-    if (cache && cache.length) {
-      console.log('Diacritization inferred to exist, transliterating')
-      diacritizedTextArray = arabicToArabizi(cache.map((batch) => batch.rawResult));
-    } else {
-      console.log('Diacritizing text first')
-      const diacritizeArray = await diacritizeTexts(texts);
-      diacritizedTextArray = arabicToArabizi(diacritizeArray)
-    }
-  }
+    // } else if (method === 'arabizi') {
+    //   // honestly, this could just be generated automatically and toggled on/off back to full arabic cache state
+    //   // could also be fun to do a "wubi" version on alternating lines?
+    //   console.log('Received arabizi request and data, processing');
+    //   if (cache && cache.length) {
+    //     console.log('Diacritization inferred to exist, transliterating')
+    //     diacritizedTextArray = arabicToArabizi(cache.map((batch) => batch.rawResult));
+    //   } else {
+    //     console.log('Diacritizing text first')
+    //     const diacritizeArray = await diacritizeTexts(texts);
+    //     diacritizedTextArray = arabicToArabizi(diacritizeArray)
+    //   }
+    // }
 
   // Store the diacritized results using DiacritizationDataManager methods
-  const diacritizedResults = diacritizationBatches.map((batch, index) => {
-    const diacritizedTexts = diacritizedTextArray[index].split(delimiter);
-    const rawResult = diacritizedTextArray[index];
+    // x    const diacritizedTexts = diacritizedTextArray[index].split(delimiter);
+    //     const rawResult = diacritizedTextArray[index];
 
     // batch.elements.forEach((element, elementIndex) => {
     //   const diacritizationElement: DiacritizationElement = {
@@ -176,10 +162,11 @@ async function processDiacritizationBatches(method: string, cache: ProcessorResp
     //   dataManager.updateElementData(pageUrl, element.elementId, diacritizationElement);
     // });
 
-    return { elements: batch.elements, diacritizedTexts, rawResult };
-  });
+    // return { elements: batch.elements, diacritizedTexts, rawResult };
+    // });
 
-  return diacritizedResults;
+    // return diacritizedResults;
+  }
 }
 
 // Prepare batches for API by extracting the text with delimiters.
