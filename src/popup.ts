@@ -1,4 +1,5 @@
 import { Prompt } from './types'
+import { getAPIKey } from './utils';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const diacritizeBtn = document.getElementById('diacritizeBtn');
@@ -14,6 +15,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   const calculateBtn = document.getElementById('calculateBtn');
   const costElement = document.getElementById('costEstimate');
 
+  const checkApiKey = () => {
+    const apiKey = getAPIKey()
+    if (!apiKey) {
+      const button = document.createElement('button');
+      button.textContent = 'Please set your API key in the options page.';
+      document.getElementById('main')?.replaceChildren(button);
+      button.addEventListener('click', () => chrome.runtime.openOptionsPage());
+    }
+  }
+
   const beginDiacritization = async (method: string) => {
     try {
       const response = chrome.runtime.sendMessage({ action: 'sendToDiacritize', method });
@@ -23,31 +34,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  const checkApiKey = () => {
-    chrome.storage.sync.get(['apiKey'], (data) => {
-      if (!data.apiKey) {
-        const button = document.createElement('button');
-        button.textContent = 'Please set your API key in the options page.';
-        document.getElementById('main')?.replaceChildren(button);
-        button.addEventListener('click', () => chrome.runtime.openOptionsPage());
-      }
-    });
-  };
-
   const getWebsiteData = async () => {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (tab.id === undefined) throw new Error('No active tab found');
-  
+
       const response = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteData' });
       console.log('Website data:', response);
 
       // Update language display
       updateLanguageDisplay(response.language);
-      
+
       // broke response.batches, so:
       const batches = 0
-      
+
       // Update character count and token estimate
       updateCharacterCount(response.characterCount, batches);
     } catch (error) {
@@ -59,16 +59,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const updateLanguageDisplay = (language: string | null) => {
     if (!languageDisplayElement) return;
-  
+
     languageDisplayElement.textContent = 'Loading...';
-  
+
     if (language) {
       const languageNamesInEnglish = new Intl.DisplayNames(['en'], { type: 'language' });
       const languageNamesInArabic = new Intl.DisplayNames(['ar'], { type: 'language' });
       const lang = languageNamesInEnglish.of(language);
       const lang_ar = languageNamesInArabic.of(language);
       languageDisplayElement.textContent = `Language: ${lang} (${lang_ar})`;
-  
+
       updateDiacritizeMessage(language);
     } else {
       console.error('Failed to get website language.');
@@ -76,12 +76,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateDiacritizeMessage(null);
     }
   };
-  
+
   const updateDiacritizeMessage = (language: string | null) => {
     if (!diacritizeMessage) return;
-  
+
     const arabicDialects = ['ar', 'ar-AE', 'ar-BH', 'ar-DZ', 'ar-EG', 'ar-IQ', 'ar-JO', 'ar-KW', 'ar-LB', 'ar-LY', 'ar-MA', 'ar-OM', 'ar-QA', 'ar-SA', 'ar-SD', 'ar-SY', 'ar-TN', 'ar-YE'];
-  
+
     if (language && arabicDialects.includes(language)) {
       diacritizeMessage.textContent = 'This website is in Arabic.';
       diacritizeMessage.style.color = 'green';
@@ -97,12 +97,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const updateCharacterCount = (chars: number, batches: number) => {
     if (!characterCountElement || !outputTokenCountElement) return;
-      characterCountElement.textContent = `Character Count: ${chars}`;
-      const outputTokens = (chars * 2.3).toFixed(0);
-      outputTokenCountElement.textContent = `Estimated output token count: ${outputTokens}`;
-      a.chars = chars;
-      a.batches = batches;
-    }
+    characterCountElement.textContent = `Character Count: ${chars}`;
+    const outputTokens = (chars * 2.3).toFixed(0);
+    outputTokenCountElement.textContent = `Estimated output token count: ${outputTokens}`;
+    a.chars = chars;
+    a.batches = batches;
+  }
 
   const getSelectedPrompt = () => {
     if (promptDisplayElement && promptLengthElement) {
