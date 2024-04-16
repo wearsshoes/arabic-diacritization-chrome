@@ -121,30 +121,30 @@ async function processDiacritizationBatches(method: string, websiteText: TextNod
   
   const diacritizationBatches = createDiacritizationElementBatches(websiteText, 750);
   const texts = createAPIBatches(diacritizationBatches);
-  let diacritizedTextArray: string[] = [];
-  
-  throw new Error('Not implemented yet');
+  let resultingTexts: string[] = [];
   
   // If the method is 'diacritize' and saved data exists for the current webpage, return the saved results
   if (method === 'diacritize') {
 
     console.log('Received diacritization request and data, processing');
-    const diacritizeArray = await diacritizeTexts(texts);
-    diacritizedTextArray = diacritizeArray
+    resultingTexts = await diacritizeTexts(texts);
 
-    // } else if (method === 'arabizi') {
-    //   // honestly, this could just be generated automatically and toggled on/off back to full arabic cache state
-    //   // could also be fun to do a "wubi" version on alternating lines?
-    //   console.log('Received arabizi request and data, processing');
-    //   if (cache && cache.length) {
-    //     console.log('Diacritization inferred to exist, transliterating')
-    //     diacritizedTextArray = arabicToArabizi(cache.map((batch) => batch.rawResult));
-    //   } else {
-    //     console.log('Diacritizing text first')
-    //     const diacritizeArray = await diacritizeTexts(texts);
-    //     diacritizedTextArray = arabicToArabizi(diacritizeArray)
-    //   }
+  } else if (method === 'arabizi') {
+
+    throw new Error('Not implemented yet');
+    
+    // // honestly, this could just be generated automatically and toggled on/off back to full arabic cache state
+    // // could also be fun to do a "wubi" version on alternating lines?
+    // console.log('Received arabizi request and data, processing');
+    // if (cache && cache.length) {
+    //   console.log('Diacritization inferred to exist, transliterating')
+    //   diacritizedTextArray = arabicToArabizi(cache.map((batch) => batch.rawResult));
+    // } else {
+    //   console.log('Diacritizing text first')
+    //   const diacritizeArray = await diacritizeTexts(texts);
+    //   diacritizedTextArray = arabicToArabizi(diacritizeArray)
     // }
+  }
 
     // Store the diacritized results using DiacritizationDataManager methods
   const diacritizedTexts = resultingTexts.flatMap((text) => text.split(delimiter));
