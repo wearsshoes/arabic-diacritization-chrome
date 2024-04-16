@@ -33,15 +33,6 @@ export interface Prompt {
   text: string;
 }
 
-export interface Models {
-  [key: string]: Model;
-}
-
-export interface Model {
-  currentVersion: string;
-  level: number;
-}
-
 export interface TransliterationDict {
   [key: string]: string[];
 }

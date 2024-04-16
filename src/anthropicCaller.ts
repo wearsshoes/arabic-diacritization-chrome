@@ -1,16 +1,24 @@
 import Anthropic from '@anthropic-ai/sdk';
 import Bottleneck from 'bottleneck'
-import { Models, Model, SysPromptTokenCache } from './types';
+import { SysPromptTokenCache } from './types';
 import { calculateHash, getAPIKey } from './utils';
 export { claude, defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel };
 
 // some parts of these functions will get refactored back into background.ts
-
+interface Models {
+    [key: string]: Model;
+  }
+  
+interface Model {
+    currentVersion: string;
+    level: number;
+  }
 // Rate-limited Anthropic API call function
 const anthropicLimiter = new Bottleneck({
     maxConcurrent: 3,
     minTime: 1500
   });
+
   
 const claude: Models = {
 haiku: {
