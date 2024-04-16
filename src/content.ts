@@ -10,6 +10,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
   // Get the website language (called by popup.ts)
   if (request.action === 'getWebsiteData') {
+    console.log('Received request for website data...');
     const language = document.documentElement.lang;
     const totalTextLength = textElements
         .map(node => node.text.length)
@@ -19,28 +20,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
   // Get metadata about the website (called by background.ts)
   if (request.action === 'getWebsiteMetadata') {
-    const pageUrl = request.pageUrl;
+    console.log('Received request for website metadata...');
     const structuralMetadata = serializeStructureMetadata(document.body.querySelectorAll('*'));
-    const contentSignature = calculateContentSignature(document.body.querySelectorAll('*'));
-    if (typeof contentSignature === 'string') {
+    calculateContentSignature(document.body.querySelectorAll('*')).then((contentSignature) => {;
       const pageMetadata: PageMetadata = {
         lastVisited: new Date,
         contentSignature,
         structuralMetadata
       }
-      sendResponse({pageMetadata});
+      sendResponse(pageMetadata);
       // should at this point send whether or not newRecurseDOM has been called successfully
-    };
+  });
     return true;
   }
 
   // When diacritization is requested, returns the APIBatches
   if (request.action === "getWebsiteText") {
-    sendResponse({data: textElements});
+    console.log('Received request for  website text...');
+    sendResponse(textElements);
   }
 
   // Updates website when told to.
   if (request.action === "updateWebsiteText") {
+    console.log('Received request to update website text...');
     const data: WebPageDiacritizationData = request.data;
     // probably use getter methods instead of direct access
     const method = request.method;
@@ -63,13 +65,16 @@ const sentenceRegex = /[.!?؟]+\s*\n*/g;
 let textElements: TextNode[];
 
 async function calculateContentSignature(elements: NodeListOf<Element>): Promise<string> {
+  console.log('Calculating content signature...');
   const textContent = Array.from(elements).map((element) => element.textContent).join("");
   const signature = await calculateHash(textContent);
+  console.log('Content signature:', signature);
   return signature;
 }
 
 function serializeStructureMetadata(elements: NodeListOf<Element>): string {
   // Serialize page structure metadata
+  console.log('Serializing page structure metadata...');
   const serialized: ElementAttributes[] = Array.from(elements).map((element) => ({
           tagName: element.tagName,
           id: element.id,
@@ -186,6 +191,7 @@ function main() {
     const mainNode = document.querySelector('main') || document.body;
     console.log('Main node:', mainNode); 
     textElements = newRecurseDOM(mainNode).textElements;
+    console.log('Text elements:', textElements);
   } catch (error) {
     console.error('Error during initialization:', error);
   }
