@@ -15,13 +15,6 @@ export interface ElementAttributes {
   className?: string; // space separated list of classes, not an array
 }
 
-
-// Roll this into WebPageDiacritizationData
-export interface DiacritizationRequestBatch {
-  text: string;
-  elements: TextNode;
-}
-
 // Roll this into WebPageDiacritizationData
 // Will be even easier to do if you move all the text serialize/deserialize into background.ts
 export interface NodeHashlist {
