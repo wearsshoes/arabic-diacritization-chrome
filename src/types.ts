@@ -1,13 +1,5 @@
 // Definition of types used in the application
-
 import { calculateHash } from "./utils";
-
-// should be replaced with DiacritizationElement.
-export interface TextNode {
-  elementId: string;
-  index: number
-  text: string;
-}
 
 export interface ElementAttributes {
   tagName: string;
@@ -15,12 +7,6 @@ export interface ElementAttributes {
   className?: string; // space separated list of classes, not an array
 }
 
-// Roll this into WebPageDiacritizationData
-// Will be even easier to do if you move all the text serialize/deserialize into background.ts
-export interface NodeHashlist {
-  [nodeHash: string]: TextNode
-}
- 
 export interface Prompt {
   name: string;
   text: string;
@@ -40,6 +26,16 @@ export interface PageMetadata {
   lastVisited: Date,
   contentSignature: string,
   structuralMetadata: string,
+}
+
+export interface TextNode {
+  elementId: string;
+  index: number
+  text: string;
+}
+
+export interface NodeHashlist {
+  [nodeHash: string]: TextNode
 }
 
 // it's like, not inconvceivable that you just transmit the entire webpage into background.ts
