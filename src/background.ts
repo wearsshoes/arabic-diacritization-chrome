@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import arabizi from './arabizi.json';
 import prompts from './defaultPrompts.json';
-import { calculateHash, getAPIKey } from './utils';
+import { getAPIKey } from './utils';
 import { Prompt, TransliterationDict, WebPageDiacritizationData, TextNode, PageMetadata } from './types';
 import { defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel } from './anthropicCaller'
 import { DiacritizationDataManager } from './datamanager';
@@ -280,7 +280,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
         ]
       };
       try {
-        const response = await anthropicAPICall(msg, apiKey, arabicTextHash);
+        const response = await anthropicAPICall(msg, apiKey);
 
         // check the token usage
         const inputTokens = response.usage.input_tokens - sysPromptLength;
