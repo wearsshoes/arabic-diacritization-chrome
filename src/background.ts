@@ -45,11 +45,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         // Load the saved data for the current webpage
         const retrievedPageData = await dataManager.getWebPageData(pageUrl);
         if (!retrievedPageData) {
-          console.log('No saved data found for the current webpage');
+          console.log('No saved data found for the current webpage, continuing');
         } else if (retrievedPageData.metadata.contentSignature === pageMetadata.contentSignature) {
           // will just return the saved data if the content hasn't changed
-          // sendResponse({retrievedPageData});
-        };
+          await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', data: retrievedPageData, method });
+          sendResponse({message: 'No changes detected, returning saved data.'});
+        } else {
+          console.log('Content has changed, updating the saved data');
+        }
 
         // Get the website text
         const websiteText: TextNode[] = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteText' });
@@ -70,7 +73,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           .then(() => console.log('Web page data updated:', webPageDiacritizationData));
 
         // Update the website text
-        await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', data: diacritizedText, method });
+        await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', data: webPageDiacritizationData, method });
         sendResponse({ message: 'Completed.' });
 
       } catch (error) {
@@ -117,7 +120,6 @@ async function getPrompt(): Promise<Prompt> {
 
 // Async worker for API call
 async function processDiacritizationBatches(method: string, websiteText: TextNode[]): Promise<TextNode[]> {
-
   
   const diacritizationBatches = createDiacritizationElementBatches(websiteText, 750);
   const texts = createAPIBatches(diacritizationBatches);
@@ -146,7 +148,7 @@ async function processDiacritizationBatches(method: string, websiteText: TextNod
     // }
   }
 
-    // Store the diacritized results using DiacritizationDataManager methods
+  // Store the diacritized results using DiacritizationDataManager methods
   const diacritizedTexts = resultingTexts.flatMap((text) => text.split(delimiter));
   const diacritizedNodes = websiteText.map((node, index) => {
     return {
