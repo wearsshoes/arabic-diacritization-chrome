@@ -58,7 +58,7 @@ export class DiacritizationDataManager {
         const objectSize = getSizeInBytes(obj);
 
         try {
-            const { storageSize = 0 } = await chromeStorageGet('storageSize');
+            const { storageSize = 0 } = await chromeStorageGet<number>('storageSize');
             const updatedSize = action === 'add' ? storageSize + objectSize : storageSize - objectSize;
             await chromeStorageSet({ storageSize: updatedSize });
         } catch (error) {
