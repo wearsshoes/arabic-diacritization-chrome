@@ -35,7 +35,7 @@ export async function getAPIKey(): Promise<string> {
   });
 }
 
-export function chromeStorageGet(key: string): Promise<{ [key: string]: any }> {
+export function chromeStorageGet<T>(key: string): Promise<{ [key: string]: T }> {
   return new Promise((resolve, reject) => {
       chrome.storage.sync.get([key], result => {
           chrome.runtime.lastError ? reject(chrome.runtime.lastError) : resolve(result);
