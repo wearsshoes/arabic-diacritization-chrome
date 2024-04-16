@@ -1,6 +1,6 @@
 // content.ts
-import { TextNode, NodeHashlist, PageMetadata, WebPageDiacritizationData } from "./types";
-import { calculateContentSignature, serializeStructureMetadata } from "./types";
+import { ElementAttributes, TextNode, NodeHashlist, PageMetadata, WebPageDiacritizationData } from "./types";
+import { calculateHash } from "./utils";
 
 // -------------- Event Listeners -------------- //
 
@@ -41,6 +41,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Updates website when told to.
   if (request.action === "updateWebsiteText") {
     const data: WebPageDiacritizationData = request.data;
+    // probably use getter methods instead of direct access
     const method = request.method;
     const original = data.original;
     const diacritization = data.getDiacritization(method);
@@ -59,6 +60,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Global Variables
 const sentenceRegex = /[.!?؟]+\s*\n*/g; 
 let textElements: TextNode[];
+
+async function calculateContentSignature(elements: NodeListOf<Element>): Promise<string> {
+  const textContent = Array.from(elements).map((element) => element.textContent).join("");
+  const signature = await calculateHash(textContent);
+  return signature;
+}
+
+function serializeStructureMetadata(elements: NodeListOf<Element>): string {
+  // Serialize page structure metadata
+  const serialized: ElementAttributes[] = Array.from(elements).map((element) => ({
+          tagName: element.tagName,
+          id: element.id,
+          className: element.className,
+      }));
+      return JSON.stringify(serialized);
+}
 
 // Builds element list according to interface. Recurses through DOM and put the in the right order. 
 function newRecurseDOM(node: Node = document.body, index: number = 0, elementId: string = '', iterator: number = 0): {textElements: TextNode[], iterator: number} {
