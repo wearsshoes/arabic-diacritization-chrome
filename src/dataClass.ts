@@ -12,16 +12,16 @@ export interface TextNode {
   text: string;
 }
 
-export interface NodeHashlist {
+export interface NodeHashDict {
   [nodeHash: string]: TextNode
 }
 
 // it's like, not inconvceivable that you just transmit the entire webpage into background.ts
 export class WebPageDiacritizationData {
-  public original?: NodeHashlist[];
-  public diacritizations?: {
-    [method: string]: NodeHashlist[]
-  }[];
+    public original?: NodeHashDict
+    private diacritizations?: {
+        [method: string]: NodeHashDict
+    };
 
   constructor(  
     public pageUrl: string,
@@ -49,27 +49,28 @@ export class WebPageDiacritizationData {
       throw new Error('Original text not created yet.');
     } else {
       const original = this.original;
-      const diacritization: NodeHashlist[] = Object.keys(original).map((key, index) => (
-        {[key]: diacritizedText[index]}
-      )); 
-
+            const diacritization: NodeHashDict = {};
+            Object.keys(original).forEach((key, index) => {
+                diacritization[key] = diacritizedText[index];
+            });
+            console.log('Adding diacritization:', diacritization);
       if (this.diacritizations === undefined) {
-        this.diacritizations = [{[method]: diacritization}];
+                this.diacritizations = { [method]: diacritization };
       } else {
-        this.diacritizations.push({method: diacritization});
+                this.diacritizations[method] = diacritization;
       }
     }
   }
 
-  getDiacritization(method: string): NodeHashlist[] {
+    getDiacritization(method: string): NodeHashDict {
     if (this.diacritizations === undefined) {
       throw new Error('Diacritizations not created yet.');
     } else {
-      const diacritization = this.diacritizations.find((diacritization) => diacritization[method]);
+            const diacritization = this.diacritizations[method];
       if (diacritization === undefined) {
         throw new Error('Diacritization method not found.');
       } else {
-        return diacritization[method];
+                return diacritization;
       }
     }
   }
