@@ -144,9 +144,11 @@ async function processDiacritizationBatches(method: string, websiteText: TextNod
   // If the method is 'diacritize' and saved data exists for the current webpage, return the saved results
   if (method === 'diacritize') {
 
-    throw new Error('Not implemented yet');
-    console.log('Received diacritization request and data, processing');
-    resultingTexts = await diacritizeTexts(texts);
+    console.log('Just returning originals for mock')
+    resultingTexts = texts;
+
+    // console.log('Received diacritization request and data, processing');
+    // resultingTexts = await diacritizeTexts(texts);
 
   } else if (method === 'arabizi') {
 
@@ -229,13 +231,11 @@ function containsArabicCharacters(text: string): boolean {
 
 // Prepare batches for API by extracting the text with delimiters.
 function createAPIBatches(textElementBatches: TextNode[][]): string[] {
-  console.log('beginning api batching')
   const diacritizationBatches: string[] = [];
 
   textElementBatches.forEach((batch) => {
     const batchText = batch.map((textElement) => textElement.text.replace(delimiter, ''))
       .join(delimiter);
-    console.log(batchText)
     diacritizationBatches.push(batchText);
   });
 
