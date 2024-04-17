@@ -24,6 +24,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const structuralMetadata = serializeStructureMetadata(document.body.querySelectorAll('*'));
     calculateContentSignature(document.body.querySelectorAll('*')).then((contentSignature) => {;
       const pageMetadata: PageMetadata = {
+        pageUrl: window.location.href,
         lastVisited: new Date,
         contentSignature,
         structuralMetadata

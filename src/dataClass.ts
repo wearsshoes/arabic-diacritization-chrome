@@ -1,6 +1,7 @@
 import { calculateHash } from "./utils";
 
 export interface PageMetadata {
+    pageUrl: string,
   lastVisited: Date,
   contentSignature: string,
   structuralMetadata: string,
