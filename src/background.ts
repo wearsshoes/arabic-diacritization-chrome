@@ -5,7 +5,7 @@ import { Prompt, TransliterationDict } from './types';
 import { PageMetadata, TextNode, WebPageDiacritizationData } from './dataClass';
 import { defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel } from './anthropicCaller'
 import { DiacritizationDataManager } from './datamanager';
-import { getAPIKey } from "./utils";
+import { getAPIKey, calculateHash } from "./utils";
 
 
 // ----------------- Event Listeners ----------------- //
@@ -33,15 +33,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Handle the diacritization request
   if (request.action === "sendToDiacritize" && request.method) {
     console.log('Received diacritization request');
-    const method = request.method;
+    const method: string = request.method;
     
     async function processDiacritizationRequest() {
       try {
         // Get the active tab
-        console.log('Getting active tab');
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab.id === undefined) throw new Error('No active tab found');
-        else console.log('Active tab found:', tab);
+        else console.log('Active tab found:', tab.url, tab.id);
         const pageUrl = tab.url as string;
 
         // Get the site's current metadata
@@ -51,7 +50,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         // Load the saved data for the current webpage
         console.log('Checking for saved data');
-        const retrievedPageData = await dataManager.getWebPageData(pageUrl);
+        const urlHash = await calculateHash(pageUrl);
+        const retrievedPageData = await dataManager.getWebPageData(urlHash);
         console.log('Retrieved page data:', retrievedPageData);
         if (!retrievedPageData) {
           console.log('No saved data found for the current webpage, continuing');
@@ -68,24 +68,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const websiteText: TextNode[] = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteText' });
         console.log('Website text:', websiteText);
 
-        const webPageDiacritizationData = new WebPageDiacritizationData(
-          pageUrl,
+        const webPageDiacritizationData = await WebPageDiacritizationData.build(
           pageMetadata,
-          websiteText,
         );
 
         // Process the diacritization batches
         console.log('Processing diacritization');
-        const diacritizedText = await processDiacritizationBatches(method, websiteText);
-        webPageDiacritizationData.addDiacritization(diacritizedText, method);
+        await webPageDiacritizationData.createOriginal(websiteText);
+        const diacritizedText = await processDiacritizationBatches(method, websiteText)
+        
+        // Wait until original is loaded on webPageDiacritizationData, then addDiacritization
+        console.log('Adding diacritization to saved data');
+        await webPageDiacritizationData.addDiacritization(diacritizedText, method);
 
         // Update the saved metadata
         console.log('Updating saved web page data');
         await dataManager.updateWebPageData(pageUrl, webPageDiacritizationData)
           .catch((error) => console.error('Failed to update web page data:', error))
-          .then(() => console.log('Web page data updated:', webPageDiacritizationData));
+          .then(() => console.log('Saved webpage data updated:', webPageDiacritizationData));
 
         // Update the website text
+        const diacritization = await webPageDiacritizationData.getDiacritization(method);
+        const { original } = webPageDiacritizationData;
         console.log('Updating website text');
         await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', original, diacritization, method });
         console.log('Website text updated');
@@ -175,6 +179,8 @@ async function processDiacritizationBatches(method: string, websiteText: TextNod
       text: diacritizedTexts[index]
     };
   });
+
+  console.log('Diacritized text:', diacritizedNodes);
   return diacritizedNodes ;
 
 };
