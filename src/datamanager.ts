@@ -132,7 +132,7 @@ function saveData(db: IDBDatabase, storeName: string, data: any): Promise<void> 
     });
 }
 
-function loadData(db: IDBDatabase, storeName: string, id: string): Promise<any> {
+function loadData<T>(db: IDBDatabase, storeName: string, id: string): Promise<any> {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(storeName, 'readonly');
         const store = transaction.objectStore(storeName);
