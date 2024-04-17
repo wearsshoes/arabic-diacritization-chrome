@@ -87,9 +87,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         // Update the website text
         console.log('Updating website text');
-        await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', data: webPageDiacritizationData, method });
+        await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', original, diacritization, method });
+        console.log('Website text updated');
         sendResponse({ message: 'Completed.' });
-
       } catch (error) {
         console.error('Error processing diacritization:', error);
         sendResponse({ error: 'Failed to process diacritization.' });

@@ -1,5 +1,5 @@
 // content.ts
-import { PageMetadata, TextNode, NodeHashlist, WebPageDiacritizationData } from "./dataClass";
+import { PageMetadata, TextNode, NodeHashDict, WebPageDiacritizationData } from "./dataClass";
 import { ElementAttributes } from "./types";
 import { calculateHash } from "./utils";
 
@@ -44,15 +44,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Updates website when told to.
   if (request.action === "updateWebsiteText") {
     console.log('Received request to update website text...');
-    const data: WebPageDiacritizationData = request.data;
-    // probably use getter methods instead of direct access
-    const method = request.method;
-    const original = data.original;
-    const diacritization = data.getDiacritization(method);
-    if (original && diacritization) {
-        replaceTextWithDiacritizedText(original, diacritization, method);
+    const {original, diacritization, method} = request;
+    console.log(original, diacritization, method)
+    if (original && diacritization && method) {
+      replaceTextWithDiacritizedText(original, diacritization, method);
+      sendResponse({success: 'Text replaced.'});
     } else {
-      sendResponse({error: 'Original or diacritization not found.'});
+      sendResponse({error: 'Original or diacritization or method not found.'});
     }
     return true;
   }
@@ -156,8 +154,8 @@ function replaceTextWithDiacritizedText(originals: NodeHashDict, replacements: N
     const newText = replacements[key]
     
     const element = document.querySelector(`[data-element-id="${newText.elementId}"]`);
-
-      if (element) {
+    
+    if (element) {
       if (element.childNodes[newText.index]) {
         element.childNodes[newText.index].textContent = newText.text;
       } else {
