@@ -74,23 +74,13 @@ export class DiacritizationDataManager {
 
     async clearAllData(): Promise<void> {
         return new Promise((resolve, reject) => {
-            if (!this.db) {
-                reject(new Error("Database not initialized"));
-                return;
+            try {
+                deleteDatabase("WebpageDiacritizations");
+                openDatabase("WebpageDiacritizations", "diacritizations_msa", 1)
+            } catch (error) {
+                console.error(error);
+                reject(new Error("Failed to clear database" + error));
             }
-
-            const transaction = this.db.transaction("diacritizations_msa", "readwrite");
-            const store = transaction.objectStore("diacritizations_msa");
-
-            const clearRequest = store.clear();
-
-            clearRequest.onerror = () => {
-                reject(new Error("Failed to clear the database"));
-            };
-
-            clearRequest.onsuccess = () => {
-                resolve();
-            };
         });
     }
 }
