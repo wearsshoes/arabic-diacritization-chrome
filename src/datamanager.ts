@@ -77,7 +77,9 @@ export class DiacritizationDataManager {
         return new Promise((resolve, reject) => {
             try {
                 deleteDatabase("WebpageDiacritizations");
+                console.log("Database cleared, reinitializing...");
                 openDatabase("WebpageDiacritizations", "diacritizations_msa", 1)
+                resolve();
             } catch (error) {
                 console.error(error);
                 reject(new Error("Failed to clear database" + error));
