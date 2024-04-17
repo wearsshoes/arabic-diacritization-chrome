@@ -145,33 +145,29 @@ function isVisible(element: Element): boolean {
 }
 
 // DOM Manipulation
-function replaceTextWithDiacritizedText(original: NodeHashlist[], replacement: NodeHashlist[], method: string): void {
+function replaceTextWithDiacritizedText(originals: NodeHashDict, replacements: NodeHashDict, method: string): void {
 
-  if (original.length !== replacement.length) {
+  console.log('Replacing text with diacritized text...');
+  if (originals.length !== replacements.length) {
     throw new Error('textElements and diacritizedTexts should have the same length.');
   }
 
-    for (let i = 0; i < original.length; i++) {
-      const textElement = original[i].textElement;
-      const diacritizedText = replacement[i].textElement.text;
-
-    if (typeof textElement.elementId !== 'string' || typeof textElement.index !== 'number') {
-      throw new Error(`Invalid textElement at index ${i}: ${JSON.stringify(textElement)}`);
-    }
-
-      const element = document.querySelector(`[data-element-id="${textElement.elementId}"]`);
+  Object.keys(replacements).forEach((key) => {
+    const newText = replacements[key]
+    
+    const element = document.querySelector(`[data-element-id="${newText.elementId}"]`);
 
       if (element) {
-      if (element.childNodes[textElement.index]) {
-        element.childNodes[textElement.index].textContent = diacritizedText;
+      if (element.childNodes[newText.index]) {
+        element.childNodes[newText.index].textContent = newText.text;
       } else {
-        console.warn(`Warning: childNode at index ${textElement.index} does not exist in element with id ${textElement.elementId}.`);
-        continue;
+        console.warn(`Warning: childNode at index ${newText.index} does not exist in element with id ${newText.elementId}.`);
       }
     } else {
-      console.warn(`Warning: elementId ${textElement.elementId} did not map to any element.`);
+      console.warn(`Warning: elementId ${newText.elementId} did not map to any element.`);
     }
-  }
+  
+  })
   if(method === 'arabizi'){
     directionLTR();
   }
