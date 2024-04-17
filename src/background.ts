@@ -148,11 +148,11 @@ async function processDiacritizationBatches(method: string, websiteText: TextNod
   // If the method is 'diacritize' and saved data exists for the current webpage, return the saved results
   if (method === 'diacritize') {
 
-    console.log('Just returning originals for mock')
-    resultingTexts = texts;
+    // console.log('Just returning originals for mock')
+    // resultingTexts = texts;
 
-    // console.log('Received diacritization request and data, processing');
-    // resultingTexts = await diacritizeTexts(texts);
+    console.log('Received diacritization request and data, processing');
+    resultingTexts = await diacritizeTexts(texts);
 
   } else if (method === 'arabizi') {
 
