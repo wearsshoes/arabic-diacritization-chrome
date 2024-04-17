@@ -4,7 +4,7 @@ export interface PageMetadata {
     pageUrl: string,
     lastVisited: Date,
     contentSignature: string,
-    structuralMetadata: string,
+    structuralMetadata: {[key: string]: any},
 }
 
 export interface TextNode {

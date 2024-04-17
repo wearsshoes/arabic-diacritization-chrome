@@ -21,8 +21,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Get metadata about the website (called by background.ts)
   if (request.action === 'getWebsiteMetadata') {
     console.log('Received request for website metadata...');
-    const structuralMetadata = serializeStructureMetadata(document.body.querySelectorAll('*'));
-    calculateContentSignature(document.body.querySelectorAll('*')).then((contentSignature) => {;
+    const structuralMetadata = serializeStructureMetadata();
+    calculateContentSignature().then((contentSignature) => {;
       const pageMetadata: PageMetadata = {
         pageUrl: window.location.href,
         lastVisited: new Date,
@@ -63,23 +63,44 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 const sentenceRegex = /[.!?؟]+\s*\n*/g; 
 let textElements: TextNode[];
 
-async function calculateContentSignature(elements: NodeListOf<Element>): Promise<string> {
+async function calculateContentSignature(): Promise<string> {
+  // for any *remotely* dynamic content, this will be different every time
+  // also this should
+  // we should run this on main, not document
+  const content = document.body.querySelector('main')?.querySelectorAll('*') || document.body.querySelectorAll('*')
   console.log('Calculating content signature...');
-  const textContent = Array.from(elements).map((element) => element.textContent).join("");
+  const textContent = Array.from(content).map((element) => element.textContent).join("");
   const signature = await calculateHash(textContent);
   console.log('Content signature:', signature);
   return signature;
 }
 
-function serializeStructureMetadata(elements: NodeListOf<Element>): string {
+async function serializeStructureMetadata(): Promise<{ [key: string]: ElementAttributes }> {
   // Serialize page structure metadata
+  // this will have already changed because of recurseDOM???
+  const content = document.body.querySelector('main')?.querySelectorAll('*') || document.body.querySelectorAll('*');
+  
   console.log('Serializing page structure metadata...');
-  const serialized: ElementAttributes[] = Array.from(elements).map((element) => ({
-          tagName: element.tagName,
-          id: element.id,
-          className: element.className,
-      }));
-      return JSON.stringify(serialized);
+  
+  const serialized: ElementAttributes[] = Array.from(content).map((element) => ({
+    tagName: element.tagName,
+    id: element.id,
+    className: element.className,
+    textContent: element.textContent,
+  }));
+  
+  const keys = await calculateHash(serialized.map((attributes) => JSON.stringify(attributes)));
+  
+  const result: { [key: string]: ElementAttributes } = {};
+  
+  serialized.forEach((attributes, index) => {
+    const key = keys[index];
+    result[key] = attributes;
+  });
+  
+  console.log('Structure metadata:', result);
+  
+  return result;
 }
 
 // Builds element list according to interface. Recurses through DOM and put the in the right order. 
