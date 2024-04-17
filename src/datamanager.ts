@@ -144,6 +144,20 @@ function loadData<T>(db: IDBDatabase, storeName: string, id: string): Promise<an
 
         request.onsuccess = () => {
             resolve(request.result);
+      };
+    });
+  }
+
+function deleteDatabase(database: string): Promise<void> {
+return new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(database);
+
+    request.onerror = () => {
+    reject(request.error);
+    };
+
+    request.onsuccess = () => {
+    resolve();
         };
     });
 }
