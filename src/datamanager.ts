@@ -1,4 +1,4 @@
-import { WebPageDiacritizationData, TextNode } from "./dataClass";
+import { WebPageDiacritizationData } from "./dataClass";
 import { chromeStorageGet, chromeStorageSet } from "./utils";
 
 export class DiacritizationDataManager {
@@ -22,28 +22,29 @@ export class DiacritizationDataManager {
         }
         return this.instance;
     }
-
+    
     async getWebPageData(url: string): Promise<WebPageDiacritizationData | undefined> {
         if (!this.db) {
             throw new Error("Database not initialized");
         }
         // Implementation to retrieve data from IndexedDB
-        const data = await loadData(this.db, "diacritizations_msa", url);
-        if (data) {
-            return data as WebPageDiacritizationData;
-        } else {
-            return undefined;
+        try {
+            console.log("Getting data for", url); 
+            return loadData<WebPageDiacritizationData>(this.db, "diacritizations_msa", url);
+        } catch (error) {
+            console.error(error);
+            throw new Error("Data not found" + error);
         }
     }
 
-    async updateWebPageData(id: string, data: WebPageDiacritizationData): Promise<void> {
+    async updateWebPageData(url: string, data: WebPageDiacritizationData): Promise<void> {
         // Implementation to update data in IndexedDB
         if (!this.db) {
             throw new Error("Database not initialized")
         } else {
             try {
-                const pageData = await this.getWebPageData(id);
-                await saveData(this.db, "diacritizations_msa", { id, data });
+                const pageData = await this.getWebPageData(url);
+                await saveData(this.db, "diacritizations_msa", data);
                 this.updateStorageSize(pageData ?? '', 'remove');
                 this.updateStorageSize(data, 'add');
             } catch (error) {
@@ -124,16 +125,16 @@ function saveData(db: IDBDatabase, storeName: string, data: any): Promise<void> 
 
 function loadData<T>(db: IDBDatabase, storeName: string, id: string): Promise<any> {
     return new Promise((resolve, reject) => {
-        const transaction = db.transaction(storeName, 'readonly');
-        const store = transaction.objectStore(storeName);
-        const request = store.get(id);
-
-        request.onerror = () => {
-            reject(request.error);
-        };
-
-        request.onsuccess = () => {
-            resolve(request.result);
+      const transaction = db.transaction(storeName, 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.get(id);
+  
+      request.onerror = () => {
+        reject(request.error);
+      };
+  
+      request.onsuccess = () => {
+        resolve(request.result);
       };
     });
   }
@@ -148,8 +149,8 @@ return new Promise((resolve, reject) => {
 
     request.onsuccess = () => {
     resolve();
-        };
-    });
+    };
+});
 }
 
 function getSizeInBytes(obj: Object) {
