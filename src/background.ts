@@ -53,14 +53,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const urlHash = await calculateHash(pageUrl);
         const retrievedPageData = await dataManager.getWebPageData(urlHash);
         console.log('Retrieved page data:', retrievedPageData);
-        if (!retrievedPageData) {
-          console.log('No saved data found for the current webpage, continuing');
-        } else if (retrievedPageData.metadata.contentSignature === pageMetadata.contentSignature) {
-          // will just return the saved data if the content hasn't changed
-          await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', data: retrievedPageData, method });
-          sendResponse({message: 'No changes detected, returning saved data.'});
+        if (retrievedPageData) {
+          if (retrievedPageData.metadata.contentSignature === pageMetadata.contentSignature) {
+            // will just return the saved data if the content hasn't changed
+            await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', data: retrievedPageData, method: 'no change' });
+            console.log('No changes detected, returning saved data.');
+            sendResponse({message: 'No changes detected, returning saved data.'});
+            return;
+          } else {
+            console.log('Content has changed, updating the saved data');
+            // log the differences in pageMetadata structuralmetadata and retrievedPageData structuralmetadata
+            const currentStructure = pageMetadata.structuralMetadata;
+            const savedStructure = retrievedPageData.metadata.structuralMetadata;
+            const diff = Object.keys(currentStructure).reduce((acc, key: string) => {
+              if (currentStructure[key] !== savedStructure[key]) {
+                acc += [currentStructure[key], savedStructure[key]];
+              }
+              return acc;
+            });
+            console.log('Differences:', diff);
+          } 
         } else {
-          console.log('Content has changed, updating the saved data');
+            console.log('No saved data found for the current webpage, continuing');
         }
 
         // Get the website text
