@@ -192,7 +192,7 @@ function replaceTextWithDiacritizedText(originals: NodeHashDict, replacements: N
 
 // Forces LTR. Only gets called for Arabizi
 function directionLTR() {
-  document.documentElement.setAttribute("lang", "en");
+  // document.documentElement.setAttribute("lang", "en");
   document.documentElement.setAttribute("dir", "ltr");
   const style = document.createElement('style')
   style.textContent = `body * {direction: ltr;}`;
