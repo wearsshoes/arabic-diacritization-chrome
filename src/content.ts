@@ -11,11 +11,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Get the website language (called by popup.ts)
   if (request.action === 'getWebsiteData') {
     console.log('Received request for website data...');
+    const metadataReady = !!(pageMetadata && textElements);
     const language = document.documentElement.lang;
     const totalTextLength = textElements
         .map(node => node.text.length)
       .reduce((acc, curr) => acc + curr, 0);
-    sendResponse({language, chars: totalTextLength});
+    sendResponse({language, chars: totalTextLength, metadataReady});
   }
   
   // Get metadata about the website (called by background.ts)

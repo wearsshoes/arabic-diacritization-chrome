@@ -43,14 +43,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       const response = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteData' });
       console.log('Website data:', response);
 
+      
       // Update language display
       updateLanguageDisplay(response.language);
-
+      
       // broke response.batches, so:
-      const batches = 0
-
+      const batches = response.chars / 675
+      
       // Update character count and token estimate
-      updateCharacterCount(response.characterCount, batches);
+      updateCharacterCount(response.chars, batches);
+      if (!response.metadataReady) {
+        throw new Error('Metadata not ready.');
+      }
     } catch (error) {
       console.error('Failed to get complete website data:', error);
       updateLanguageDisplay(null);
