@@ -18,7 +18,7 @@ export interface NodeHashDict {
 }
 
 export class WebPageDiacritizationData {
-    private diacritizations: {
+    diacritizations: {
         [method: string]: NodeHashDict
     } = {};
 
@@ -63,7 +63,7 @@ export class WebPageDiacritizationData {
         }
     }
 
-    getDiacritization(method: string): NodeHashDict {
+    getDiacritization(method: string): TextNode[] {
         if (this.diacritizations === undefined) {
             throw new Error('Diacritizations not created yet.');
         } else {
@@ -71,7 +71,11 @@ export class WebPageDiacritizationData {
             if (diacritization === undefined) {
                 throw new Error('Diacritization method not found.');
             } else {
-                return diacritization;
+                let acc: TextNode[] = [];
+                Object.keys(diacritization).forEach((key, index) => {
+                    acc[index] = diacritization[key];
+                });            
+                return acc;
             }
         }
     }
