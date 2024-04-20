@@ -21,19 +21,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Get metadata about the website (called by background.ts)
   if (request.action === 'getWebsiteMetadata') {
     console.log('Received request for website metadata...');
-    const structuralMetadata = serializeStructureMetadata();
-    calculateContentSignature().then((contentSignature) => {;
-      const pageMetadata: PageMetadata = {
-        pageUrl: window.location.href,
-        lastVisited: new Date,
-        contentSignature,
-        structuralMetadata
-      }
+    if (pageMetadata) {
       sendResponse(pageMetadata);
-      // should at this point send whether or not newRecurseDOM has been called successfully
-  });
+    } else {
+      console.error('Metadata not found.');
+      sendResponse({error: 'Metadata not found.'});
+    }
     return true;
-  }
+  };
+
 
   // When diacritization is requested, returns the APIBatches
   if (request.action === "getWebsiteText") {
@@ -62,11 +58,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Global Variables
 const sentenceRegex = /[.!?؟]+\s*\n*/g; 
 let textElements: TextNode[];
+let pageMetadata: PageMetadata;
 
+// eventually this 
 async function calculateContentSignature(): Promise<string> {
   // for any *remotely* dynamic content, this will be different every time
-  // also this should
-  // we should run this on main, not document
+  // might be able to do it as part of newRecurseDOM
   const content = document.body.querySelector('main')?.querySelectorAll('*') || document.body.querySelectorAll('*')
   console.log('Calculating content signature...');
   const textContent = Array.from(content).map((element) => element.textContent).join("");
@@ -201,9 +198,21 @@ function directionLTR() {
   document.head.appendChild(style);
 }    
 
+
+
 // starts the batch preparer
-function main() {
+async function main() {
   try {
+    const structuralMetadata = await serializeStructureMetadata();
+    await calculateContentSignature().then((contentSignature) => {;
+      pageMetadata = {
+        pageUrl: window.location.href,
+        lastVisited: new Date,
+        contentSignature,
+        structuralMetadata
+      };
+    })
+    console.log('Initializing...', pageMetadata);
     const mainNode = document.querySelector('main') || document.body;
     console.log('Main node:', mainNode); 
     textElements = newRecurseDOM(mainNode).textElements;
@@ -223,3 +232,4 @@ if (document.readyState === "loading") {
   // But often, `DOMContentLoaded` has already fired
   main();
 }
+
