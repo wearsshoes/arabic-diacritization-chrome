@@ -183,7 +183,10 @@ async function processDiacritizationBatches(method: string, websiteText: TextNod
     //   const diacritizeArray = await diacritizeTexts(texts);
     //   diacritizedTextArray = arabicToArabizi(diacritizeArray)
     // }
-  }
+  } else {
+    console.error(method + ' is not implemented yet')
+    throw new Error(method + ' is not implemented yet');
+  } 
 
   // Store the diacritized results using DiacritizationDataManager methods
   const diacritizedTexts = resultingTexts.flatMap((text) => text.split(delimiter));

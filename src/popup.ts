@@ -152,15 +152,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     return totalCostPlusTax;
   };
 
-  diacritizeBtn?.addEventListener('click', () => beginDiacritization('diacritize'));
-  arabiziBtn?.addEventListener('click', () => beginDiacritization('arabizi'));
+  const diacritizationSelector = document.getElementById('diacritizationSelector') as HTMLSelectElement
+  diacritizeBtn?.addEventListener('click', () => beginDiacritization(diacritizationSelector.value));
+  // arabiziBtn?.addEventListener('click', () => beginDiacritization('arabizi'));
   optionsBtn?.addEventListener('click', () => chrome.runtime.openOptionsPage());
   calculateBtn?.addEventListener('click', calculateCost);
+  
 
   checkApiKey();
   getWebsiteData();
   getSelectedPrompt();
   updateModelDisplay();
+  console.log(diacritizationSelector?.value)
 });
 
 let a: { [key: string]: number } = {};
