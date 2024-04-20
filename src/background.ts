@@ -35,7 +35,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('Received diacritization request');
     const method: string = request.method;
 
-
     async function processDiacritizationRequest() {
       try {
         // Get the active tab
@@ -54,16 +53,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const urlHash = await calculateHash(pageUrl);
         const retrievedPageData = await dataManager.getWebPageData(urlHash);
         console.log('Retrieved page data:', retrievedPageData);
+
+        // check current and saved data
         if (retrievedPageData) {
           // for now, we're just going to bypass everything on original
-          if (method === 'original') {
-            if (retrievedPageData.metadata.contentSignature === pageMetadata.contentSignature) {
-              // wait. this doesn't work, because the DOM hasn't been altered, so the select will fail.
-              await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', original: retrievedPageData.original, diacritization: retrievedPageData.original, method: 'original' }); 
-              sendResponse({ success: 'Restored to original.' });
-              return;
-            }
-          }
           if (retrievedPageData.metadata.contentSignature === pageMetadata.contentSignature) {
             // will just return the saved data if the content hasn't changed
             await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', original: retrievedPageData.original, diacritization: retrievedPageData.getDiacritization(method), method: method });
@@ -72,16 +65,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return;
           } else {
             console.log('Content has changed, updating the saved data');
-            // log the differences in pageMetadata structuralmetadata and retrievedPageData structuralmetadata
-            const currentStructure = pageMetadata.structuralMetadata;
-            const savedStructure = retrievedPageData.metadata.structuralMetadata;
-            const diff = Object.keys(currentStructure).reduce((acc, key: string) => {
-              if (currentStructure[key] !== savedStructure[key]) {
-                acc += [currentStructure[key], savedStructure[key]];
-              }
-              return acc;
-            });
-            console.log('Differences:', diff);
+            logChanges(retrievedPageData.metadata, pageMetadata);
           }
         } else {
           console.log('No saved data found for the current webpage, continuing');
@@ -92,13 +76,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const websiteText: TextNode[] = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteText' });
         console.log('Website text:', websiteText);
 
-        const webPageDiacritizationData = await WebPageDiacritizationData.build(
-          pageMetadata,
-        );
+        // setup webpage cache object
+        const webPageDiacritizationData = await WebPageDiacritizationData.build(pageMetadata);
+        await webPageDiacritizationData.createOriginal(websiteText);
 
         // Process the diacritization batches
         console.log('Processing diacritization');
-        await webPageDiacritizationData.createOriginal(websiteText);
         const diacritizedText = await processDiacritizationBatches(method, websiteText)
 
         // Wait until original is loaded on webPageDiacritizationData, then addDiacritization
@@ -214,6 +197,19 @@ async function processDiacritizationBatches(method: string, websiteText: TextNod
   return diacritizedNodes;
 
 };
+
+function logChanges(saved: PageMetadata, current: PageMetadata): void {
+  // log the differences in pageMetadata structuralmetadata and retrievedPageData structuralmetadata
+  const currentStructure = current.structuralMetadata;
+  const savedStructure = saved.structuralMetadata;
+  const diff = Object.keys(currentStructure).reduce((acc, key: string) => {
+    if (currentStructure[key] !== savedStructure[key]) {
+      acc += [currentStructure[key], savedStructure[key]];
+    }
+    return acc;
+  });
+  console.log('Differences:', diff);
+}
 
 // Create batches of elements according to sentence boundaries and API character limit.
 function createDiacritizationElementBatches(textElements: TextNode[], maxChars: number): TextNode[][] {
