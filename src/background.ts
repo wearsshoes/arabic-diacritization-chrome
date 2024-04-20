@@ -86,17 +86,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
 
         // Get the website text
-        let diacritizedText: TextNode[];
-        if (webPageDiacritizationData.diacritizations['original']) {
-          const websiteText = webPageDiacritizationData.getDiacritization('original');
-          diacritizedText = await processDiacritizationBatches(method, websiteText)
-        }else {
+        if (!webPageDiacritizationData.diacritizations['original']) {
           console.log('Getting website text');
           const websiteText: TextNode[] = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteText' });
           console.log('Website text:', websiteText);
           await webPageDiacritizationData.createOriginal(websiteText);
-          diacritizedText = await processDiacritizationBatches(method, websiteText)
         }
+        const diacritizedText = await processDiacritizationBatches(method, webPageDiacritizationData)
 
         // Process the diacritization batches
         console.log('Processing diacritization');
