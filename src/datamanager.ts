@@ -22,38 +22,41 @@ export class DiacritizationDataManager {
         }
         return this.instance;
     }
-    
-    async getWebPageData(url: string): Promise<WebPageDiacritizationData | undefined> {
+
+    async getWebPageData(urlHash: string): Promise<WebPageDiacritizationData | undefined> {
         if (!this.db) {
-            throw new Error("Database not initialized");
+          throw new Error("Database not initialized");
         }
-        // Implementation to retrieve data from IndexedDB
         try {
-            console.log("Getting data for", url); 
-            return loadData<WebPageDiacritizationData>(this.db, "diacritizations_msa", url);
+          console.log("Getting data for", urlHash);
+          const serializedData = await loadData<string>(this.db, "diacritizations_msa", urlHash);
+          if (serializedData) {
+            return WebPageDiacritizationData.fromJSON(JSON.parse(serializedData.data));
+          }
+          return undefined;
         } catch (error) {
-            console.error(error);
-            throw new Error("Data not found" + error);
+          console.error(error);
+          throw new Error("Data not found" + error);
         }
-    }
-
-    async updateWebPageData(url: string, data: WebPageDiacritizationData): Promise<void> {
-        // Implementation to update data in IndexedDB
+      }
+    
+      async updateWebPageData(urlHash: string, data: WebPageDiacritizationData): Promise<void> {
         if (!this.db) {
-            throw new Error("Database not initialized")
+          throw new Error("Database not initialized");
         } else {
-            try {
-                const pageData = await this.getWebPageData(url);
-                await saveData(this.db, "diacritizations_msa", data);
-                this.updateStorageSize(pageData ?? '', 'remove');
-                this.updateStorageSize(data, 'add');
-            } catch (error) {
-                console.error(error);
-                throw new Error("Failed to save data" + error);
-            }
-        };
-    }
-
+          try {
+            const pageData = await this.getWebPageData(urlHash);
+            const serializedData = JSON.stringify(data);
+            await saveData(this.db, "diacritizations_msa", { id: data.id, data: serializedData });
+            this.updateStorageSize(pageData ?? '', 'remove');
+            this.updateStorageSize(data, 'add');
+          } catch (error) {
+            console.error(error);
+            throw new Error("Failed to save data" + error);
+          }
+        }
+      }
+    
     // when called by an add/remove function, update storage size in chrome storage
     async updateStorageSize(obj: Object, action: 'add' | 'remove'): Promise<void> {
         const objectSize = getSizeInBytes(obj);

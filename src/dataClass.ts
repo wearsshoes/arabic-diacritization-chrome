@@ -74,7 +74,7 @@ export class WebPageDiacritizationData {
                 let acc: TextNode[] = [];
                 Object.keys(diacritization).forEach((key, index) => {
                     acc[index] = diacritization[key];
-                });            
+                });
                 return acc;
             }
         }
@@ -84,4 +84,11 @@ export class WebPageDiacritizationData {
         this.metadata.lastVisited = date
     }
 
+    // Deserialization method
+    static fromJSON(json: any): WebPageDiacritizationData {
+        const { id, metadata, diacritizations } = json.data;
+        const instance = new WebPageDiacritizationData(id, metadata);
+        instance.diacritizations = diacritizations;
+        return instance;
+    }
 }
