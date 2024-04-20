@@ -164,7 +164,7 @@ function isVisible(element: Element): boolean {
 // DOM Manipulation
 function replaceTextWithDiacritizedText(originals: NodeHashDict, replacements: NodeHashDict, method: string): void {
 
-  console.log('Replacing text with diacritized text...');
+  console.log('Replacing text using method:', method);
   if (originals.length !== replacements.length) {
     throw new Error('textElements and diacritizedTexts should have the same length.');
   }

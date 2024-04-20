@@ -34,7 +34,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "sendToDiacritize" && request.method) {
     console.log('Received diacritization request');
     const method: string = request.method;
-    
+
+
     async function processDiacritizationRequest() {
       try {
         // Get the active tab
@@ -54,11 +55,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const retrievedPageData = await dataManager.getWebPageData(urlHash);
         console.log('Retrieved page data:', retrievedPageData);
         if (retrievedPageData) {
+          // for now, we're just going to bypass everything on original
+          if (method === 'original') {
+            if (retrievedPageData.metadata.contentSignature === pageMetadata.contentSignature) {
+              // wait. this doesn't work, because the DOM hasn't been altered, so the select will fail.
+              await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', original: retrievedPageData.original, diacritization: retrievedPageData.original, method: 'original' }); 
+              sendResponse({ success: 'Restored to original.' });
+              return;
+            }
+          }
           if (retrievedPageData.metadata.contentSignature === pageMetadata.contentSignature) {
             // will just return the saved data if the content hasn't changed
-            await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', data: retrievedPageData, method: 'no change' });
+            await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', original: retrievedPageData.original, diacritization: retrievedPageData.getDiacritization(method), method: method });
             console.log('No changes detected, returning saved data.');
-            sendResponse({message: 'No changes detected, returning saved data.'});
+            sendResponse({ message: 'No changes detected, returning saved data.' });
             return;
           } else {
             console.log('Content has changed, updating the saved data');
@@ -72,9 +82,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               return acc;
             });
             console.log('Differences:', diff);
-          } 
+          }
         } else {
-            console.log('No saved data found for the current webpage, continuing');
+          console.log('No saved data found for the current webpage, continuing');
         }
 
         // Get the website text
@@ -90,7 +100,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.log('Processing diacritization');
         await webPageDiacritizationData.createOriginal(websiteText);
         const diacritizedText = await processDiacritizationBatches(method, websiteText)
-        
+
         // Wait until original is loaded on webPageDiacritizationData, then addDiacritization
         console.log('Adding diacritization to saved data');
         await webPageDiacritizationData.addDiacritization(diacritizedText, method);
@@ -154,11 +164,11 @@ async function getPrompt(): Promise<Prompt> {
 
 // Async worker for API call
 async function processDiacritizationBatches(method: string, websiteText: TextNode[]): Promise<TextNode[]> {
-  
+
   const diacritizationBatches = createDiacritizationElementBatches(websiteText, 750);
   const texts = createAPIBatches(diacritizationBatches);
   let resultingTexts: string[] = [];
-  
+
   // If the method is 'diacritize' and saved data exists for the current webpage, return the saved results
   if (method === 'diacritize') {
 
@@ -171,7 +181,7 @@ async function processDiacritizationBatches(method: string, websiteText: TextNod
   } else if (method === 'arabizi') {
 
     throw new Error('Not implemented yet');
-    
+
     // // honestly, this could just be generated automatically and toggled on/off back to full arabic cache state
     // // could also be fun to do a "wubi" version on alternating lines?
     // console.log('Received arabizi request and data, processing');
@@ -183,10 +193,13 @@ async function processDiacritizationBatches(method: string, websiteText: TextNod
     //   const diacritizeArray = await diacritizeTexts(texts);
     //   diacritizedTextArray = arabicToArabizi(diacritizeArray)
     // }
+  } else if (method === 'original') {
+    // check if original already exists
+    // 
   } else {
     console.error(method + ' is not implemented yet')
     throw new Error(method + ' is not implemented yet');
-  } 
+  }
 
   // Store the diacritized results using DiacritizationDataManager methods
   const diacritizedTexts = resultingTexts.flatMap((text) => text.split(delimiter));
@@ -198,7 +211,7 @@ async function processDiacritizationBatches(method: string, websiteText: TextNod
   });
 
   console.log('Diacritized text:', diacritizedNodes);
-  return diacritizedNodes ;
+  return diacritizedNodes;
 
 };
 
