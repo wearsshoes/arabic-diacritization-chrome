@@ -4,7 +4,7 @@ export interface PageMetadata {
     pageUrl: string,
     lastVisited: Date,
     contentSignature: string,
-    structuralMetadata: {[key: string]: any},
+    structuralMetadata: { [key: string]: any },
 }
 
 export interface TextNode {
@@ -17,42 +17,39 @@ export interface NodeHashDict {
     [nodeHash: string]: TextNode
 }
 
-// it's like, not inconvceivable that you just transmit the entire webpage into background.ts
 export class WebPageDiacritizationData {
-    public original?: NodeHashDict
-    private diacritizations?: {
+    private diacritizations: {
         [method: string]: NodeHashDict
-    };
-    
-    constructor(
+    } = {};
+
+    private constructor(
         public id: string,
         public metadata: PageMetadata,
-    ) {};
+    ) { };
 
     static async build(
         metadata: PageMetadata,
     ) {
         const id = await calculateHash(metadata.pageUrl)
-        return new WebPageDiacritizationData(id, metadata)      
-    };
-    
-    async createOriginal(websiteText: TextNode[]) {
-    const textlist = websiteText.map((textNode) => (textNode.elementId + textNode.text))
-    const nodeHashes = await calculateHash(textlist)
-  
-    const original = nodeHashes.reduce((dict, nodeHash, index) => {
-      dict[nodeHash] = websiteText[index];
-      return dict;
-    }, {} as NodeHashDict);
-    this.original = original;
+        return new WebPageDiacritizationData(id, metadata)
     };
 
+    async createOriginal(websiteText: TextNode[]) {
+        const textlist = websiteText.map((textNode) => (textNode.elementId + textNode.text))
+        const nodeHashes = await calculateHash(textlist)
+
+        const original = nodeHashes.reduce((dict, nodeHash, index) => {
+            dict[nodeHash] = websiteText[index];
+            return dict;
+        }, {} as NodeHashDict);
+        this.diacritizations = { ['original']: original };
+    };
 
     async addDiacritization(diacritizedText: TextNode[], method: string) {
-        if (this.original === undefined) {
+        if (this.diacritizations['original'] === undefined) {
             throw new Error('Original text not created yet.');
         } else {
-            const original = this.original;
+            const original = this.diacritizations['original'];
             const diacritization: NodeHashDict = {};
             Object.keys(original).forEach((key, index) => {
                 diacritization[key] = diacritizedText[index];
@@ -78,6 +75,7 @@ export class WebPageDiacritizationData {
             }
         }
     }
+
     updateLastVisited(date: Date): void {
         this.metadata.lastVisited = date
     }

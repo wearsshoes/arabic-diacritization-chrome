@@ -59,7 +59,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           // for now, we're just going to bypass everything on original
           if (retrievedPageData.metadata.contentSignature === pageMetadata.contentSignature) {
             // will just return the saved data if the content hasn't changed
-            await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', original: retrievedPageData.original, diacritization: retrievedPageData.getDiacritization(method), method: method });
+            await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', original: retrievedPageData.getDiacritization(method), diacritization: retrievedPageData.getDiacritization(method), method: method });
             console.log('No changes detected, returning saved data.');
             sendResponse({ message: 'No changes detected, returning saved data.' });
             return;
@@ -95,12 +95,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           .then(() => console.log('Saved webpage data updated:', webPageDiacritizationData));
 
         // Update the website text
+        const original = webPageDiacritizationData.getDiacritization('original');
         const diacritization = await webPageDiacritizationData.getDiacritization(method);
-        const { original } = webPageDiacritizationData;
         console.log('Updating website text');
         await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', original, diacritization, method });
         console.log('Website text updated');
         sendResponse({ message: 'Completed.' });
+        
       } catch (error) {
         console.error('Error processing diacritization:', error);
         sendResponse({ error: 'Failed to process diacritization.' });
