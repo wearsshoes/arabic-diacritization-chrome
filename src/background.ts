@@ -59,12 +59,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (retrievedPageData) {
 
           if (retrievedPageData.metadata.contentSignature === pageMetadata.contentSignature) {
-
-            if (webPageDiacritizationData.diacritizations[method]) {
+            if (retrievedPageData.diacritizations[method]) {
+              console.log(typeof retrievedPageData)
               await chrome.tabs.sendMessage(tab.id, {
                 action: 'updateWebsiteText',
-                original: webPageDiacritizationData.getDiacritization(method),
-                diacritization: webPageDiacritizationData.getDiacritization(method),
+                original: retrievedPageData.getDiacritization(method),
+                diacritization: retrievedPageData.getDiacritization(method),
                 method: method
               });
               console.log('No changes detected, returning saved data.');
