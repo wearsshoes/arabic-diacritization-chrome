@@ -42,6 +42,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (tab.id === undefined) throw new Error('No active tab found');
         else console.log('Active tab found:', tab.url, tab.id);
         const pageUrl = tab.url as string;
+        const urlHash = await calculateHash(pageUrl);
 
         // Get the site's current metadata
         console.log('Getting website metadata');
@@ -51,7 +52,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         // Load the saved data for the current webpage
         console.log('Checking for saved data');
-        const urlHash = await calculateHash(pageUrl);
         const retrievedPageData = await dataManager.getWebPageData(urlHash);
         console.log('Retrieved page data:', retrievedPageData);
 
@@ -107,7 +107,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         // Update the saved metadata
         console.log('Updating saved web page data');
-        await dataManager.updateWebPageData(pageUrl, webPageDiacritizationData)
+        await dataManager.updateWebPageData(urlHash, webPageDiacritizationData)
           .catch((error) => console.error('Failed to update web page data:', error))
           .then(() => console.log('Saved webpage data updated:', webPageDiacritizationData));
 
