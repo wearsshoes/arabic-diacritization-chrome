@@ -1,5 +1,10 @@
 **Changelog**
 
+## v0.2.4
+- started work on returning original text as is.
+- Changed location of some things in database.
+- Violating semver a bit here because that's a breaking change but this is private alpha.
+
 ## v0.2.3
 - Implemented database to store webpage results.
 - Refactored a lot of code, mainly to improve communication between different parts of the extension.

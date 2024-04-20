@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ArabEasy",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Allows users to add pronunciation diacritics (tashkeel) to Arabic text or convert Arabic text to Arabizi.",
   "permissions": [
     "activeTab",
