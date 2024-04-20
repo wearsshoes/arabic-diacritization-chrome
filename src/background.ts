@@ -137,7 +137,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 const dataManager = DiacritizationDataManager.getInstance();
 const delimiter = '|';
 const sentenceRegex = /[.!?؟]+\s*\n*/g;
-const defaultPrompt: Prompt = prompts[0];
+const defaultPrompt: Prompt = prompts[1];
 
 async function getPrompt(): Promise<Prompt> {
   return new Promise((resolve, reject) => {
