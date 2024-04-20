@@ -1,5 +1,12 @@
 **Changelog**
 
+## v0.2.3
+- Implemented database to store webpage results.
+- Refactored a lot of code, mainly to improve communication between different parts of the extension.
+- Built the foundation for more complex website manipulation.
+- Fix some nonfunctional UI elements like calculating cost.
+- Setup basic unit testing in Jest (mostly for self-education purposes)
+
 ## v0.2.2
 - Fixed a bug where diacritics were not displayed correctly on many websites.
 - Improved performance by optimizing the rendering algorithm.
