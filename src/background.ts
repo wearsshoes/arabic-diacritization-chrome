@@ -59,7 +59,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (retrievedPageData) {
 
           if (retrievedPageData.metadata.contentSignature === pageMetadata.contentSignature) {
-            if (retrievedPageData.diacritizations[method]) {
+            if (!!retrievedPageData.diacritizations[method]) {
               console.log(typeof retrievedPageData)
               await chrome.tabs.sendMessage(tab.id, {
                 action: 'updateWebsiteText',
@@ -160,55 +160,56 @@ async function getPrompt(): Promise<Prompt> {
 }
 
 // Async worker for API call
-async function processDiacritizationBatches(method: string, websiteText: TextNode[]): Promise<TextNode[]> {
-
-  const diacritizationBatches = createDiacritizationElementBatches(websiteText, 750);
-  const texts = createAPIBatches(diacritizationBatches);
-  let resultingTexts: string[] = [];
+async function processDiacritizationBatches(method: string, data: WebPageDiacritizationData): Promise<TextNode[]> {
+  let resultingTexts: string[];
 
   // If the method is 'diacritize' and saved data exists for the current webpage, return the saved results
   if (method === 'diacritize') {
-
-    // console.log('Just returning originals for mock')
-    // resultingTexts = texts;
-
     console.log('Received diacritization request and data, processing');
-    resultingTexts = await diacritizeTexts(texts);
+    
+    const websiteText: TextNode[] = data.getDiacritization('original')
+    const diacritizationBatches = createDiacritizationElementBatches(websiteText, 750);
+    const texts = createAPIBatches(diacritizationBatches);
+    const resultBatches = await diacritizeTexts(texts);
+    console.log('resultBatches:', resultBatches);
+    const result = resultBatches.flatMap((batch) => batch.split(delimiter))
+    const diacritizedNodes: TextNode[] = websiteText.map((node, index) => {
+      return {
+        ...node,
+        text: result[index]
+      };
+    });
+    return diacritizedNodes;
 
   } else if (method === 'arabizi') {
 
-    throw new Error('Not implemented yet');
+    console.log('Received arabizi request and data, processing');
+    let fullDiacritics: TextNode[] = []
 
-    // // honestly, this could just be generated automatically and toggled on/off back to full arabic cache state
-    // // could also be fun to do a "wubi" version on alternating lines?
-    // console.log('Received arabizi request and data, processing');
-    // if (cache && cache.length) {
-    //   console.log('Diacritization inferred to exist, transliterating')
-    //   diacritizedTextArray = arabicToArabizi(cache.map((batch) => batch.rawResult));
-    // } else {
-    //   console.log('Diacritizing text first')
-    //   const diacritizeArray = await diacritizeTexts(texts);
-    //   diacritizedTextArray = arabicToArabizi(diacritizeArray)
-    // }
-  } else if (method === 'original') {
-    // check if original already exists
-    // 
+    if (data.diacritizations['diacritize']) {
+      fullDiacritics = data.getDiacritization('diacritize')
+      console.log('Diacritization inferred to exist, transliterating')
+
+    } else {
+      console.log('Diacritizing text first')
+      fullDiacritics = await processDiacritizationBatches('diacritize', data)
+      // wait!!! but we want it to store the results! or we need to pass them out of here somehow!!!
+    }
+
+    console.log('Full diacritics:', fullDiacritics)
+    const result = arabicToArabizi(fullDiacritics.map((element) => element.text))
+    const diacritizedNodes: TextNode[] = fullDiacritics.map((node, index) => {
+      return {
+        ...node,
+        text: result[index]
+      };
+    });
+    return diacritizedNodes
+
   } else {
     console.error(method + ' is not implemented yet')
     throw new Error(method + ' is not implemented yet');
   }
-
-  // Store the diacritized results using DiacritizationDataManager methods
-  const diacritizedTexts = resultingTexts.flatMap((text) => text.split(delimiter));
-  const diacritizedNodes = websiteText.map((node, index) => {
-    return {
-      ...node,
-      text: diacritizedTexts[index]
-    };
-  });
-
-  console.log('Diacritized text:', diacritizedNodes);
-  return diacritizedNodes;
 
 };
 
@@ -366,13 +367,19 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
 // simple one: get the punctuation marks to change to english equivs
 
 function arabicToArabizi(texts: string[], transliterationDict: TransliterationDict = arabizi.transliteration): string[] {
-  return texts.map(arabicText =>
-    arabicText
+  console.log('Transliterating', texts);
+  return texts.map(arabicText => {
+    if (arabicText && arabicText.length > 0) {
+      return arabicText
       .replace(/[ْ]/g, '') // remove sukoon
       .replace(/([\u0621-\u064A])([\u064B-\u0652]*)(\u0651)/g, '$1$1$2') // replace all cases of shadda with previous letter
       .split('')
       .map(char => transliterationDict[char]
         ?.[0] || char).join('')
+    } else { 
+      return ''
+    }
+  }
   );
 }
 
