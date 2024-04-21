@@ -74,26 +74,23 @@ async function calculateContentSignature(): Promise<string> {
 }
 
 async function serializeStructureMetadata(): Promise<{ [key: string]: ElementAttributes }> {
-  // Serialize page structure metadata
-  // this will have already changed because of recurseDOM???
   const content = document.body.querySelector('main')?.querySelectorAll('*') || document.body.querySelectorAll('*');
-  
-  console.log('Serializing page structure metadata...');
-  
-  const serialized: ElementAttributes[] = Array.from(content).map((element) => ({
-    tagName: element.tagName,
-    id: element.id,
-    className: element.className,
-    textContent: element.textContent,
-  }));
-  
-  const keys = await calculateHash(serialized.map((attributes) => JSON.stringify(attributes)));
+
+  console.log('Serializing page structure metadata...'); 
+  const contentSummary = Array.from(content).map((element) => (element.tagName + element.id + element.className + (element.textContent || '')));
+  console.log('Text content:', contentSummary);
+
+  const keys = await calculateHash(contentSummary);
   
   const result: { [key: string]: ElementAttributes } = {};
   
-  serialized.forEach((attributes, index) => {
+  Array.from(content).forEach((element, index) => {
     const key = keys[index];
-    result[key] = attributes;
+    result[key] = {
+      tagName: element.tagName,
+      id: element.id,
+      className: element.className,
+    };
   });
   
   console.log('Structure metadata:', result);
@@ -102,7 +99,7 @@ async function serializeStructureMetadata(): Promise<{ [key: string]: ElementAtt
 }
 
 // Builds element list according to interface. Recurses through DOM and put the in the right order. 
-function newRecurseDOM(node: Node = document.body, index: number = 0, elementId: string = '', iterator: number = 0): {textElements: TextNode[], iterator: number} {
+function recurseDOM(node: Node = document.body, index: number = 0, elementId: string = '', iterator: number = 0): {textElements: TextNode[], iterator: number} {
   const textElements: TextNode[] = [];
 
   if (node.nodeType === Node.ELEMENT_NODE) {
@@ -113,7 +110,7 @@ function newRecurseDOM(node: Node = document.body, index: number = 0, elementId:
       elementId = 'element-' + iterator + '-' + element.tagName;
       element.setAttribute('data-element-id', elementId);
       for (const childNode of Array.from(element.childNodes)) {
-        const innerText = newRecurseDOM(childNode, innerIndex, elementId, iterator++);
+        const innerText = recurseDOM(childNode, innerIndex, elementId, iterator++);
         textElements.push(...innerText.textElements);
         innerIndex += innerText.textElements.length;
         iterator = innerText.iterator;
@@ -205,6 +202,7 @@ function directionLTR() {
 async function main() {
   try {
     const structuralMetadata = await serializeStructureMetadata();
+    console.log('Structural metadata:', structuralMetadata);
     await calculateContentSignature().then((contentSignature) => {;
       pageMetadata = {
         pageUrl: window.location.href,
@@ -216,7 +214,7 @@ async function main() {
     console.log('Initializing...', pageMetadata);
     const mainNode = document.querySelector('main') || document.body;
     console.log('Main node:', mainNode); 
-    textElements = newRecurseDOM(mainNode).textElements;
+    textElements = recurseDOM(mainNode).textElements;
     console.log('Text elements:', textElements);
   } catch (error) {
     console.error('Error during initialization:', error);
