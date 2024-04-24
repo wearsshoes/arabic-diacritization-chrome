@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ArabEasy",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "description": "Allows users to add pronunciation diacritics (tashkeel) to Arabic text or convert Arabic text to Arabizi.",
   "permissions": [
     "activeTab",
@@ -11,23 +11,24 @@
     "scripting"
   ],
   "background": {
-    "service_worker": "dist/background.js"
+    "service_worker": "static/js/background.js"
   },
   "options_ui": {
-    "page": "dist/options.html",
+    "page": "static/options.html",
     "open_in_tab": true
     },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["dist/content.js"]
+      "js": ["static/js/content.js"]
     }
   ],
     "content_security_policy": {
       "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
     },
   "action": {
-    "default_popup": "dist/popup.html"
+    "default_popup": "static/popup.html",
+    "default_title": "ArabEasy"
   },
   "host_permissions": [
     "<all_urls>"
