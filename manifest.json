@@ -11,25 +11,23 @@
     "scripting"
   ],
   "background": {
-    "service_worker": "assets/background.js",
-    "type": "module"
+    "service_worker": "src/background.ts"
   },
   "options_ui": {
-    "page": "assets/options.html",
+    "page": "src/components/options.html",
     "open_in_tab": true
     },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["assets/content.js"],
-      "type": "module"
+      "js": ["src/content.tsx"]
     }
   ],
     "content_security_policy": {
       "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
     },
   "action": {
-    "default_popup": "assets/popup.html",
+    "default_popup": "index.html",
     "default_title": "ArabEasy"
   },
   "host_permissions": [
