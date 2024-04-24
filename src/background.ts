@@ -138,7 +138,35 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
     return true;
   }
+  if (request.action === "processSelectedElements") {
+    const selectedText = request.text;
+    const selectedElements = request.elements;
+
+    // Process the selected text and elements here
+    console.log("Selected Text:", selectedText);
+    console.log("Selected Elements:", selectedElements);
+
+    // send to processDiacritizationBatches
+
+
+  }
 });
+
+chrome.contextMenus.create({
+  id: "processSelectedText",
+  title: "Process Selected Text",
+  contexts: ["selection"]
+});
+
+chrome.contextMenus.onClicked.addListener(function (info, tab) {
+  if (info.menuItemId === "processSelectedText") {
+    if (tab && tab.id) {
+      chrome.tabs.sendMessage(tab.id, { action: "getSelectedElements" });
+      console.log("Sending message to content script to process selected text...");
+    }
+  }
+});
+
 
 // ----------------- Functions ----------------- //
 
@@ -162,12 +190,11 @@ async function getPrompt(): Promise<Prompt> {
 
 // Async worker for API call
 async function processDiacritizationBatches(method: string, data: WebPageDiacritizationData): Promise<TextNode[]> {
-  let resultingTexts: string[];
 
   // If the method is 'diacritize' and saved data exists for the current webpage, return the saved results
   if (method === 'diacritize') {
     console.log('Received diacritization request and data, processing');
-    
+
     const websiteText: TextNode[] = data.getDiacritization('original')
     const diacritizationBatches = createDiacritizationElementBatches(websiteText, 750);
     const texts = createAPIBatches(diacritizationBatches);
@@ -342,24 +369,24 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
   // diacritize the texts in parallel with retries
   const diacritizedTexts = await Promise.all(texts.map(async (arabicTextChunk) => {
 
-    for (let tries = 0; tries < maxTries; tries++) {
-      const msg: Anthropic.Messages.MessageCreateParams = {
+      for (let tries = 0; tries < maxTries; tries++) {
+  const msg: Anthropic.Messages.MessageCreateParams = {
         model: escalateModel(defaultModel, tries).currentVersion,
-        max_tokens: 4000,
-        temperature: 0,
-        system: promptText,
-        messages: [
+    max_tokens: 4000,
+    temperature: 0,
+    system: promptText,
+    messages: [
+      {
+        role: "user",
+        content: [
           {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: arabicTextChunk,
-              }
-            ]
+            type: "text",
+            text: arabicTextChunk,
           }
         ]
-      };
+      }
+    ]
+  };
       try {
         const response = await anthropicAPICall(msg, apiKey);
 
@@ -407,12 +434,12 @@ function arabicToArabizi(texts: string[], transliterationDict: TransliterationDi
   return texts.map(arabicText => {
     if (arabicText && arabicText.length > 0) {
       return arabicText
-      .replace(/[ْ]/g, '') // remove sukoon
-      .replace(/([\u0621-\u064A])([\u064B-\u0652]*)(\u0651)/g, '$1$1$2') // replace all cases of shadda with previous letter
-      .split('')
-      .map(char => transliterationDict[char]
-        ?.[0] || char).join('')
-    } else { 
+        .replace(/[ْ]/g, '') // remove sukoon
+        .replace(/([\u0621-\u064A])([\u064B-\u0652]*)(\u0651)/g, '$1$1$2') // replace all cases of shadda with previous letter
+        .split('')
+        .map(char => transliterationDict[char]
+          ?.[0] || char).join('')
+    } else {
       return ''
     }
   }
