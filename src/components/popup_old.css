@@ -1,0 +1,18 @@
+
+/* Set the size and position of the popup */
+body {
+    width: 360px;
+    padding: 30px;
+}
+
+/* Dark theme styles */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #222;
+        color: #ccc;
+    }
+    button {
+        background-color: #444;
+        color: #ccc;
+    }
+}
