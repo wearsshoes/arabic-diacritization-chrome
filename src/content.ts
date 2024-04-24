@@ -38,42 +38,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse(textElements);
   }
 
-
-  if (request.action === "getSelectedElements") {
-    let selectedText = "";
-    const selectedElements: string[] = [];
-
+  // When diacritization is requested, returns the selected elements
+  // Assumes that the webpage was already processed
+  if (request.action === "getSelectedNodes") {
     const selection = window.getSelection();
     if (selection !== null) {
-      selectedText = selection.toString();
-
+      console.log(selection.toString());
       const range = selection.getRangeAt(0);
-      let container: Node | null = range.commonAncestorContainer;
-
-      while (container && container.nodeType !== Node.ELEMENT_NODE) {
-        container = container.parentNode;
-      }
-
-      if (container) {
-        selectedElements.push((container as Element).outerHTML);
-      }
+      const textNodes = getTextNodesInRange(range);
+      sendResponse({nodes: textNodes})
     }
-
-    const message = {
-      action: "processSelectedElements",
-      text: selectedText,
-      elements: selectedElements
-    };
-
-    chrome.runtime.sendMessage(message);
   }
-
 
   // Updates website when told to.
   if (request.action === "updateWebsiteText") {
     console.log('Received request to update website text...');
     const { original, diacritization, method } = request;
-    console.log(original, diacritization, method)
+    console.log("updating:", original, diacritization, method)
     if (original && diacritization && method) {
       replaceTextWithDiacritizedText(original, diacritization, method);
       sendResponse({ success: 'Text replaced.' });
@@ -107,9 +88,9 @@ async function calculateContentSignature(): Promise<string> {
 async function serializeStructureMetadata(): Promise<{ [key: string]: ElementAttributes }> {
   const content = document.body.querySelector('main')?.querySelectorAll('*') || document.body.querySelectorAll('*');
 
-  console.log('Serializing page structure metadata...');
+  // console.log('Serializing page structure metadata...');
   const contentSummary = Array.from(content).map((element) => (element.tagName + element.id + element.className + (element.textContent || '')));
-  console.log('Text content:', contentSummary);
+  // console.log('Text content:', contentSummary);
 
   const keys = await calculateHash(contentSummary);
 
@@ -124,7 +105,7 @@ async function serializeStructureMetadata(): Promise<{ [key: string]: ElementAtt
     };
   });
 
-  console.log('Structure metadata:', result);
+  // console.log('Structure metadata:', result);
 
   return result;
 }
@@ -314,7 +295,7 @@ function directionLTR() {
 async function main() {
   try {
     const structuralMetadata = await serializeStructureMetadata();
-    console.log('Structural metadata:', structuralMetadata);
+    // console.log('Structural metadata:', structuralMetadata);
     await calculateContentSignature().then((contentSignature) => {
       ;
       pageMetadata = {

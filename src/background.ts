@@ -137,33 +137,31 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ message: 'Failed to clear database.' });
       });
     return true;
-  }
-  if (request.action === "processSelectedElements") {
-    const selectedText = request.text;
-    const selectedElements = request.elements;
-
-    // Process the selected text and elements here
-    console.log("Selected Text:", selectedText);
-    console.log("Selected Elements:", selectedElements);
-
-    // send to processDiacritizationBatches
-
 
   }
 });
 
 chrome.contextMenus.create({
   id: "processSelectedText",
-  title: "Process Selected Text",
+  title: "Fully Diacritize Selected Text",
   contexts: ["selection"]
 });
 
-chrome.contextMenus.onClicked.addListener(function (info, tab) {
+chrome.contextMenus.onClicked.addListener(async function (info, tab) {
   if (info.menuItemId === "processSelectedText") {
-    if (tab && tab.id) {
-      chrome.tabs.sendMessage(tab.id, { action: "getSelectedElements" });
-      console.log("Sending message to content script to process selected text...");
+    console.log("Diacritizing selected text...");
+    async function processDiacritizationRequest() {
+      if (tab && tab.id) {
+        const request = await chrome.tabs.sendMessage(tab.id, { action: "getSelectedNodes" });
+        const selectedNodes: TextNode[] = request.nodes;
+        console.log("Selected Nodes:", selectedNodes);
+        const diacritization = await fullDiacritization(selectedNodes)
+        console.log('result:', diacritization);
+        await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', original: selectedNodes, diacritization, method: 'diacritize' });
+      }
     }
+    await processDiacritizationRequest();
+    console.log('Website text updated');
   }
 });
 
