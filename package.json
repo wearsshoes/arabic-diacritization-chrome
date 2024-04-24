@@ -5,10 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build --watch",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview",
-    "watch": "nodemon --watch src --watch public --exec 'tsc && vite build'"
+    "preview": "vite preview"
   },
   "description": "This extension adds full diacritics (tashkeel) to Arabic text using an LLM API.",
   "keywords": [
@@ -43,7 +42,6 @@
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.6",
-    "nodemon": "^3.1.0",
     "rollup-plugin-copy": "^3.5.0",
     "typescript": "^5.2.2",
     "vite": "^5.2.0"
