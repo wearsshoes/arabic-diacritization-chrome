@@ -355,23 +355,70 @@ function createAPIBatches(textElementBatches: TextNode[][]): string[] {
 
 // API Call for Diacritization
 async function diacritizeTexts(texts: string[]): Promise<string[]> {
-
   const apiKey = await getAPIKey();
-
   const diacritizePrompt = await getPrompt() || defaultPrompt;
   const promptText = diacritizePrompt.text;
   const sysPromptLength = await countSysPromptTokens(promptText) || 0;
 
   // parameters for retrying
-  const fudgefactor = 1
-  const maxTries = 1
+  const fudgefactor = 1;
+  const maxTries = 1;
 
   // diacritize the texts in parallel with retries
-  const diacritizedTexts = await Promise.all(texts.map(async (arabicTextChunk) => {
-
+  const diacritizedTexts = await Promise.all(
+    texts.map(async (arabicTextChunk) => {
       for (let tries = 0; tries < maxTries; tries++) {
+        const model = escalateModel(defaultModel, tries).currentVersion
+        try {
+          const response = await callAnthropicAPI(
+            arabicTextChunk,
+            promptText,
+            apiKey,
+            model,
+          );
+
+          const diacritizedText: string = response.content[0].text;
+          console.log(arabicTextChunk);
+          console.log(diacritizedText);
+
+          // check the token output: should be more than the input
+          const inputTokens = response.usage.input_tokens - sysPromptLength;
+          const outputTokens = response.usage.output_tokens;
+          console.log('Input tokens:', inputTokens, 'Output tokens:', outputTokens);
+          const enoughTokens = outputTokens > inputTokens;
+
+          // check if the diacritized text is longer than the original text
+          const separatorsInOriginal = arabicTextChunk.split(delimiter).length - 1;
+          const separatorsInDiacritized = diacritizedText.split(delimiter).length - 1;
+          console.log('Separators in original:', separatorsInOriginal, 'Separators in diacritized:', separatorsInDiacritized);
+          const rightDelimiters = separatorsInDiacritized + fudgefactor >= separatorsInOriginal;
+
+          if (enoughTokens && rightDelimiters) {
+            return diacritizedText;
+          } else {
+            console.log('Too short or wrong separators, trying again: try', tries, 'of', maxTries);
+          }
+        } catch (error) {
+          console.error('Error diacritizing chunk:', error);
+          break;
+        }
+      }
+      return arabicTextChunk;
+    })
+  );
+  console.log('Finished diacritizing.');
+  return diacritizedTexts;
+}
+
+// Function to construct the message and make the API call
+async function callAnthropicAPI(
+  arabicTextChunk: string,
+  promptText: string,
+  apiKey: string,
+  model: string,
+): Promise<Anthropic.Message> {
   const msg: Anthropic.Messages.MessageCreateParams = {
-        model: escalateModel(defaultModel, tries).currentVersion,
+    model: model,
     max_tokens: 4000,
     temperature: 0,
     system: promptText,
@@ -387,40 +434,10 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
       }
     ]
   };
-      try {
-        const response = await anthropicAPICall(msg, apiKey);
 
-        // check the token usage
-        const inputTokens = response.usage.input_tokens - sysPromptLength;
-        const outputTokens = response.usage.output_tokens;
-        console.log('Input tokens:', inputTokens, 'Output tokens:', outputTokens);
-        const enoughTokens = outputTokens > inputTokens;
+  const response: Anthropic.Message = await anthropicAPICall(msg, apiKey);
+  return response;
 
-        const diacritizedText: string = response.content[0].text;
-        console.log(arabicTextChunk);
-        console.log(diacritizedText);
-
-        // check if the diacritized text is longer than the original text
-        const separatorsInOriginal = arabicTextChunk.split(delimiter).length - 1;
-        const separatorsInDiacritized = diacritizedText.split(delimiter).length - 1;
-        console.log('Separators in original:', separatorsInOriginal, 'Separators in diacritized:', separatorsInDiacritized);
-        const rightDelimiters = separatorsInDiacritized + fudgefactor >= separatorsInOriginal;
-
-        if (enoughTokens && rightDelimiters) {
-          return diacritizedText;
-        } else {
-          console.log('Too short or wrong separators, trying again: try', tries, 'of', maxTries);
-        }
-      }
-      catch (error) {
-        console.error('Error diacritizing chunk:', error);
-        break;
-      }
-    }
-    return arabicTextChunk;
-  }));
-  console.log('Finished diacritizing.')
-  return diacritizedTexts;
 }
 
 // Arabizi diacritization
