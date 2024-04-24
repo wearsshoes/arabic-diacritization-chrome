@@ -1,7 +1,7 @@
 {
   "name": "arabeasy-extension",
+  "version": "0.3.0",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,7 +9,26 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
+  "description": "This extension adds full diacritics (tashkeel) to Arabic text using an LLM API.",
+  "keywords": [
+    "arabic"
+  ],
+  "author": "Rachel Shu",
+  "license": "ISC",
+  "main": "manifest.json",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wearsshoes/arabic-diacritization-chrome.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wearsshoes/arabic-diacritization-chrome/issues"
+  },
+  "homepage": "https://github.com/wearsshoes/arabic-diacritization-chrome#readme",
+
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.20.2",
+    "bottleneck": "^2.19.5",
+    "xxhash-wasm": "^1.0.2"
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
@@ -24,5 +43,23 @@
     "eslint-plugin-react-refresh": "^0.4.6",
     "typescript": "^5.2.2",
     "vite": "^5.2.0"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
