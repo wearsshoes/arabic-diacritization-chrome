@@ -57,6 +57,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         // check current and saved data
         if (retrievedPageData) {
+          console.log('current:', pageMetadata.contentSignature, 'saved:', retrievedPageData.metadata.contentSignature);
 
           if (retrievedPageData.metadata.contentSignature === pageMetadata.contentSignature) {
             if (!!retrievedPageData.diacritizations[method]) {
@@ -214,16 +215,51 @@ async function processDiacritizationBatches(method: string, data: WebPageDiacrit
 };
 
 function logChanges(saved: PageMetadata, current: PageMetadata): void {
-  // log the differences in pageMetadata structuralmetadata and retrievedPageData structuralmetadata
   const currentStructure = current.structuralMetadata;
   const savedStructure = saved.structuralMetadata;
-  const diff = Object.keys(currentStructure).reduce((acc, key: string) => {
-    if (currentStructure[key] !== savedStructure[key]) {
-      acc += [currentStructure[key], savedStructure[key]];
+
+  const diff: Record<string, { current: unknown; saved: unknown }> = {};
+
+  Object.keys(currentStructure).forEach((key: string) => {
+    if (!isEqual(currentStructure[key], savedStructure[key])) {
+      diff[key] = {
+        current: currentStructure[key],
+        saved: savedStructure[key],
+      };
     }
-    return acc;
   });
-  console.log('Differences:', diff);
+
+  if (Object.keys(diff).length > 0) {
+    console.log('Differences:');
+    console.log(JSON.stringify(diff, null, 2));
+  } else {
+    console.log('No differences found.');
+  }
+}
+
+function isEqual(a: unknown, b: unknown): boolean {
+  if (typeof a !== typeof b) {
+    return false;
+  }
+
+  if (typeof a === 'object' && a !== null && b !== null) {
+    const keysA = Object.keys(a as Record<string, unknown>);
+    const keysB = Object.keys(b as Record<string, unknown>);
+
+    if (keysA.length !== keysB.length) {
+      return false;
+    }
+
+    for (const key of keysA) {
+      if (!isEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  return a === b;
 }
 
 // Create batches of elements according to sentence boundaries and API character limit.
