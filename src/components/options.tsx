@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 // import defaultPrompts from '../common/defaultPrompts.json';
 // import { Prompt } from '../common/types';
+import ReactDOM from 'react-dom/client';
 
 const Options: React.FC = () => {
   // const [llmChoice, setLlmChoice] = useState('haiku');
@@ -198,5 +199,14 @@ const Options: React.FC = () => {
     </div>
   );
 };
+
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
+      <Options />
+    </React.StrictMode>,
+  );
+}
 
 export default Options;

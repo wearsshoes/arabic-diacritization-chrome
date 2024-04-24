@@ -11,45 +11,28 @@
     "scripting"
   ],
   "background": {
-    "service_worker": "static/js/background.js"
+    "service_worker": "assets/background.js",
+    "type": "module"
   },
   "options_ui": {
-    "page": "static/options.html",
+    "page": "assets/options.html",
     "open_in_tab": true
     },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["static/js/content.js"]
+      "js": ["assets/content.js"],
+      "type": "module"
     }
   ],
     "content_security_policy": {
       "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
     },
   "action": {
-    "default_popup": "static/popup.html",
+    "default_popup": "assets/popup.html",
     "default_title": "ArabEasy"
   },
   "host_permissions": [
     "<all_urls>"
-  ],
-  "icons": [
-    {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    },
-    {
-      "src": "logo192.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "logo512.png",
-      "type": "image/png",
-      "sizes": "512x512"
-    }
-  ],
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  ]
 }
