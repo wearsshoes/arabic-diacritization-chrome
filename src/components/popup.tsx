@@ -1,67 +1,8 @@
-import React, { useEffect } from 'react';
-// import React, { useEffect, useState } from 'react';
-// import { Prompt } from '../common/types';
-// import { getAPIKey } from '../common/utils';
+import React from 'react';
+
+import ReactDOM from 'react-dom/client';
 
 const Popup: React.FC = () => {
-  // const [diacritizeMessage, setDiacritizeMessage] = useState('');
-  // const [arabiziMessage, setArabiziMessage] = useState('');
-  // const [pageLanguage, setPageLanguage] = useState('');
-  // const [selectedPrompt, setSelectedPrompt] = useState('');
-  // const [promptLength, setPromptLength] = useState(0);
-  // const [characterCount, setCharacterCount] = useState(0);
-  // const [outputTokenCount, setOutputTokenCount] = useState(0);
-  // const [model, setModel] = useState('');
-  // const [costEstimate, setCostEstimate] = useState(0);
-
-  useEffect(() => {
-    // Check API key
-    // chrome.storage.sync.get(['apiKey'], (data) => {
-    //   if (!data.apiKey) {
-    //     // Handle missing API key
-    //   }
-    // });
-
-    // // Get website data
-    // getWebsiteData();
-
-    // // Get selected prompt
-    // getSelectedPrompt();
-
-    //   // Update model display
-    //   setModel('Claude Haiku');
-
-  }, []);
-
-  //   const getWebsiteData = async () => {
-  //     try {
-  //       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  //       if (tab.id === undefined) throw new Error('No active tab found');
-
-  //       const response = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteData' });
-  //       setPageLanguage(response.language);
-  //       setCharacterCount(response.characterCount);
-  //       setOutputTokenCount(response.batches);
-  //     } catch (error) {
-  //       console.error('Failed to get complete website data:', error);
-  //     }
-  //   };
-
-  //   const getSelectedPrompt = () => {
-  //     chrome.storage.sync.get(['selectedPrompt'], (data: { selectedPrompt?: Prompt }) => {
-  //       if (data.selectedPrompt) {
-  //         setSelectedPrompt(data.selectedPrompt.name);
-  //         chrome.runtime.sendMessage(
-  //           { action: 'getSystemPromptLength', prompt: data.selectedPrompt.text },
-  //           (response) => {
-  //             if (response) {
-  //               setPromptLength(response);
-  //             }
-  //           }
-  //         );
-  //       }
-  //     });
-  //   };
 
   const beginDiacritization = async (method: string) => {
     try {
@@ -71,25 +12,6 @@ const Popup: React.FC = () => {
       console.error(`Error in ${method}:`, error);
     }
   };
-
-  // const calculateCost = () => {
-  //   if (costElement && a.batches && a.chars && a.promptLength) {
-  //     const costEstimate = calculateCostEstimate();
-  //     const costInDollars = costEstimate.toFixed(2);
-  //     costElement.textContent = `Estimated cost: $${costInDollars}`;
-  //   } else if (costElement) {
-  //     costElement.textContent = 'Estimated cost: Unknown';
-  //   }
-  // };
-
-  // const calculateCostEstimate = (): number => {
-  //   const inputCost = 0.25 / 1000000;
-  //   const inputSubtotal = (a.promptLength * a.batches + a.chars) * inputCost;
-  //   const outputCost = 1.25 / 1000000;
-  //   const outputSubtotal = a.chars * 2.3 * outputCost;
-  //   const totalCostPlusTax = (inputSubtotal + outputSubtotal) * 1.1;
-  //   return totalCostPlusTax;
-  // };
 
   return (
     <div>
@@ -135,5 +57,14 @@ const Popup: React.FC = () => {
     </div>
   );
 };
+
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
+      <Popup />
+    </React.StrictMode>,
+  );
+}
 
 export default Popup;

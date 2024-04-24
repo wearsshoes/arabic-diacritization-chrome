@@ -5,8 +5,7 @@ dist-ssr
 *.local
 
 # production
-/build
-/static
+/dist
 /tmp
 
 # testing
