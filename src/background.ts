@@ -93,7 +93,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           console.log('Website text:', websiteText);
           await webPageDiacritizationData.createOriginal(websiteText);
         }
-        const diacritizedText = await processDiacritizationBatches(method, webPageDiacritizationData)
+        const diacritizedText = await processWebpage(method, webPageDiacritizationData)
 
         // Process the diacritization batches
         console.log('Processing diacritization');
@@ -189,25 +189,13 @@ async function getPrompt(): Promise<Prompt> {
 }
 
 // Async worker for API call
-async function processDiacritizationBatches(method: string, data: WebPageDiacritizationData): Promise<TextNode[]> {
+async function processWebpage(method: string, data: WebPageDiacritizationData): Promise<TextNode[]> {
 
   // If the method is 'diacritize' and saved data exists for the current webpage, return the saved results
   if (method === 'diacritize') {
     console.log('Received diacritization request and data, processing');
-
     const websiteText: TextNode[] = data.getDiacritization('original')
-    const diacritizationBatches = createDiacritizationElementBatches(websiteText, 750);
-    const texts = createAPIBatches(diacritizationBatches);
-    const resultBatches = await diacritizeTexts(texts);
-    console.log('resultBatches:', resultBatches);
-    const result = resultBatches.flatMap((batch) => batch.split(delimiter))
-    const diacritizedNodes: TextNode[] = websiteText.map((node, index) => {
-      return {
-        ...node,
-        text: result[index]
-      };
-    });
-    return diacritizedNodes;
+    return await fullDiacritization(websiteText);
 
   } else if (method === 'arabizi') {
 
@@ -220,7 +208,7 @@ async function processDiacritizationBatches(method: string, data: WebPageDiacrit
 
     } else {
       console.log('Diacritizing text first')
-      fullDiacritics = await processDiacritizationBatches('diacritize', data)
+      fullDiacritics = await processWebpage('diacritize', data)
       // wait!!! but we want it to store the results! or we need to pass them out of here somehow!!!
     }
 
@@ -240,6 +228,21 @@ async function processDiacritizationBatches(method: string, data: WebPageDiacrit
   }
 
 };
+
+async function fullDiacritization(websiteText: TextNode[]): Promise<TextNode[]> {
+  const diacritizationBatches = createDiacritizationElementBatches(websiteText, 750);
+  const texts = createAPIBatches(diacritizationBatches);
+  const resultBatches = await diacritizeTexts(texts);
+  console.log('resultBatches:', resultBatches);
+  const result = resultBatches.flatMap((batch) => batch.split(delimiter))
+  const diacritizedNodes: TextNode[] = websiteText.map((node, index) => {
+    return {
+      ...node,
+      text: result[index]
+    };
+  });
+  return diacritizedNodes;
+}
 
 function logChanges(saved: PageMetadata, current: PageMetadata): void {
   const currentStructure = current.structuralMetadata;
