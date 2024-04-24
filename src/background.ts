@@ -1,11 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
-import arabizi from './arabizi.json';
-import prompts from './defaultPrompts.json';
-import { Prompt, TransliterationDict } from './types';
-import { PageMetadata, TextNode, WebPageDiacritizationData } from './dataClass';
-import { defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel } from './anthropicCaller'
-import { DiacritizationDataManager } from './datamanager';
-import { getAPIKey, calculateHash } from "./utils";
+import arabizi from './common/arabizi.json';
+import prompts from './common/defaultPrompts.json';
+import { Prompt, TransliterationDict } from './common/types';
+import { PageMetadata, TextNode, WebPageDiacritizationData } from './common/dataClass';
+import { defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel } from './common/anthropicCaller'
+import { DiacritizationDataManager } from './common/datamanager';
+import { getAPIKey, calculateHash } from "./common/utils";
 
 
 // ----------------- Event Listeners ----------------- //
