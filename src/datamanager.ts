@@ -31,9 +31,11 @@ export class DiacritizationDataManager {
           console.log("Getting data for", urlHash);
           const serializedData = await loadData<string>(this.db, "diacritizations_msa", urlHash);
           if (serializedData) {
-            return WebPageDiacritizationData.fromJSON(JSON.parse(serializedData.data));
+            console.log("Data found", serializedData);
+            return WebPageDiacritizationData.fromJSON(serializedData);
+          } else {
+            return undefined;
           }
-          return undefined;
         } catch (error) {
           console.error(error);
           throw new Error("Data not found" + error);

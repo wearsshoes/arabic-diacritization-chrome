@@ -86,7 +86,8 @@ export class WebPageDiacritizationData {
 
     // Deserialization method
     static fromJSON(json: any): WebPageDiacritizationData {
-        const { id, metadata, diacritizations } = json.data;
+        const parsedData = JSON.parse(json.data);
+        const { id, metadata, diacritizations } = parsedData;
         const instance = new WebPageDiacritizationData(id, metadata);
         instance.diacritizations = diacritizations;
         return instance;
