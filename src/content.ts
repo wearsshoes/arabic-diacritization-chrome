@@ -129,6 +129,50 @@ async function serializeStructureMetadata(): Promise<{ [key: string]: ElementAtt
   return result;
 }
 
+function getTextNodesInRange(range: Range): TextNode[] {
+  const textNodes: TextNode[] = [];
+
+  // Create a TreeWalker to traverse the DOM tree within the range
+  const walker = document.createTreeWalker(
+    range.commonAncestorContainer,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode: (node: Node) => {
+        // Check if the node is within the range
+        if (range.intersectsNode(node)) {
+          return NodeFilter.FILTER_ACCEPT;
+        }
+        return NodeFilter.FILTER_REJECT;
+      }
+    }
+  );
+
+  // Traverse the DOM tree and collect text nodes
+  let currentNode = walker.nextNode();
+  while (currentNode) {
+    textNodes.push({
+      elementId: currentNode.parentElement?.getAttribute('data-element-id') ?? '',
+      index: getTextNodeIndex(currentNode as Text),
+      text: currentNode.textContent ?? ''
+    });
+    currentNode = walker.nextNode();
+  }
+
+  return textNodes;
+}
+
+function getTextNodeIndex(textNode: Text): number {
+  let index = 0;
+  let currentNode = textNode.previousSibling;
+
+  while (currentNode) {
+    index++;
+    currentNode = currentNode.previousSibling;
+  }
+
+  return index;
+}
+
 function getTextElements(node: Node = document.body, index: number = 0, elementId: string = ''): { textElements: TextNode[] } {
   const textElements: TextNode[] = [];
 
