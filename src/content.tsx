@@ -1,4 +1,6 @@
 import React, { useEffect } from "react";
+import ReactDOM from 'react-dom/client'
+
 import { PageMetadata, TextNode, NodeHashDict } from "./common/dataClass";
 import { ElementAttributes } from "./common/types";
 import { calculateHash } from "./common/utils";
@@ -333,4 +335,12 @@ const Content: React.FC = () => {
   return null; // Content script doesn't render anything
 };
 
-export default Content;
+const root = document.createElement("div");
+root.id = "crx-root";
+document.body.appendChild(root);
+
+ReactDOM.createRoot(root).render(
+  <React.StrictMode>
+    <Content />
+  </React.StrictMode>
+);
