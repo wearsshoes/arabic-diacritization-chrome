@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { Prompt } from '../common/types';
-import { getAPIKey } from '../common/utils';
+import React, { useEffect } from 'react';
+// import React, { useEffect, useState } from 'react';
+// import { Prompt } from '../common/types';
+// import { getAPIKey } from '../common/utils';
 
 const Popup: React.FC = () => {
-  const [diacritizeMessage, setDiacritizeMessage] = useState('');
-  const [arabiziMessage, setArabiziMessage] = useState('');
+  // const [diacritizeMessage, setDiacritizeMessage] = useState('');
+  // const [arabiziMessage, setArabiziMessage] = useState('');
   // const [pageLanguage, setPageLanguage] = useState('');
   // const [selectedPrompt, setSelectedPrompt] = useState('');
   // const [promptLength, setPromptLength] = useState(0);
@@ -108,11 +109,11 @@ const Popup: React.FC = () => {
         </select>
         </div> */}
         <div>
-          <p>{diacritizeMessage}</p>
+          {/* <p>{diacritizeMessage}</p> */}
           <button onClick={() => beginDiacritization('diacritize')}>Diacritize Page</button>
         </div>
         <div>
-          <p>{arabiziMessage}</p>
+          {/* <p>{arabiziMessage}</p> */}
           <button onClick={() => beginDiacritization('arabizi')}>Convert to Arabizi</button>
         </div>
         <div>

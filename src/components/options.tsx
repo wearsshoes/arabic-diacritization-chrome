@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import defaultPrompts from '../common/defaultPrompts.json';
-import { Prompt } from '../common/types';
+// import defaultPrompts from '../common/defaultPrompts.json';
+// import { Prompt } from '../common/types';
 
 const Options: React.FC = () => {
   // const [llmChoice, setLlmChoice] = useState('haiku');
@@ -168,14 +168,16 @@ const Options: React.FC = () => {
       </div> */}
       <div id="apiKeyForm">
         <h2>API Key</h2>
-        <form id="optionsForm">
+        <form id="optionsForm" onSubmit={handleApiKeySubmit}>
           <label htmlFor="apiKey">API Key:</label>
-          <input type="text" id="apiKey" name="apiKey" />
+          <input type="text" id="apiKey" name="apiKey" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
           <button type="submit">Save</button>
         </form>
-        <p id="savedKey">Current saved key: </p>
-        <p id="savedTime">Last saved at: </p>
-        <button id="clearBtn">Clear</button>
+        <p id="savedKey">Current saved key: {savedKeyDisplay}</p>
+        <p id="savedTime">Last saved at: {savedTimeDisplay}</p>
+        <button id="clearBtn" onClick={handleClearApiKey}>
+          Clear
+        </button>
       </div>
       {/* <div id="dataManagement">
         <h2>Cache and Database Management</h2>
