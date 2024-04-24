@@ -1,6 +1,37 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "manifest_version": 3,
+  "name": "ArabEasy",
+  "version": "0.2.5",
+  "description": "Allows users to add pronunciation diacritics (tashkeel) to Arabic text or convert Arabic text to Arabizi.",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "contextMenus",
+    "storage",
+    "scripting"
+  ],
+  "background": {
+    "service_worker": "dist/background.js"
+  },
+  "options_ui": {
+    "page": "dist/options.html",
+    "open_in_tab": true
+    },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["dist/content.js"]
+    }
+  ],
+    "content_security_policy": {
+      "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+    },
+  "action": {
+    "default_popup": "dist/popup.html"
+  },
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "icons": [
     {
       "src": "favicon.ico",
@@ -18,8 +49,6 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": ".",
-  "display": "standalone",
   "theme_color": "#000000",
   "background_color": "#ffffff"
 }
