@@ -1,5 +1,10 @@
 **Changelog**
 
+## v0.2.5
+- transliteration to arabizi works again.
+- now possible to revert text to original.
+- now can process selected text on page, instead of whole page (but currently doesn't save the transliteration when doing so)
+
 ## v0.2.4
 - started work on returning original text as is.
 - Changed location of some things in database.
