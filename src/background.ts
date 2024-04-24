@@ -297,7 +297,7 @@ function createDiacritizationElementBatches(textElements: TextNode[], maxChars: 
   let currentBatchLength = 0;
   let batchLengths: [number, string, TextNode[]][] = []
 
-  textElements.forEach((textElement) => {
+  textElements.forEach((textElement, index) => {
     const text = textElement.text
     if (text != '') {
       // if (containsArabicCharacters(text)) {
@@ -317,7 +317,7 @@ function createDiacritizationElementBatches(textElements: TextNode[], maxChars: 
         currentBatchLength += textLength;
 
         // handle sentence breaks as new batch        
-        if (text.match(sentenceRegex) && (currentBatchLength > (maxChars * 2 / 3))) {
+        if ((text.match(sentenceRegex) && (currentBatchLength > (maxChars * 2 / 3))) || index === (textElements.length - 1)) {
           batchLengths.push([currentBatchLength, 'end of sentence', currentBatch]);
           textElementBatches.push(currentBatch);
           currentBatch = [];
