@@ -130,7 +130,7 @@ async function serializeStructureMetadata(): Promise<{ [key: string]: ElementAtt
 }
 
 // Builds element list according to interface. Recurses through DOM and put the in the right order. 
-function recurseDOM(node: Node = document.body, index: number = 0, elementId: string = '', iterator: number = 0): { textElements: TextNode[], iterator: number } {
+function getTextElementsAndIndexDOM(node: Node = document.body, index: number = 0, elementId: string = '', iterator: number = 0): { textElements: TextNode[], iterator: number } {
   const textElements: TextNode[] = [];
 
   if (node.nodeType === Node.ELEMENT_NODE) {
@@ -141,7 +141,7 @@ function recurseDOM(node: Node = document.body, index: number = 0, elementId: st
       elementId = 'element-' + iterator + '-' + element.tagName;
       element.setAttribute('data-element-id', elementId);
       for (const childNode of Array.from(element.childNodes)) {
-        const innerText = recurseDOM(childNode, innerIndex, elementId, iterator++);
+        const innerText = getTextElementsAndIndexDOM(childNode, innerIndex, elementId, iterator++);
         textElements.push(...innerText.textElements);
         innerIndex += innerText.textElements.length;
         iterator = innerText.iterator;
@@ -246,7 +246,7 @@ async function main() {
     console.log('Initializing...', pageMetadata);
     const mainNode = document.querySelector('main') || document.body;
     console.log('Main node:', mainNode);
-    textElements = recurseDOM(mainNode).textElements;
+    textElements = getTextElementsAndIndexDOM(mainNode).textElements;
     console.log('Text elements:', textElements);
   } catch (error) {
     console.error('Error during initialization:', error);
