@@ -14,7 +14,7 @@
     "service_worker": "src/background.ts"
   },
   "options_ui": {
-    "page": "src/optionsPage/options.html",
+    "page": "src/options/index.html",
     "open_in_tab": true
     },
   "content_scripts": [
@@ -27,7 +27,7 @@
       "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
     },
   "action": {
-    "default_popup": "index.html",
+    "default_popup": "src/popup/index.html",
     "default_title": "ArabEasy"
   },
   "host_permissions": [

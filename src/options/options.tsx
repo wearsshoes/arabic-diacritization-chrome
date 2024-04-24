@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import ReactDOM from 'react-dom/client';
-import '../index.css'
 
 // import defaultPrompts from '../common/defaultPrompts.json';
 // import { Prompt } from '../common/types';
@@ -21,31 +19,31 @@ const Options: React.FC = () => {
       setSavedTimeDisplay(data.savedAt || 'Never');
     });
 
-  //   // Load LLM choice
-  //   chrome.storage.sync.get(['llmChoice'], (data: { llmChoice?: string }) => {
-  //     setLlmChoice(data.llmChoice || 'haiku');
-  //   });
+    //   // Load LLM choice
+    //   chrome.storage.sync.get(['llmChoice'], (data: { llmChoice?: string }) => {
+    //     setLlmChoice(data.llmChoice || 'haiku');
+    //   });
 
-  //   // Load the last selected prompt
-  //   chrome.storage.sync.get(['selectedPrompt'], (data: { selectedPrompt?: Prompt }) => {
-  //     const selected = data.selectedPrompt?.name;
-  //     setCustomPrompt(defaultPrompts[0].text || '');
-  //     if (selected) {
-  //       const selectedPrompt = defaultPrompts.find((prompt) => prompt.name === selected);
-  //       if (selectedPrompt) {
-  //         setCustomPrompt(selectedPrompt.text);
-  //       }
-  //     }
-  //   });
+    //   // Load the last selected prompt
+    //   chrome.storage.sync.get(['selectedPrompt'], (data: { selectedPrompt?: Prompt }) => {
+    //     const selected = data.selectedPrompt?.name;
+    //     setCustomPrompt(defaultPrompts[0].text || '');
+    //     if (selected) {
+    //       const selectedPrompt = defaultPrompts.find((prompt) => prompt.name === selected);
+    //       if (selectedPrompt) {
+    //         setCustomPrompt(selectedPrompt.text);
+    //       }
+    //     }
+    //   });
 
-  //   // Load saved prompts
-  //   chrome.storage.sync.get(['savedPrompts'], (data: { savedPrompts?: Prompt[] }) => {
-  //     if (data.savedPrompts) {
-  //       setSavedPrompts([...defaultPrompts, ...data.savedPrompts]);
-  //     } else {
-  //       setSavedPrompts(defaultPrompts);
-  //     }
-  //   });
+    //   // Load saved prompts
+    //   chrome.storage.sync.get(['savedPrompts'], (data: { savedPrompts?: Prompt[] }) => {
+    //     if (data.savedPrompts) {
+    //       setSavedPrompts([...defaultPrompts, ...data.savedPrompts]);
+    //     } else {
+    //       setSavedPrompts(defaultPrompts);
+    //     }
+    //   });
   }, []);
 
   // const handleLlmChoiceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -130,7 +128,7 @@ const Options: React.FC = () => {
 
 
   return (
-    <div>
+    <div className="container">
       <h1>Extension Options</h1>
       <p>Customize your extension settings here.</p>
       {/* <div id="llmChoice">
@@ -202,8 +200,5 @@ const Options: React.FC = () => {
   );
 };
 
-ReactDOM.createRoot(document.getElementById('options-root')!).render(
-  <React.StrictMode>
-    <Options />
-  </React.StrictMode>,
-)
+export default Options;
+
