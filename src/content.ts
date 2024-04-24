@@ -129,6 +129,43 @@ async function serializeStructureMetadata(): Promise<{ [key: string]: ElementAtt
   return result;
 }
 
+function getTextElements(node: Node = document.body, index: number = 0, elementId: string = ''): { textElements: TextNode[] } {
+  const textElements: TextNode[] = [];
+
+  if (node.nodeType === Node.ELEMENT_NODE) {
+
+    const element = node as Element;
+    if (element.hasChildNodes() && isVisible(element)) {
+      let innerIndex = 0;
+      elementId = element.getAttribute('data-element-id') ?? '';
+      for (const childNode of Array.from(element.childNodes)) {
+        const innerText = getTextElements(childNode, innerIndex, elementId);
+        textElements.push(...innerText.textElements);
+        innerIndex += innerText.textElements.length;
+      }
+      index += innerIndex;
+    }
+
+  } else if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+    const sentences = splitTextIntoSentences(node.textContent);
+
+    sentences.forEach((sentence, sentenceIndex) => {
+
+      const textElement: TextNode = {
+        elementId: elementId,
+        index: index + sentenceIndex,
+        text: sentence,
+      };
+
+      textElements.push(textElement);
+    });
+
+    // again, this should be moved to another place in the program.
+  };
+
+  return { textElements };
+}
+
 // Builds element list according to interface. Recurses through DOM and put the in the right order. 
 function getTextElementsAndIndexDOM(node: Node = document.body, index: number = 0, elementId: string = '', iterator: number = 0): { textElements: TextNode[], iterator: number } {
   const textElements: TextNode[] = [];
