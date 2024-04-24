@@ -21,7 +21,7 @@ chrome.runtime.onInstalled.addListener(function (details) {
 });
 
 // Listen for messages from content scripts
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
   // Get the system prompt length
   if (request.action === "getSystemPromptLength") {
@@ -329,16 +329,15 @@ function createDiacritizationElementBatches(textElements: TextNode[], maxChars: 
   });
   console.log("batches created:", textElementBatches.length);
   console.log(batchLengths);
-  textElementBatches.forEach(batch => {
-  });
+
   return textElementBatches;
 }
 
 // Check whether there are any Arabic characters. Not used
-function containsArabicCharacters(text: string): boolean {
-  const arabicRegex = /[\u0600-\u06FF]/;
-  return arabicRegex.test(text);
-}
+// function containsArabicCharacters(text: string): boolean {
+//   const arabicRegex = /[\u0600-\u06FF]/;
+//   return arabicRegex.test(text);
+// }
 
 // Prepare batches for API by extracting the text with delimiters.
 function createAPIBatches(textElementBatches: TextNode[][]): string[] {
@@ -464,10 +463,10 @@ function arabicToArabizi(texts: string[], transliterationDict: TransliterationDi
   );
 }
 
-// ALLCAPS diacritization function <for fun>
-function ALLCAPS(str: string): string {
-  return str.replace(/[a-z]/g, (char) => {
-    const charCode = char.charCodeAt(0);
-    return String.fromCharCode(charCode - 32);
-  });
-}
+// // ALLCAPS diacritization function <for fun>
+// function ALLCAPS(str: string): string {
+//   return str.replace(/[a-z]/g, (char) => {
+//     const charCode = char.charCodeAt(0);
+//     return String.fromCharCode(charCode - 32);
+//   });
+// }
