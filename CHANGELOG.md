@@ -1,9 +1,13 @@
 **Changelog**
 
+## v0.3.0
+- Migrate extension to React.
+- Many features temporarily disabled.
+
 ## v0.2.5
-- transliteration to arabizi works again.
-- now possible to revert text to original.
-- now can process selected text on page, instead of whole page (but currently doesn't save the transliteration when doing so)
+- Transliteration to Arabizi works again.
+- Now possible to revert text to original.
+- Now can process selected text on page, instead of whole page (but currently doesn't save the transliteration when doing so).
 
 ## v0.2.4
 - started work on returning original text as is.
