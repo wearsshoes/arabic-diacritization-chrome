@@ -42,3 +42,5 @@
 - take wrong-word feedback and do something useful with it
 - hebrew support?
 - subscription pricing and/or free api access
+- do hovertext support
+- have translations to english in popup

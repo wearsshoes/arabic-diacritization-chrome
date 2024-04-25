@@ -1,6 +1,8 @@
 import React, { useEffect } from "react";
 import ReactDOM from 'react-dom/client';
 import { scrapeContent, setupListeners } from "./contentUtils";
+import ContentOverlay from "./overlay";
+import { ChakraProvider } from '@chakra-ui/react'
 
 const Content: React.FC = () => {
   useEffect(() => {
@@ -17,6 +19,9 @@ document.body.appendChild(root);
 
 ReactDOM.createRoot(root).render(
   <React.StrictMode>
+    <ChakraProvider>
     <Content />
+    <ContentOverlay />
+    </ChakraProvider> 
   </React.StrictMode>
 );
