@@ -1,5 +1,10 @@
 **Changelog**
 
+## v0.3.2
+- Created styled UIs for options page and extension popup using Chakra UI.
+- Slight improvements to dev environment.
+- Cleanup unnoticed problems from previous merge.
+
 ## v0.3.1
 - All previously existing features are re-enabled.
 - Codebase is a bit cleaner now.
