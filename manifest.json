@@ -14,7 +14,7 @@
     "service_worker": "src/background.ts"
   },
   "options_ui": {
-    "page": "src/options/index.html",
+    "page": "src/options/optionsPage.html",
     "open_in_tab": true
     },
   "content_scripts": [
