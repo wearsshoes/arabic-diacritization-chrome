@@ -1,5 +1,9 @@
 **Changelog**
 
+## v0.3.1
+- All previously existing features are re-enabled.
+- Codebase is a bit cleaner now.
+
 ## v0.3.0
 - Migrate extension to React.
 - Many features temporarily disabled.

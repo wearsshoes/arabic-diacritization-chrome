@@ -1,30 +1,35 @@
-# React + TypeScript + Vite
+# ArabEasy
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+ArabEasy is a powerful Chrome extension that adds full diacritics (tashkeel) to Arabic text using Claude 3 (Haiku), a large language model from Anthropic. This tool is designed to enhance the readability and understanding of Arabic text on the web, especially for newcomers to the language.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Automatic Diacritics Addition**: ArabEasy adds helpful diacritics to Arabic text, and can transliterate into Arabizi.
+- **LLM API Integration**: ArabEasy uses the Anthropic API to ensure that accurate and reliable diacritics are added.
 
-## Expanding the ESLint configuration
+## Installation
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+1. Open Google Chrome
+2. Go to Chrome Web Store
+3. Search for "ArabEasy"
+4. Click on "Add to Chrome"
 
-- Configure the top-level `parserOptions` property like this:
+## Usage
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
-```
+After installing the extension, you currently must obtain an Claude API key in order to use the extension. This can be gotten from https://console.anthropic.com
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+## Contributing
+
+We welcome contributions from the community. If you'd like to contribute, please fork the repository and make changes as you'd like. Pull requests are warmly welcome.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+
+## Support
+
+If you encounter any problems or have suggestions, please open an issue on the GitHub repository.
+
+## Acknowledgements
+
+We would like to thank Anthropic for providing the service that makes this extension possible.
