@@ -25,7 +25,11 @@
   "homepage": "https://github.com/wearsshoes/arabic-diacritization-chrome#readme",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.20.2",
+    "@chakra-ui/react": "^2.8.2",
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
     "bottleneck": "^2.19.5",
+    "framer-motion": "^11.1.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "xxhash-wasm": "^1.0.2"
