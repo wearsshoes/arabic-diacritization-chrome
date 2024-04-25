@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Container, FormControl, Card, Grid, GridItem, Text, Input, Heading, Button, VStack } from '@chakra-ui/react'
 
 const APIKeyForm: React.FC = () => {
 
@@ -8,27 +9,25 @@ const APIKeyForm: React.FC = () => {
 
   useEffect(() => {
     // Load the API key
-    chrome.storage.sync.get(['apiKey', 'savedAt'], (data: { apiKey?: string; savedAt?: string }) => {
+    chrome.storage.sync.get(['apiKey', 'apiKeySavedAt'], (data: { apiKey?: string; apiKeySavedAt?: string }) => {
       setApiKey(data.apiKey || '');
       setSavedKeyDisplay(data.apiKey || 'None');
-      setSavedTimeDisplay(data.savedAt || 'Never');
+      setSavedTimeDisplay(data.apiKeySavedAt || 'Never');
     });
-  });
+  }, []);
 
-  const handleApiKeySubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const newApiKey = event.currentTarget.apiKey.value;
+  const handleApiKeySubmit = () => {
     const apiKeySavedAt = new Date().toLocaleString();
-    chrome.storage.sync.set({ apiKey: newApiKey, apiKeySavedAt }, () => {
+    chrome.storage.sync.set({ apiKey: apiKey, apiKeySavedAt }, () => {
       alert('API Key saved!');
-      setSavedKeyDisplay(newApiKey);
+      setSavedKeyDisplay(apiKey);
       setSavedTimeDisplay(apiKeySavedAt);
     });
   };
 
   const handleClearApiKey = () => {
     if (confirm('Are you sure you want to remove the API Key?')) {
-      chrome.storage.sync.remove(['apiKey', 'savedAt'], () => {
+      chrome.storage.sync.remove(['apiKey', 'apiKeySavedAt'], () => {
         setApiKey('');
         setSavedKeyDisplay('None');
         setSavedTimeDisplay('Never');
@@ -37,19 +36,31 @@ const APIKeyForm: React.FC = () => {
   };
 
   return (
-    <div id="apiKeyForm">
-      <h2>API Key</h2>
-      <form id="optionsForm" onSubmit={handleApiKeySubmit}>
-        <label htmlFor="apiKey">API Key:</label>
-        <input type="text" id="apiKey" name="apiKey" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
-        <button type="submit">Save</button>
-      </form>
-      <p id="savedKey">Current saved key: {savedKeyDisplay}</p>
-      <p id="savedTime">Last saved at: {savedTimeDisplay}</p>
-      <button id="clearBtn" onClick={handleClearApiKey}>
-        Clear
-      </button>
-    </div>
+    <Container id="apiKeyForm" maxW='lg'>
+      <VStack spacing='5'>
+        <Heading size='lg'>API Key</Heading>
+        <Card padding='5'>
+        <FormControl id="optionsForm">
+          <Grid templateColumns='repeat(5, 1fr)' gap={4}>
+            <GridItem colSpan={4} w='100%'>
+              <Input type="text" id="apiKey" name="apiKey" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
+            </GridItem>
+            <GridItem colSpan={1} w='100%'>
+              <Button id="saveBtn" onClick={handleApiKeySubmit}>Save</Button>
+            </GridItem>
+          </Grid>
+        </FormControl>
+        </Card>
+
+        <Card width='100%' padding='5'>
+          <Text fontWeight='bold'>Current saved key:</Text>
+          <Text id="savedKey">{savedKeyDisplay}</Text>
+          <Text fontWeight='bold'>Last saved at: </Text>
+          <Text id="savedTime">{savedTimeDisplay}</Text>
+          <Button id="clearBtn" onClick={handleClearApiKey}>Clear</Button>
+        </Card>
+      </VStack>
+    </Container>
   );
 };
 

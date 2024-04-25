@@ -1,4 +1,5 @@
 import React from 'react';
+import { Container, Card, VStack, Heading, Button} from '@chakra-ui/react'
 
 const Options: React.FC = () => {
 
@@ -15,31 +16,28 @@ const Options: React.FC = () => {
   };
 
   return (
-    <div className="container">
-      <h1>Extension Options</h1>
-      <p>Customize your extension settings here.</p>
-      
-      <div id="dataManagement">
-        <h2>Cache and Database Management</h2>
-        <div id="cacheContent">
-          <h3>Cache Content:</h3>
+    <Container className="container" id="dataManagement" maxW='lg'>
+        <VStack spacing='5'>  
+        <Heading size='lg'>Data Management</Heading>
+        <Card width='100%' id="cacheContent" padding='5'>
+          {/* <Heading size='sm'>Cache Content:</Heading>
           <p id="cacheContentList"></p>
-          <p id="cacheStatus"></p>
-          <button id="clearCacheBtn" onClick={handleClearCache}>
+          <p id="cacheStatus"></p> */}
+          <Button id="clearCacheBtn" onClick={handleClearCache}>
             Clear Cache
-          </button>
+          </Button>
           <p id="cacheMessage"></p>
-        </div>
-        <div id="databaseContent">
-          <h3>Database Content:</h3>
-          <p id="databaseSize"></p>
-          <button id="clearDatabaseBtn" onClick={handleClearDatabase}>
+        </Card>
+        <Card width='100%' id="databaseContent" padding='5'>
+          {/* <h3>Database Content:</h3>
+          <p id="databaseSize"></p> */}
+          <Button id="clearDatabaseBtn" onClick={handleClearDatabase}>
             Clear Database
-          </button>
+          </Button>
           <p id="databaseMessage"></p>
-        </div>
-      </div>
-    </div>
+        </Card>
+        </VStack>
+    </Container>
   );
 };
 
