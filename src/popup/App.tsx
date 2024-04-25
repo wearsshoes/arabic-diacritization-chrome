@@ -30,6 +30,7 @@ const App: React.FC = () => {
   const [outputTokenCount, setOutputTokenCount] = useState(0);
   const [model, setModel] = useState('');
   const [costEstimate, setCostEstimate] = useState('');
+  const [diacritizeStatus, setDiacritizeStatus] = useState('');
 
   useEffect(() => {
     // Check API key
@@ -58,6 +59,8 @@ const App: React.FC = () => {
       if (tab.id === undefined) throw new Error('No active tab found');
 
       const response = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteData' });
+      
+      // if cache exists for selected task, inform user.
 
       if (response.language) {
         const languageNamesInEnglish = new Intl.DisplayNames(['en'], { type: 'language' });
@@ -92,10 +95,13 @@ const App: React.FC = () => {
 
   const beginDiacritization = async (method: string) => {
     try {
+      setDiacritizeStatus('Diacritizing, see progress bar modal...');
       const response = await chrome.runtime.sendMessage({ action: 'sendToDiacritize', method });
       console.log(`${method} response:`, response);
+      setDiacritizeStatus('Diacritization complete, page updated.');
     } catch (error) {
       console.error(`Error in ${method}:`, error);
+      setDiacritizeStatus('Error diacritizing:' + error);
     }
   };
 
@@ -193,6 +199,7 @@ const App: React.FC = () => {
               </Select>
               <Button size='sm' onClick={() => beginDiacritization('diacritize')}>Start</Button>
             </HStack>
+              <Text>{diacritizeStatus}</Text>
           </Card>
         </Card>
 

@@ -3,6 +3,7 @@
 - calculateCost doesn't work.
 
 # Features
+- stream completed chunks as soon as they're done.
 - option to translate arabic pages by default
 - dialect detection
 ## Arabizi
@@ -17,10 +18,12 @@
 ## overlay
 - content overlay gui for info
 - progress bar in overlay
+- cancel button
 - field for entering text for on-the-fly diacritization (much easier api call)
 ## popup
 - choose among saved prompts before clicking start
-- re-show overlay if it disappeared
+- see whether cached save exists for page
+- button to re-show overlay if it disappeared
 ## options
 - supply instructions on getting API key
 - arabizi style chooser
