@@ -1,7 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import './App.css'
+// import './App.css'
 import { Prompt } from '../common/types';
 import { getAPIKey } from '../common/utils';
+import {
+  SimpleGrid,
+  Button,
+  Card,
+  Heading,
+  HStack,
+  Select,
+  Text,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionIcon,
+  AccordionPanel,
+  VStack,
+  Center
+} from '@chakra-ui/react';
 
 const App: React.FC = () => {
 
@@ -17,7 +33,7 @@ const App: React.FC = () => {
     // Check API key
     const apiKey = getAPIKey()
     if (!apiKey) {
-      const button = document.createElement('button');
+      const button = document.createElement('Button');
       button.textContent = 'Please set your API key in the options page.';
       document.getElementById('main')?.replaceChildren(button);
       button.addEventListener('click', () => chrome.runtime.openOptionsPage());
@@ -93,42 +109,82 @@ const App: React.FC = () => {
   };
 
   return (
-    <div>
-      <p>This extension adds full diacritics (tashkeel) to Arabic text via Claude Haiku.</p>
-      <p>Features:</p>
-      <ul>
-        <li>Diacritize Arabic text on any webpage</li>
-        <li>Customizable diacritization options</li>
-        <li>Fast and accurate diacritization powered by LLM</li>
-      </ul>
-      <div>
-        <select id="diacritizationSelector">
-          <option value="diacritize">Full Diacritization</option>
-          <option value="arabizi">Arabizi</option>
-        </select>
-      </div>
-      <div>
-        {/* <p>{diacritizeMessage}</p> */}
-        <button onClick={() => beginDiacritization('diacritize')}>Diacritize Page</button>
-      </div>
-      <div>
-        <p>{ }</p>
-        <button onClick={() => chrome.runtime.openOptionsPage()}>More options</button>
-      </div>
-      <h2>Page information</h2>
-      <div>
-        <p>Language: {pageLanguage}</p>
-        <p>Task: {selectedPrompt}</p>
-        <p>Prompt length: {promptLength}</p>
-        <p>Character count: {characterCount}</p>
-        <p>Estimated output token count: {outputTokenCount}</p>
-        <p>Model: {model}</p>
-        <p>
-          {costEstimate}
-          <button onClick={calculateCost}>Calculate</button>
-        </p>
-      </div>
-    </div>
+    <Card bg='#c2a25d' padding='2' width='100%'>
+      <VStack spacing={2} align="start">
+
+        <Card bg='#fbeed7' padding='2' width='100%'>
+          <Center>
+            <Heading fontFamily={'basmala'} padding={2}>ArabEasy</Heading>
+          </Center>
+          <Card padding='2'>
+            <Text>This extension adds full diacritics (tashkeel) to Arabic text via Claude Haiku. Remember to add your Anthropic API Key on the options page.</Text>
+            <Button size='xs' onClick={() => chrome.runtime.openOptionsPage()}>Open Options Page</Button>
+          </Card>
+        </Card>
+
+        <Card bg='#fbeed7' width={'100%'}>
+          <Accordion allowToggle>
+            <AccordionItem width='100%'>
+              <AccordionButton justifyContent="center">
+                <Heading size='md'>Page information</Heading>
+                <AccordionIcon />
+              </AccordionButton>
+              <AccordionPanel padding='2'>
+                <SimpleGrid columns={2} spacing={2} marginBottom={2}>
+                  <Card>
+                    <Text fontWeight={'bold'}>Page language: </Text>
+                    <Text>{pageLanguage}</Text>
+                  </Card>
+                  <Card>
+                    <Text fontWeight={'bold'}>Active prompt: </Text>
+                    <Text>"{selectedPrompt}"</Text>
+                  </Card>
+                  <Card>
+                    <Text fontWeight={'bold'}>Prompt length: </Text>
+                    <Text>{promptLength}</Text>
+                  </Card>
+                  <Card>
+                    <Text fontWeight={'bold'}>Characters on page: </Text>
+                    <Text>{characterCount || 'NaN'}</Text>
+                  </Card>
+                  <Card>
+                    <Text fontWeight={'bold'}>Estimated output: </Text>
+                    <Text>{outputTokenCount || 'NaN'} tokens</Text>
+                  </Card>
+                  <Card>
+                    <Text fontWeight={'bold'}>Model used: </Text>
+                    <Text>{model}</Text>
+                  </Card>
+                </SimpleGrid>
+                <Card>
+                  <HStack>
+                    <Text fontWeight={'bold'}>Estimated cost:</Text>
+                    <Button size='xs' onClick={calculateCost}>Calculate</Button>
+                  </HStack>
+                  <Text>{costEstimate}</Text>
+                </Card>
+              </AccordionPanel>
+            </AccordionItem>
+          </Accordion>
+        </Card>
+
+        <Card bg='#fbeed7' width='100%' padding='2'>
+          <Center>
+            <Heading size='md' marginBottom={2}>Task</Heading>
+          </Center>
+          <Card padding='2'>
+            <HStack>
+              <Select size='sm' id="diacritizationSelector">
+                <option value="diacritize">Full Diacritization</option>
+                <option value="arabizi">Arabizi</option>
+              </Select>
+              <Button size='sm' onClick={() => beginDiacritization('diacritize')}>Start</Button>
+            </HStack>
+          </Card>
+        </Card>
+
+      </VStack>
+    </Card>
   );
 };
 

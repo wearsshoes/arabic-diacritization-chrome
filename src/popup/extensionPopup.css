@@ -2,10 +2,9 @@
 /* Set the size and position of the popup */
 body {
   width: 360px;
-  padding: 30px;
 }
 
-:root {
+/* :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -73,8 +72,6 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
-
-/* Dark theme styles */
 @media (prefers-color-scheme: dark) {
   body {
       background-color: #222;
@@ -84,4 +81,4 @@ button:focus-visible {
       background-color: #444;
       color: #ccc;
   }
-}
+} */
