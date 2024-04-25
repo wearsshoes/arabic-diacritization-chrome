@@ -9,15 +9,17 @@ import {
   Heading,
   HStack,
   Select,
-  Text,
   Accordion,
   AccordionItem,
   AccordionButton,
   AccordionIcon,
   AccordionPanel,
   VStack,
-  Center
+  Center,
+  Text
 } from '@chakra-ui/react';
+// import theme from '../assets/theme';
+// import Text from '../assets/text';
 
 const App: React.FC = () => {
 
@@ -56,7 +58,15 @@ const App: React.FC = () => {
       if (tab.id === undefined) throw new Error('No active tab found');
 
       const response = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteData' });
-      setPageLanguage(response.language);
+
+      if (response.language) {
+        const languageNamesInEnglish = new Intl.DisplayNames(['en'], { type: 'language' });
+        const languageNamesInArabic = new Intl.DisplayNames(['ar'], { type: 'language' });
+        const lang = languageNamesInEnglish.of(response.language) || 'unknown';
+        const lang_ar = languageNamesInArabic.of(response.language) || 'unknown';
+        setPageLanguage(lang + ' (' + lang_ar + ')');
+      };
+  
       setCharacterCount(response.characterCount);
       setOutputTokenCount(response.batches);
     } catch (error) {
@@ -114,10 +124,13 @@ const App: React.FC = () => {
 
         <Card bg='#fbeed7' padding='2' width='100%'>
           <Center>
-            <Heading fontFamily={'basmala'} padding={2}>ArabEasy</Heading>
+            <VStack>
+            <Heading fontFamily={'basmala'} padding={2} marginTop={5} marginBottom={0} lineHeight={0}>ArabEasy</Heading>
+            <Text fontFamily={'arabic'} fontSize='xl' fontWeight={900} marginBottom={5} lineHeight={1}>بتِحكي عَرَبِيْزِي؟</Text>
+            </VStack>
           </Center>
           <Card padding='2'>
-            <Text>This extension adds full diacritics (tashkeel) to Arabic text via Claude Haiku. Remember to add your Anthropic API Key on the options page.</Text>
+            <Text>This extension adds diacritics (taškīl) to Arabic text via Claude Haiku. Remember to add your Anthropic API Key on the options page.</Text>
             <Button size='xs' onClick={() => chrome.runtime.openOptionsPage()}>Open Options Page</Button>
           </Card>
         </Card>
@@ -141,7 +154,7 @@ const App: React.FC = () => {
                   </Card>
                   <Card>
                     <Text fontWeight={'bold'}>Prompt length: </Text>
-                    <Text>{promptLength}</Text>
+                    <Text>{promptLength} tokens</Text>
                   </Card>
                   <Card>
                     <Text fontWeight={'bold'}>Characters on page: </Text>

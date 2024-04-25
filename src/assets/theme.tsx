@@ -1,4 +1,5 @@
 import { extendTheme } from '@chakra-ui/react'
+import '@fontsource-variable/cairo-play';
 
 const theme = extendTheme({
     components: {
@@ -17,6 +18,7 @@ const theme = extendTheme({
     fonts: {
         heading: `Baskerville, sans-serif`,
         body: `Verdana, sans-serif`,
+        arabic: `'Cairo Play Variable', sans-serif`,
     },
     styles: {
         global: {
