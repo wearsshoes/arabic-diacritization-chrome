@@ -27,7 +27,7 @@
       "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
     },
   "action": {
-    "default_popup": "src/popup/index.html",
+    "default_popup": "src/popup/extensionPopup.html",
     "default_title": "ArabEasy"
   },
   "host_permissions": [
