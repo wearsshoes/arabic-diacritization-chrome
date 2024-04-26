@@ -52,6 +52,19 @@ export const setupListeners = () => {
       }
     }
 
+    if (request.action === "diacritizationChunkFinished") {
+        const { original, diacritization, method } = request;
+        console.log("updating:", original, diacritization, method);
+        if (original && diacritization && method) {
+          replaceTextWithDiacritizedText(original, diacritization, method);
+          sendResponse({ success: 'Text replaced.' });
+        } else {
+          sendResponse({ error: 'Original or diacritization or method not found.' });
+        }
+        return true; 
+    }
+
+
     // Updates website when told to.
     if (request.action === "updateWebsiteText") {
       console.log('Received request to update website text...');

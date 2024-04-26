@@ -93,7 +93,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
           console.log('Website text:', websiteText);
           await webPageDiacritizationData.createOriginal(websiteText);
         }
-        const diacritizedText = await processWebpage(method, webPageDiacritizationData)
+        const diacritizedText = await processWebpage(method, webPageDiacritizationData, tab.id)
 
         // Process the diacritization batches
         console.log('Processing diacritization');
@@ -155,7 +155,7 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
         const request = await chrome.tabs.sendMessage(tab.id, { action: "getSelectedNodes" });
         const selectedNodes: TextNode[] = request.nodes;
         console.log("Selected Nodes:", selectedNodes);
-        const diacritization = await fullDiacritization(selectedNodes)
+        const diacritization = await fullDiacritization(selectedNodes, tab.id)
         console.log('result:', diacritization);
         await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', original: selectedNodes, diacritization, method: 'diacritize' });
       }
@@ -187,13 +187,13 @@ async function getPrompt(): Promise<Prompt> {
 }
 
 // Async worker for API call
-async function processWebpage(method: string, data: WebPageDiacritizationData): Promise<TextNode[]> {
+async function processWebpage(method: string, data: WebPageDiacritizationData, tabId: number): Promise<TextNode[]> {
 
   // If the method is 'diacritize' and saved data exists for the current webpage, return the saved results
   if (method === 'diacritize') {
     console.log('Received diacritization request and data, processing');
     const websiteText: TextNode[] = data.getDiacritization('original')
-    return await fullDiacritization(websiteText);
+    return await fullDiacritization(websiteText, tabId);
 
   } else if (method === 'arabizi') {
 
@@ -206,7 +206,7 @@ async function processWebpage(method: string, data: WebPageDiacritizationData): 
 
     } else {
       console.log('Diacritizing text first')
-      fullDiacritics = await processWebpage('diacritize', data)
+      fullDiacritics = await processWebpage('diacritize', data, tabId)
       // wait!!! but we want it to store the results! or we need to pass them out of here somehow!!!
     }
 
@@ -227,10 +227,10 @@ async function processWebpage(method: string, data: WebPageDiacritizationData): 
 
 };
 
-async function fullDiacritization(websiteText: TextNode[]): Promise<TextNode[]> {
+async function fullDiacritization(websiteText: TextNode[], tabId: number): Promise<TextNode[]> {
   const diacritizationBatches = createDiacritizationElementBatches(websiteText, 750);
   const texts = createAPIBatches(diacritizationBatches);
-  const resultBatches = await diacritizeTexts(texts);
+  const resultBatches = await diacritizeTexts(texts, tabId);
   console.log('resultBatches:', resultBatches);
   const result = resultBatches.flatMap((batch) => batch.split(delimiter))
   const diacritizedNodes: TextNode[] = websiteText.map((node, index) => {
@@ -354,11 +354,13 @@ function createAPIBatches(textElementBatches: TextNode[][]): string[] {
 
 
 // API Call for Diacritization
-async function diacritizeTexts(texts: string[]): Promise<string[]> {
+async function diacritizeTexts(texts: string[], tabId: number): Promise<string[]> {
   const apiKey = await getAPIKey();
   const diacritizePrompt = await getPrompt() || defaultPrompt;
   const promptText = diacritizePrompt.text;
   const sysPromptLength = await countSysPromptTokens(promptText) || 0;
+
+  chrome.tabs.sendMessage(tabId, { action: 'diacritizationBatchesStarted', batches: texts.length });
 
   // parameters for retrying
   const fudgefactor = 1;
@@ -392,8 +394,9 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
           const separatorsInDiacritized = diacritizedText.split(delimiter).length - 1;
           console.log('Separators in original:', separatorsInOriginal, 'Separators in diacritized:', separatorsInDiacritized);
           const rightDelimiters = separatorsInDiacritized + fudgefactor >= separatorsInOriginal;
-
+          
           if (enoughTokens && rightDelimiters) {
+            chrome.tabs.sendMessage(tabId, { action: 'diacritizationChunkFinished', diacritization: diacritizedText });
             return diacritizedText;
           } else {
             console.log('Too short or wrong separators, trying again: try', tries, 'of', maxTries);
@@ -404,6 +407,7 @@ async function diacritizeTexts(texts: string[]): Promise<string[]> {
         }
       }
       return arabicTextChunk;
+      // send a message to a listener that a chunk has finished
     })
   );
   console.log('Finished diacritizing.');
