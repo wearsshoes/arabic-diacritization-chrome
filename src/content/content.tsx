@@ -1,13 +1,13 @@
 import React, { useEffect } from "react";
 import ReactDOM from 'react-dom/client';
-import { setupListeners } from "./contentUtils";
+import { setUpListeners } from "./contentUtils";
 import ContentOverlay from "./overlay";
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 
 const Content: React.FC = () => {
   useEffect(() => {
-    setupListeners();
+    setUpListeners();
   }, []);
 
   return null;
