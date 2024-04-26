@@ -5,10 +5,6 @@
 - arabizi doesn't work right now.
 - calculateCost doesn't work.
 
-## Features
-
-- option to translate arabic pages by default
-
 ### Arabizi
 
 - arabizi transliterate al- rules, etc.
@@ -20,6 +16,7 @@
 - cancel button
 
 ### Popup
+
 - inform user whether cached save exists for page
 
 ### Options page
@@ -32,7 +29,7 @@
 ## Features
 
 - dialect detection
-
+- option to translate arabic pages by default (needs to be cheaper first? implement stat tracking first?)
 
 ### Arabizi
 

@@ -9,16 +9,20 @@ let pageMetadata: PageMetadata;
 
 // Event listener for messages from background script
 export const setupListeners = () => {
-  const listener = (request: any, _sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
+  const listener = async (request: any, _sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
     
     // Get the website language (called by popup.ts)
     if (request.action === 'getWebsiteData') {
       console.log('Received request for website data...');
+      await scrapeContent();
       const metadataReady = !!(pageMetadata && textElements);
       const language = document.documentElement.lang;
-      const totalTextLength = textElements
-        .map(node => node.text.length)
+      let totalTextLength = 0;
+      if (textElements) {
+        totalTextLength = textElements
+        .map(textNode => textNode.text.length)
         .reduce((acc, curr) => acc + curr, 0);
+      }
       sendResponse({ language, chars: totalTextLength, metadataReady });
     }
 
@@ -93,7 +97,7 @@ export const setupListeners = () => {
 }
 
 // Scrape webpage data for the content script
-export const scrapeContent = async () => {
+const scrapeContent = async () => {
   const main = async () => {
     try {
       const structuralMetadata = await serializeStructureMetadata();
