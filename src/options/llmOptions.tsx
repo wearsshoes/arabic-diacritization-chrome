@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import defaultPrompts from '../../public/defaultPrompts.json';
 import { Prompt } from '../common/types';
 
-import { Container, Center, Card, HStack, VStack, Input, Textarea, Select, Heading, Button } from '@chakra-ui/react'
+import { Box, Center, Card, HStack, VStack, Input, Textarea, Select, Heading, Button } from '@chakra-ui/react'
 
 const LLMOptions: React.FC = () => {
   const [llmChoice, setLlmChoice] = useState('haiku');
@@ -86,7 +86,7 @@ const LLMOptions: React.FC = () => {
   };
 
   return (
-    <Container padding='5'maxW='container.lg'>
+    <Box padding='5'maxW='container.lg'>
       <Center>
         <Heading size='lg' marginBottom='5'>LLM Options</Heading>
       </Center>
@@ -131,7 +131,7 @@ const LLMOptions: React.FC = () => {
           </HStack>
         </VStack>
       </Card>
-    </Container>
+    </Box>
   );
 };
 

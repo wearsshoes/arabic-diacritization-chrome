@@ -1,5 +1,5 @@
 import React from 'react';
-import { Container, Card, VStack, Heading, Button} from '@chakra-ui/react'
+import { Box, Card, VStack, Heading, Button} from '@chakra-ui/react'
 
 const Options: React.FC = () => {
 
@@ -16,7 +16,7 @@ const Options: React.FC = () => {
   };
 
   return (
-    <Container className="container" id="dataManagement" maxW='lg'>
+    <Box id="dataManagement" maxW='lg'>
         <VStack spacing='5'>  
         <Heading size='lg'>Data Management</Heading>
         <Card width='100%' id="cacheContent" padding='5'>
@@ -37,7 +37,7 @@ const Options: React.FC = () => {
           <p id="databaseMessage"></p>
         </Card>
         </VStack>
-    </Container>
+    </Box>
   );
 };
 

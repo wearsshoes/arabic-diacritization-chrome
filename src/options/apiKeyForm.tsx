@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Container, FormControl, Card, Grid, GridItem, Text, Input, Heading, Button, VStack } from '@chakra-ui/react'
+import { Box, FormControl, Card, Grid, GridItem, Text, Input, Heading, Button, VStack } from '@chakra-ui/react'
 
 const APIKeyForm: React.FC = () => {
 
@@ -36,7 +36,7 @@ const APIKeyForm: React.FC = () => {
   };
 
   return (
-    <Container id="apiKeyForm" maxW='lg'>
+    <Box id="apiKeyForm" maxW='lg'>
       <VStack spacing='5'>
         <Heading size='lg'>API Key</Heading>
         <Card padding='5'>
@@ -60,7 +60,7 @@ const APIKeyForm: React.FC = () => {
           <Button id="clearBtn" onClick={handleClearApiKey}>Clear</Button>
         </Card>
       </VStack>
-    </Container>
+    </Box>
   );
 };
 
