@@ -4,10 +4,10 @@
 
 - arabizi doesn't work right now.
 - calculateCost doesn't work.
+- need to search id=main not just class=main
 
 ## Features
 
-- stream completed chunks as soon as they're done.
 - option to translate arabic pages by default
 
 ### Arabizi
@@ -18,15 +18,14 @@
 
 ### Overlay
 
-- progress bar in overlay
 - cancel button
 
 ### Popup
-- see whether cached save exists for page
+- inform user whether cached save exists for page
 
-### Options
+### Options page
 - supply instructions on getting API key
-- way to get feedback on app experience
+- provide contact info for feedback
 - have custom prompts stored by task
 
 # FUTURE
@@ -46,7 +45,6 @@
 
 ### overlay
 
-- content overlay gui for info
 - field for entering text for on-the-fly diacritization (much easier api call)
 
 ### popup
@@ -54,7 +52,7 @@
 - choose among saved prompts before clicking start
 - button to re-show overlay if it disappeared
 
-### options
+### options page
 
 - arabizi style chooser
 - more stats on usage
