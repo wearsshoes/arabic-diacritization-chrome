@@ -48,43 +48,10 @@ function getTextNodeIndex(textNode: Text): number {
   return index;
 }
 
-// function getTextElements(node: Node = document.body, index: number = 0, elementId: string = ''): { textElements: TextNode[] } {
-//   const textElements: TextNode[] = [];
-
-//   if (node.nodeType === Node.ELEMENT_NODE) {
-//     const element = node as Element;
-//     if (element.hasChildNodes() && isVisible(element)) {
-//       let innerIndex = 0;
-//       elementId = element.getAttribute('data-element-id') ?? '';
-//       for (const childNode of Array.from(element.childNodes)) {
-//         const innerText = getTextElements(childNode, innerIndex, elementId);
-//         textElements.push(...innerText.textElements);
-//         innerIndex += innerText.textElements.length;
-//       }
-//       index += innerIndex;
-//     }
-
-//   } else if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
-//     const sentences = splitTextIntoSentences(node.textContent);
-//     sentences.forEach((sentence, sentenceIndex) => {
-//       const textElement: TextNode = {
-//         elementId: elementId,
-//         index: index + sentenceIndex,
-//         text: sentence,
-//       };
-
-//       textElements.push(textElement);
-//     });
-//   };
-//   return { textElements };
-// }
-
-// Builds element list according to interface. Recurses through DOM and put the in the right order. 
 function getTextElementsAndIndexDOM(node: Node = document.body, index: number = 0, elementId: string = '', iterator: number = 0): { textElements: TextNode[], iterator: number } {
   const textElements: TextNode[] = [];
 
   if (node.nodeType === Node.ELEMENT_NODE) {
-
     const element = node as Element;
     if (element.hasChildNodes() && isVisible(element)) {
       let innerIndex = 0;
@@ -98,35 +65,33 @@ function getTextElementsAndIndexDOM(node: Node = document.body, index: number = 
       }
       index += innerIndex;
     }
-
   } else if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
     const sentences = splitTextIntoSentences(node.textContent);
-    const fragment = document.createDocumentFragment();
-
     sentences.forEach((sentence, sentenceIndex) => {
-
       const textElement: TextNode = {
         elementId: elementId,
         index: index + sentenceIndex,
         text: sentence,
       };
-
       textElements.push(textElement);
-
-      // it would be a lot more stateful to do this in replaceTextWithDiacritizedText
-      // we can move it when we handle serialization/deserialization better.
-      // maybe we flatmap the textElements?
-      const textNode = document.createTextNode(sentence);
-      fragment.appendChild(textNode);
-
-      iterator++;
     });
 
-    // again, this should be moved to another place in the program.
-    node.parentNode?.replaceChild(fragment, node);
-  };
+    replaceSentencesWithNodes(node, sentences, iterator);
+  }
 
   return { textElements, iterator };
+}
+
+function replaceSentencesWithNodes(node: Node, sentences: string[], iterator: number) {
+  const fragment = document.createDocumentFragment();
+
+  sentences.forEach((sentence) => {
+    const textNode = document.createTextNode(sentence);
+    fragment.appendChild(textNode);
+    iterator++;
+  });
+
+  node.parentNode?.replaceChild(fragment, node);
 }
 
 function splitTextIntoSentences(text: string): string[] {
