@@ -137,27 +137,25 @@ async function calculateContentSignature(): Promise<string> {
   return signature;
 }
 
-async function serializeStructureMetadata(): Promise<{ [key: string]: ElementAttributes }> {
+  async function summarizeMetadata(): Promise<{ [key: string]: ElementAttributes }> {
   const content = document.body.querySelector('main')?.querySelectorAll('*') || document.body.querySelectorAll('*');
+    const elementAttributes: { [summary: string]: ElementAttributes } = {};
+    const contentSummaries: string[] = [];
+  
+    content.forEach((element) => {
+      const { tagName, id, className, textContent = "" } = element;
+      const summary = `${tagName}${id}${className}${textContent}`;
+      elementAttributes[summary] = { tagName, id, className };
+      contentSummaries.push(summary);
+    });
+    
+    // Hash all the content summaries at once, and then remap them onto the element attributes
+    const contentKeys = await calculateHash(contentSummaries);
+  
+    return Object.fromEntries(
+      contentKeys.map((key, index) => [key, elementAttributes[contentSummaries[index]]])
+    );
+  }
 
-  // console.log('Serializing page structure metadata...');
-  const contentSummary = Array.from(content).map((element) => (element.tagName + element.id + element.className + (element.textContent || '')));
-  // console.log('Text content:', contentSummary);
-
-  const keys = await calculateHash(contentSummary);
-
-  const result: { [key: string]: ElementAttributes } = {};
-
-  Array.from(content).forEach((element, index) => {
-    const key = keys[index];
-    result[key] = {
-      tagName: element.tagName,
-      id: element.id,
-      className: element.className,
-    };
-  });
-
-  // console.log('Structure metadata:', result);
-
-  return result;
-}
+  return { textElements, pageMetadata };
+};
