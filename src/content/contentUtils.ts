@@ -1,7 +1,7 @@
 import { PageMetadata, TextNode } from "../common/dataClass";
 import { ElementAttributes } from "../common/types";
 import { calculateHash } from "../common/utils";
-import { getTextElementsAndIndexDOM, replaceTextWithDiacritizedText, partiallyReplaceText, getTextNodesInRange } from "./domUtils";
+import { getTextElementsAndIndexDOM, replaceWebpageText, getTextNodesInRange } from "./domUtils";
 
 // Global Variables
 let textElements: TextNode[];
@@ -68,10 +68,14 @@ export const setupListeners = () => {
     // Updates website when told to.
     if (request.action === "updateWebsiteText") {
       console.log('Received request to update website text...');
-      const { original, diacritization, method } = request;
+      const { original, diacritization, method }: { 
+        original: TextNode[], 
+        diacritization: string[], 
+        method: string 
+      } = request;
       console.log("updating:", original, diacritization, method);
       if (original && diacritization && method) {
-        replaceTextWithDiacritizedText(original, diacritization, method);
+        replaceWebpageText(original, diacritization, method);
         sendResponse({ success: 'Text replaced.' });
       } else {
         sendResponse({ error: 'Original or diacritization or method not found.' });
@@ -102,7 +106,7 @@ export const scrapeContent = async () => {
         };
       });
       console.log('Initializing...', pageMetadata);
-      const mainNode = document.querySelector('main') || document.body;
+      const mainNode = document.querySelector('main, #main') || document.body;
       console.log('Main node:', mainNode);
       textElements = getTextElementsAndIndexDOM(mainNode).textElements;
       console.log('Text elements:', textElements);

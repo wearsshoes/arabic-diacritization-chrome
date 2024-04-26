@@ -140,55 +140,38 @@ function isVisible(element: Element): boolean {
 }
 
 // DOM Manipulation
-function replaceTextWithDiacritizedText(originals: NodeHashDict, replacements: NodeHashDict, method: string): void {
-
+function replaceWebpageText(originals: NodeHashDict | TextNode[], replacements: NodeHashDict | string[], method: string): void {
   console.log('Replacing text using method:', method);
-  if (originals.length !== replacements.length) {
-    throw new Error('textElements and diacritizedTexts should have the same length.');
+
+  const originalEntries = Array.isArray(originals) ? originals : Object.values(originals);
+  const replacementEntries = Array.isArray(replacements) ? replacements : Object.values(replacements);
+
+  if (originalEntries.length !== replacementEntries.length) {
+      throw new Error('originals and replacements should have the same length.');
   }
 
-  Object.keys(replacements).forEach((key) => {
-    const newText = replacements[key]
+  originalEntries.forEach((textNode, index) => {
+      const { elementId, index: nodeIndex } = textNode;
+      const replacementEntry = replacementEntries[index];
+      const replacementText = typeof replacementEntry === 'string' ? replacementEntry : replacementEntry.text;
 
-    const element = document.querySelector(`[data-element-id="${newText.elementId}"]`);
+      const element = document.querySelector(`[data-element-id="${elementId}"]`);
 
-    if (element) {
-      if (element.childNodes[newText.index]) {
-        element.childNodes[newText.index].textContent = newText.text;
+      if (element) {
+          if (element.childNodes[nodeIndex]) {
+              element.childNodes[nodeIndex].textContent = replacementText;
+          } else {
+              console.warn(`Warning: childNode at index ${nodeIndex} does not exist in element with id ${elementId}.`);
+          }
       } else {
-        console.warn(`Warning: childNode at index ${newText.index} does not exist in element with id ${newText.elementId}.`);
+          console.warn(`Warning: elementId ${elementId} did not map to any element.`);
       }
-    } else {
-      console.warn(`Warning: elementId ${newText.elementId} did not map to any element.`);
-    }
-
-  })
-  if (method === 'arabizi') {
-    directionLTR();
-  }
-}
-
-function partiallyReplaceText(original: TextNode[], diacritization: string[], method: string): void {
-  console.log('Replacing text using method:', method);
-
-  if (original.length !== diacritization.length) {
-    throw new Error('originals and replacementParts should have the same length.');
-  }
-
-  original.forEach((textNode, index) => {
-    const element = document.querySelector(`[data-element-id="${textNode.elementId}"]`);
-    if (element) {
-      element.childNodes[textNode.index].textContent = diacritization[index];
-    } else {
-      console.warn(`Warning: elementId ${textNode.elementId} did not map to any element.`);
-    }
   });
 
   if (method === 'arabizi') {
-    directionLTR();
+      directionLTR();
   }
 }
-
 // Forces LTR. Only gets called for Arabizi
 function directionLTR() {
   // document.documentElement.setAttribute("lang", "en");
@@ -198,4 +181,4 @@ function directionLTR() {
   document.head.appendChild(style);
 }
 
-export { getTextNodesInRange, getTextElementsAndIndexDOM, replaceTextWithDiacritizedText, partiallyReplaceText };
+export { getTextNodesInRange, getTextElementsAndIndexDOM, replaceWebpageText };
