@@ -44,3 +44,9 @@ reactRoot.render(
       <Content />
   </React.StrictMode>
 );
+
+window.addEventListener('error', (event) => {
+  if (event.message.includes('Failed to fetch dynamically imported module')) {
+    window.location.reload();
+  }
+});
