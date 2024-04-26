@@ -1,5 +1,8 @@
 # Changelog
 
+## Current
+- Selects main content with more accuracy now.
+
 ## 0.3.3 (2024-04-25)
 - Implemented a popup progress bar to show how many batches the API has completed.
 - Each section of the site sent to the API now auto-updates as soon as the API has processed it.

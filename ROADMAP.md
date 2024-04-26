@@ -4,7 +4,6 @@
 
 - arabizi doesn't work right now.
 - calculateCost doesn't work.
-- need to search id=main not just class=main
 
 ## Features
 

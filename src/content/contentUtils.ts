@@ -56,7 +56,7 @@ export const setupListeners = () => {
       const { original, diacritization, method } = request;
       console.log("updating:", original, diacritization, method);
       if (original && diacritization && method) {
-        partiallyReplaceText(original, diacritization, method);
+        replaceWebpageText(original, diacritization, method);
         sendResponse({ success: 'Text replaced.' });
       } else {
         console.error('Original or diacritization or method not found.');
