@@ -168,6 +168,27 @@ function replaceTextWithDiacritizedText(originals: NodeHashDict, replacements: N
   }
 }
 
+function partiallyReplaceText(original: TextNode[], diacritization: string[], method: string): void {
+  console.log('Replacing text using method:', method);
+
+  if (original.length !== diacritization.length) {
+    throw new Error('originals and replacementParts should have the same length.');
+  }
+
+  original.forEach((textNode, index) => {
+    const element = document.querySelector(`[data-element-id="${textNode.elementId}"]`);
+    if (element) {
+      element.childNodes[textNode.index].textContent = diacritization[index];
+    } else {
+      console.warn(`Warning: elementId ${textNode.elementId} did not map to any element.`);
+    }
+  });
+
+  if (method === 'arabizi') {
+    directionLTR();
+  }
+}
+
 // Forces LTR. Only gets called for Arabizi
 function directionLTR() {
   // document.documentElement.setAttribute("lang", "en");
@@ -177,4 +198,4 @@ function directionLTR() {
   document.head.appendChild(style);
 }
 
-export { getTextNodesInRange, getTextElementsAndIndexDOM, replaceTextWithDiacritizedText };
+export { getTextNodesInRange, getTextElementsAndIndexDOM, replaceTextWithDiacritizedText, partiallyReplaceText };

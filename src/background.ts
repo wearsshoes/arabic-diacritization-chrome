@@ -230,7 +230,7 @@ async function processWebpage(method: string, data: WebPageDiacritizationData, t
 async function fullDiacritization(websiteText: TextNode[], tabId: number): Promise<TextNode[]> {
   const diacritizationBatches = createDiacritizationElementBatches(websiteText, 750);
   const texts = createAPIBatches(diacritizationBatches);
-  const resultBatches = await diacritizeTexts(texts, tabId);
+  const resultBatches = await diacritizeTexts(texts, diacritizationBatches, tabId);
   console.log('resultBatches:', resultBatches);
   const result = resultBatches.flatMap((batch) => batch.split(delimiter))
   const diacritizedNodes: TextNode[] = websiteText.map((node, index) => {
@@ -354,7 +354,7 @@ function createAPIBatches(textElementBatches: TextNode[][]): string[] {
 
 
 // API Call for Diacritization
-async function diacritizeTexts(texts: string[], tabId: number): Promise<string[]> {
+async function diacritizeTexts(texts: string[], textElementBatches: TextNode[][], tabId: number): Promise<string[]> {
   const apiKey = await getAPIKey();
   const diacritizePrompt = await getPrompt() || defaultPrompt;
   const promptText = diacritizePrompt.text;
@@ -368,7 +368,7 @@ async function diacritizeTexts(texts: string[], tabId: number): Promise<string[]
 
   // diacritize the texts in parallel with retries
   const diacritizedTexts = await Promise.all(
-    texts.map(async (arabicTextChunk) => {
+    texts.map(async (arabicTextChunk, index) => {
       for (let tries = 0; tries < maxTries; tries++) {
         const model = escalateModel(defaultModel, tries).currentVersion
         try {
@@ -396,7 +396,12 @@ async function diacritizeTexts(texts: string[], tabId: number): Promise<string[]
           const rightDelimiters = separatorsInDiacritized + fudgefactor >= separatorsInOriginal;
           
           if (enoughTokens && rightDelimiters) {
-            chrome.tabs.sendMessage(tabId, { action: 'diacritizationChunkFinished', diacritization: diacritizedText });
+            chrome.tabs.sendMessage(tabId, { 
+              action: 'diacritizationChunkFinished', 
+              original: textElementBatches[index], 
+              diacritization: diacritizedText.split(delimiter), 
+              method: 'diacritize'
+            });
             return diacritizedText;
           } else {
             console.log('Too short or wrong separators, trying again: try', tries, 'of', maxTries);

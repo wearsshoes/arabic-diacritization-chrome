@@ -1,7 +1,7 @@
 import { PageMetadata, TextNode } from "../common/dataClass";
 import { ElementAttributes } from "../common/types";
 import { calculateHash } from "../common/utils";
-import { getTextElementsAndIndexDOM, replaceTextWithDiacritizedText, getTextNodesInRange } from "./domUtils";
+import { getTextElementsAndIndexDOM, replaceTextWithDiacritizedText, partiallyReplaceText, getTextNodesInRange } from "./domUtils";
 
 // Global Variables
 let textElements: TextNode[];
@@ -53,17 +53,17 @@ export const setupListeners = () => {
     }
 
     if (request.action === "diacritizationChunkFinished") {
-        const { original, diacritization, method } = request;
-        console.log("updating:", original, diacritization, method);
-        if (original && diacritization && method) {
-          replaceTextWithDiacritizedText(original, diacritization, method);
-          sendResponse({ success: 'Text replaced.' });
-        } else {
-          sendResponse({ error: 'Original or diacritization or method not found.' });
-        }
-        return true; 
+      const { original, diacritization, method } = request;
+      console.log("updating:", original, diacritization, method);
+      if (original && diacritization && method) {
+        partiallyReplaceText(original, diacritization, method);
+        sendResponse({ success: 'Text replaced.' });
+      } else {
+        console.error('Original or diacritization or method not found.');
+        sendResponse({ error: 'Original or diacritization or method not found.' });
+      }
+      return true;
     }
-
 
     // Updates website when told to.
     if (request.action === "updateWebsiteText") {
