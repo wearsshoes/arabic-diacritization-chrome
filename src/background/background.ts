@@ -4,7 +4,7 @@ import prompts from '../../public/defaultPrompts.json';
 import { Prompt } from '../common/types'
 import { PageMetadata, TextNode, WebPageDiacritizationData } from '../common/dataClass';
 import { defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel } from './anthropicCaller'
-import { getAPIKey, DiacritizationDataManager } from '../common/datamanager';
+import { getAPIKey, DiacritizationDataManager } from './datamanager';
 import { calculateHash } from "../common/utils";
 
 
