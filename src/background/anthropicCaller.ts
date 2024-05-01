@@ -1,6 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
 import Bottleneck from 'bottleneck'
-import { SysPromptTokenCache } from '../common/types';
 import { calculateHash, getAPIKey } from '../common/utils';
 export { claude, defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel };
 
@@ -18,6 +17,12 @@ const anthropicLimiter = new Bottleneck({
     maxConcurrent: 3,
     minTime: 1500
 });
+
+interface SysPromptTokenCache {
+    hash: string;
+    model: string;
+    tokens: number;
+  }
 
 
 const claude: Models = {

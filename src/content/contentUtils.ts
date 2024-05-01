@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { PageMetadata, TextNode } from '../common/dataClass';
-import { ElementAttributes } from '../common/types';
 import { calculateHash } from '../common/utils';
 import { getTextElementsAndIndexDOM, replaceWebpageText, getTextNodesInRange } from './domUtils';
 
@@ -131,6 +130,12 @@ export const setUpListeners = () => {
     const signature = await calculateHash(textContent);
     console.log('Content signature:', signature);
     return signature;
+  }
+
+ interface ElementAttributes {
+    tagName: string;
+    id?: string;
+    className?: string; // space separated list of classes, not an array
   }
 
   async function summarizeMetadata(): Promise<{ [key: string]: ElementAttributes }> {
