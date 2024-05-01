@@ -1,12 +1,13 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { arabicToArabizi } from './arabizi';
 import prompts from '../../public/defaultPrompts.json';
+
 import { Prompt } from '../common/types'
+import { calculateHash } from "../common/utils";
 import { PageMetadata, TextNode, WebPageDiacritizationData } from '../common/dataClass';
+
+import { arabicToArabizi } from './arabizi';
 import { defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel } from './anthropicCaller'
 import { getAPIKey, DiacritizationDataManager } from './datamanager';
-import { calculateHash } from "../common/utils";
-
 
 // ----------------- Event Listeners ----------------- //
 

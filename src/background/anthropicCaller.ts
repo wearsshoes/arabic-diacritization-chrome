@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import Bottleneck from 'bottleneck'
-import { calculateHash, getAPIKey } from '../common/utils';
+import { calculateHash } from '../common/utils';
+import { getAPIKey } from './datamanager';
 export { claude, defaultModel, anthropicAPICall, countSysPromptTokens, escalateModel };
 
 // some parts of these functions will get refactored back into background.ts

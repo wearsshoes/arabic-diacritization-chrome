@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+
 import { PageMetadata, TextNode } from '../common/dataClass';
 import { calculateHash } from '../common/utils';
+
 import { getTextElementsAndIndexDOM, replaceWebpageText, getTextNodesInRange } from './domUtils';
 
 export const setUpListeners = () => {

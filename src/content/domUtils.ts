@@ -1,8 +1,7 @@
 import { TextNode, NodeHashDict } from "../common/dataClass";
-const sentenceRegex = /[.!?؟]+\s*\n*/g;
-
 
 // -------------- Functions -------------- //
+const sentenceRegex = /[.!?؟]+\s*\n*/g;
 
 function getTextNodesInRange(range: Range): TextNode[] {
   const textNodes: TextNode[] = [];
