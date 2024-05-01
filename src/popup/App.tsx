@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-// import './App.css'
 import { Prompt } from '../common/types';
 import { getAPIKey } from '../background/datamanager';
 import {
