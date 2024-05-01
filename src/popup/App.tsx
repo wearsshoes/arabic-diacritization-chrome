@@ -33,6 +33,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // Check API key
+    // TODO: just get it from the background worker instead
     const apiKey = getAPIKey()
     if (!apiKey) {
       const button = document.createElement('Button');
