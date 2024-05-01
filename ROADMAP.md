@@ -34,6 +34,8 @@
 ### Arabizi
 
 - lebanese arabizi support
+- in dialect -- handle proper nouns? Qatar and not 'atar
+- other dialects
 
 ## UI
 
