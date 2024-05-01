@@ -10,10 +10,6 @@ export interface Prompt {
   text: string;
 }
 
-export interface TransliterationDict {
-  [key: string]: string[];
-}
-
 export interface SysPromptTokenCache {
   hash: string;
   model: string;
