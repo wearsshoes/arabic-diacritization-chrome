@@ -1,5 +1,30 @@
 import { WebPageDiacritizationData } from "./dataClass";
-import { chromeStorageGet, chromeStorageSet } from "./utils";
+
+export async function getAPIKey(): Promise<string> {
+  try {
+    const { apiKey } = await chromeStorageGet<string>('apiKey');
+    return apiKey;
+  }
+  catch (error) {
+    throw new Error(`Error getting API Key: ${error}`);
+  }
+}
+
+function chromeStorageGet<T>(key: string): Promise<{ [key: string]: T }> {
+  return new Promise((resolve, reject) => {
+    chrome.storage.sync.get([key], result => {
+      chrome.runtime.lastError ? reject(chrome.runtime.lastError) : resolve(result);
+    });
+  });
+}
+
+function chromeStorageSet(items: { [key: string]: any }): Promise<void> {
+  return new Promise((resolve, reject) => {
+    chrome.storage.sync.set(items, () => {
+      chrome.runtime.lastError ? reject(chrome.runtime.lastError) : resolve();
+    });
+  });
+}
 
 export class DiacritizationDataManager {
     private static instance: DiacritizationDataManager;
