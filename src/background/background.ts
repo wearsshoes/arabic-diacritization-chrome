@@ -19,9 +19,7 @@ chrome.runtime.onInstalled.addListener(function (details) {
     var thisVersion = chrome.runtime.getManifest().version;
     console.log("Updated from " + details.previousVersion + " to " + thisVersion + "!");
   }
-});
 
-chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "processSelectedText",
     title: "Fully Diacritize Selected Text",
@@ -31,8 +29,8 @@ chrome.runtime.onInstalled.addListener(() => {
       console.error(`Error creating context menu: ${chrome.runtime.lastError.message}`);
     }
   });
-});
 
+});
 
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
@@ -57,6 +55,28 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       };
     };
     getWebsiteData();
+    return true;
+  }
+
+  if (request.action === "getSavedInfo") {
+    async function getSavedInfo() {
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab.id === undefined) throw new Error('No active tab found');
+        const urlHash = await calculateHash(tab.url as string);
+        await dataManager.getWebPageData(urlHash)
+        // send the keys of the existing response?.diacritizations for the webpage
+          .then((response) => {
+            const savedDiacritizations = (Object.keys(response?.diacritizations || {}))
+            console.log('Saved diacritizations:', savedDiacritizations);
+            sendResponse(savedDiacritizations);
+          })
+          .catch((error) => console.error('Failed to get saved info:', error));
+      } catch (error) {
+        throw (error)
+      }
+    }
+    getSavedInfo();
     return true;
   }
 
@@ -164,7 +184,7 @@ async function processDiacritizationRequest(method: string) {
             method: method
           });
           console.log('No changes detected, returning saved data.');
-          return({ message: 'No changes detected, returning saved data.' });
+          return ({ message: 'No changes detected, returning saved data.' });
 
         } else {
           console.log('Webpage is unchanged, generating', method, 'from saved data');
@@ -208,8 +228,8 @@ async function processDiacritizationRequest(method: string) {
     console.log('Updating website text');
     await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', original, diacritization, method });
     console.log('Website text updated');
-    
-    return({ message: 'Completed.' });
+
+    return ({ message: 'Completed.' });
 
   } catch (error) {
     throw (error);

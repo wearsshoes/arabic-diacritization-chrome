@@ -53,6 +53,9 @@ const App: React.FC = () => {
     // Get selected prompt
     getSelectedPrompt();
 
+    // Get saved info
+    getSavedInfo();
+
     // Update model display
     setModel('Claude Haiku');
 
@@ -96,6 +99,15 @@ const App: React.FC = () => {
       }
     });
   };
+
+  const getSavedInfo = () => {
+    chrome.runtime.sendMessage({ action: 'getSavedInfo' }, (response) => {
+      // set saved info to all the methods for which there are saved diacritizations
+      console.log('Saved info:', response);
+      const savedInfo = response.join(', ');
+      setSavedInfo('Existing diacritizations: ' + savedInfo);
+    });
+  }
 
   const beginDiacritization = async (method: string) => {
     try {
