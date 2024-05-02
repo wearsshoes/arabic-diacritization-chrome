@@ -20,8 +20,7 @@
 - inform user whether cached save exists for page
 
 ### Options page
-- supply instructions on getting API key
-- provide contact info for feedback
+
 - have custom prompts stored by task
 
 # FUTURE
