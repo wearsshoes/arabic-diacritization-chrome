@@ -228,7 +228,7 @@ const App: React.FC = () => {
                 <option value="diacritize">Full Diacritization</option>
                 <option value="arabizi">Arabizi</option>
               </Select>
-              <Button size='sm' onClick={() => beginDiacritization('diacritize')}>Start</Button>
+              <Button size='sm' onClick={() => beginDiacritization('fullDiacritics')}>Start</Button>
             </HStack>
             <Text>{diacritizeStatus}</Text>
           </Card>

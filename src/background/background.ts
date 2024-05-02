@@ -121,7 +121,7 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
         console.log("Selected Nodes:", selectedNodes);
         const diacritization = await fullDiacritization(selectedNodes, tab.id)
         console.log('result:', diacritization);
-        await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', original: selectedNodes, diacritization, method: 'diacritize' });
+        await chrome.tabs.sendMessage(tab.id, { action: 'updateWebsiteText', original: selectedNodes, diacritization, method: 'fullDiacritics' });
       }
     }
     await processDiacritizationRequest();
@@ -239,8 +239,8 @@ async function processDiacritizationRequest(method: string) {
 // Async worker for API call
 async function processWebpage(method: string, data: WebPageDiacritizationData, tabId: number): Promise<TextNode[]> {
 
-  // If the method is 'diacritize' and saved data exists for the current webpage, return the saved results
-  if (method === 'diacritize') {
+  // If the method is 'fullDiacritics' and saved data exists for the current webpage, return the saved results
+  if (method === 'fullDiacritics') {
     console.log('Received diacritization request and data, processing');
     const websiteText: TextNode[] = data.getDiacritization('original')
     return await fullDiacritization(websiteText, tabId);
@@ -250,13 +250,13 @@ async function processWebpage(method: string, data: WebPageDiacritizationData, t
     console.log('Received arabizi request and data, processing');
     let fullDiacritics: TextNode[] = []
 
-    if (data.diacritizations['diacritize']) {
-      fullDiacritics = data.getDiacritization('diacritize')
+    if (data.diacritizations['fullDiacritics']) {
+      fullDiacritics = data.getDiacritization('fullDiacritics')
       console.log('Diacritization inferred to exist, transliterating')
 
     } else {
       console.log('Diacritizing text first')
-      fullDiacritics = await processWebpage('diacritize', data, tabId)
+      fullDiacritics = await processWebpage('fullDiacritics', data, tabId)
       // wait!!! but we want it to store the results! or we need to pass them out of here somehow!!!
     }
 
@@ -450,7 +450,7 @@ async function diacritizeTexts(texts: string[], textElementBatches: TextNode[][]
               action: 'diacritizationChunkFinished',
               original: textElementBatches[index],
               diacritization: diacritizedText.split(delimiter),
-              method: 'diacritize'
+              method: 'fullDiacritics'
             });
             return diacritizedText;
           } else {
