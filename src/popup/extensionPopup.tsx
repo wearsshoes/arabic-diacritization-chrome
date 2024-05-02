@@ -129,7 +129,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <Card bg='#c2a25d' padding='2' width='100%'>
+    <Card bg='#c2a25d' padding='2' w='360px'>
       <VStack spacing={2} align="start">
 
         <Card bg='#fbeed7' padding='2' width='100%'>
