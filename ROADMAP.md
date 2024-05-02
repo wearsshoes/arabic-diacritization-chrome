@@ -20,6 +20,7 @@
 #### Popup
 
 - inform user whether cached save exists for page
+- delete cache for page
 
 #### Options page
 

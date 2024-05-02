@@ -34,6 +34,7 @@ const App: React.FC = () => {
   const [model, setModel] = useState('');
   const [costEstimate, setCostEstimate] = useState('');
   const [diacritizeStatus, setDiacritizeStatus] = useState('');
+  const [savedInfo, setSavedInfo] = useState('');
 
   useEffect(() => {
     // Check API key
@@ -128,6 +129,10 @@ const App: React.FC = () => {
     return totalCostPlusTax;
   };
 
+  const clearSaved = () => {
+    setSavedInfo('clearing cache info for page');
+    };
+
   return (
     <Card bg='#c2a25d' padding='2' w='360px'>
       <VStack spacing={2} align="start">
@@ -189,6 +194,16 @@ const App: React.FC = () => {
               </AccordionPanel>
             </AccordionItem>
           </Accordion>
+        </Card>
+
+        <Card bg='#fbeed7' width='100%' padding='2'>
+          <Center>
+            <Heading size='md' marginBottom={2}>Cache Info</Heading>
+          </Center>
+          <Card padding='2'>
+            <Text>{savedInfo}</Text>
+            <Button size='sm' onClick={() => clearSaved()}>Clear Saved Data</Button>
+          </Card>
         </Card>
 
         <Card bg='#fbeed7' width='100%' padding='2'>
