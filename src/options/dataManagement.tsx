@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Card, VStack, Heading, Button} from '@chakra-ui/react'
+import { Box, Card, VStack, Heading, Button } from '@chakra-ui/react'
 
 const Options: React.FC = () => {
 
@@ -11,13 +11,19 @@ const Options: React.FC = () => {
 
   const handleClearDatabase = () => {
     if (confirm('Are you sure you want to clear the database?')) {
-      alert('jk, lol: Database clearing is disabled in this version.');
+      chrome.runtime.sendMessage({ action: 'clearDatabase' }, (response) => {
+        if (response.message) {
+          document.getElementById('databaseMessage')!.textContent = response.message;
+        } else {
+          document.getElementById('databaseMessage')!.textContent = 'Failed to clear database: no response from background script';
+        }
+      });
     }
   };
 
   return (
     <Box id="dataManagement" maxW='lg'>
-        <VStack spacing='5'>  
+      <VStack spacing='5'>
         <Heading size='lg'>Data Management</Heading>
         <Card width='100%' id="cacheContent" padding='5'>
           {/* <Heading size='sm'>Cache Content:</Heading>
@@ -36,7 +42,7 @@ const Options: React.FC = () => {
           </Button>
           <p id="databaseMessage"></p>
         </Card>
-        </VStack>
+      </VStack>
     </Box>
   );
 };
