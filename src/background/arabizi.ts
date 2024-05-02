@@ -36,7 +36,7 @@ export function arabicToArabizi(texts: string[], dialect: string = "msa"): strin
   }
 
 // TODO: identify al-, add dash
-// TODO: sun/moon transformation: al-Sudan == as-Sudan
+// TODO: sun/moon transformation: al-sudan == as-sudan
 // (maybe this should be an optional flag)
 
 // TODO: joined vowels -- fii instead of fiy, etc

@@ -1,67 +1,70 @@
-# MVP
+# Roadmap
 
-## Bugs
+## MVP
+
+### Bugs
 
 - arabizi doesn't work right now.
 - calculateCost doesn't work.
 
-### Arabizi
+#### Arabizi
 
 - arabizi transliterate al- rules, etc.
 
-## UI
+### UI
 
-### Overlay
+#### Overlay
 
 - cancel button
 
-### Popup
+#### Popup
 
 - inform user whether cached save exists for page
 
-### Options page
+#### Options page
 
 - have custom prompts stored by task
 
-# FUTURE
+## Future
 
-## Features
+### Features
 
 - dialect detection
 - option to translate arabic pages by default (needs to be cheaper first? implement stat tracking first?)
 
-### Arabizi
+#### Arabizi
 
 - lebanese arabizi support
 - in dialect -- handle proper nouns? Qatar and not 'atar
 - other dialects
+- let people write custom diacritizations
 
-## UI
+### UI
 
 - nicer styling overall
 
-### overlay
+#### overlay
 
 - field for entering text for on-the-fly diacritization (much easier api call)
 
-### popup
+#### popup
 
 - choose among saved prompts before clicking start
 - button to re-show overlay if it disappeared
 
-### options page
+#### options page
 
 - arabizi style chooser
 - more stats on usage
 - choose how many max tokens you want to send to claude
 
-## Under the hood
+### Under the hood
 
 - processing selected text should also save results to IndexedDB.
 - some parts of background.ts are real spaghetti code that need to be cleaned up.
 - stuff is loading a lot slower since the react migration.
 
-## pie in sky
+## Pie in sky
 
 - local inference
 - take wrong-word feedback and do something useful with it
