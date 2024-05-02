@@ -59,14 +59,11 @@ const App: React.FC = () => {
   }, []);
 
   const getWebsiteData = async () => {
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab.id === undefined) throw new Error('No active tab found');
-
-      const response = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteData' });
-      
-      // if cache exists for selected task, inform user.
-
+    interface WebsiteData {
+      characterCount: number;
+      language: string;
+    }
+    chrome.runtime.sendMessage({ action: 'getWebsiteData' }, (response: WebsiteData) => {
       if (response.language) {
         const languageNamesInEnglish = new Intl.DisplayNames(['en'], { type: 'language' });
         const languageNamesInArabic = new Intl.DisplayNames(['ar'], { type: 'language' });
@@ -74,12 +71,11 @@ const App: React.FC = () => {
         const lang_ar = languageNamesInArabic.of(response.language) || 'unknown';
         setPageLanguage(lang + ' (' + lang_ar + ')');
       };
-  
-      setCharacterCount(response.characterCount);
-      setOutputTokenCount(response.batches);
-    } catch (error) {
-      console.error('Failed to get complete website data:', error);
-    }
+      
+      //   setCharacterCount(response.characterCount);
+      //   setOutputTokenCount(response.batches);
+      
+    });  
   };
 
   const getSelectedPrompt = () => {
@@ -131,7 +127,7 @@ const App: React.FC = () => {
 
   const clearSaved = () => {
     setSavedInfo('clearing cache info for page');
-    };
+  };
 
   return (
     <Card bg='#c2a25d' padding='2' w='360px'>
@@ -140,8 +136,8 @@ const App: React.FC = () => {
         <Card bg='#fbeed7' padding='2' width='100%'>
           <Center>
             <VStack>
-            <Heading fontFamily={'basmala'} padding={2} marginTop={5} marginBottom={0} lineHeight={0}>ArabEasy</Heading>
-            <Text fontFamily={'arabic'} fontSize='xl' fontWeight={900} marginBottom={5} lineHeight={1}>بتِحكي عَرَبِيْزِي؟</Text>
+              <Heading fontFamily={'basmala'} padding={2} marginTop={5} marginBottom={0} lineHeight={0}>ArabEasy</Heading>
+              <Text fontFamily={'arabic'} fontSize='xl' fontWeight={900} marginBottom={5} lineHeight={1}>بتِحكي عَرَبِيْزِي؟</Text>
             </VStack>
           </Center>
           <Card padding='2'>
@@ -218,7 +214,7 @@ const App: React.FC = () => {
               </Select>
               <Button size='sm' onClick={() => beginDiacritization('diacritize')}>Start</Button>
             </HStack>
-              <Text>{diacritizeStatus}</Text>
+            <Text>{diacritizeStatus}</Text>
           </Card>
         </Card>
 

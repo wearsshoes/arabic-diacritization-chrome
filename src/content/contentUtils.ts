@@ -11,22 +11,28 @@ export const useContentSetup = () => {
 
   // Event listener for messages from background script
   useEffect(() => {
-    const listener = async (request: any, _sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
+    const listener = (request: any, _sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
+      
       // Get the website language (called by popup.ts)
       if (request.action === 'getWebsiteData') {
         console.log('Received request for website data...');
-        await scrapeContent();
-        const metadataReady = !!(pageMetadata && textElements);
-        const language = document.documentElement.lang;
-        let totalTextLength = 0;
-        if (textElements) {
-          totalTextLength = textElements
+        async function getWebsiteData() {
+          // await scrapeContent();
+          // const metadataReady = !!(pageMetadata && textElements);
+          const language = document.documentElement.lang;
+          let characterCount = 0;
+          if (textElements) {
+            characterCount = textElements
             .map(textNode => textNode.text.length)
             .reduce((acc, curr) => acc + curr, 0);
-        }
-        sendResponse({ language, chars: totalTextLength, metadataReady });
+          };
+          sendResponse({ language, characterCount });
+          // sendResponse({ language, characterCount, metadataReady });
+          // sendResponse('test')
+        };
+        getWebsiteData();
+        return true;
       }
-
 
       // Get metadata about the website (called by background.ts)
       if (request.action === 'getWebsiteMetadata') {

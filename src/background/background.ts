@@ -23,13 +23,13 @@ chrome.runtime.onInstalled.addListener(function (details) {
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
-      id: "processSelectedText",
-      title: "Fully Diacritize Selected Text",
-      contexts: ["selection"]
+    id: "processSelectedText",
+    title: "Fully Diacritize Selected Text",
+    contexts: ["selection"]
   }, () => {
-      if (chrome.runtime.lastError) {
-          console.error(`Error creating context menu: ${chrome.runtime.lastError.message}`);
-      }
+    if (chrome.runtime.lastError) {
+      console.error(`Error creating context menu: ${chrome.runtime.lastError.message}`);
+    }
   });
 });
 
@@ -41,6 +41,22 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === "getSystemPromptLength") {
     const prompt = request.prompt;
     countSysPromptTokens(prompt).then((tokens) => sendResponse(tokens));
+    return true;
+  }
+
+  if (request.action === "getWebsiteData") {
+    async function getWebsiteData() {
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab.id === undefined) throw new Error('No active tab found');
+        const response = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteData' });
+        console.log('Website data at background:', response);
+        sendResponse(response);
+      } catch (error) {
+        console.error('Failed to get complete website data:', error);
+      };
+    };
+    getWebsiteData();
     return true;
   }
 
@@ -402,12 +418,12 @@ async function diacritizeTexts(texts: string[], textElementBatches: TextNode[][]
           const separatorsInDiacritized = diacritizedText.split(delimiter).length - 1;
           console.log('Separators in original:', separatorsInOriginal, 'Separators in diacritized:', separatorsInDiacritized);
           const rightDelimiters = separatorsInDiacritized + fudgefactor >= separatorsInOriginal;
-          
+
           if (enoughTokens && rightDelimiters) {
-            chrome.tabs.sendMessage(tabId, { 
-              action: 'diacritizationChunkFinished', 
-              original: textElementBatches[index], 
-              diacritization: diacritizedText.split(delimiter), 
+            chrome.tabs.sendMessage(tabId, {
+              action: 'diacritizationChunkFinished',
+              original: textElementBatches[index],
+              diacritization: diacritizedText.split(delimiter),
               method: 'diacritize'
             });
             return diacritizedText;
