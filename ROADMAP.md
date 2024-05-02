@@ -5,7 +5,6 @@
 ### Bugs
 
 - arabizi doesn't work right now.
-- calculateCost doesn't work.
 
 #### Arabizi
 
