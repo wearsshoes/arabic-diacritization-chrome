@@ -1,17 +1,14 @@
-import React, { useEffect } from "react";
+import React from 'react';
 import ReactDOM from 'react-dom/client';
 
-import { setUpListeners } from "./contentUtils";
+import { useContentSetup } from "./contentUtils";
 import ContentOverlay from "./overlay";
 
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 
 const Content: React.FC = () => {
-  useEffect(() => {
-    setUpListeners();
-  }, []);
-
+ useContentSetup();
   return null;
 };
 
@@ -36,6 +33,7 @@ const emotionCache = createCache({
 });
 
 // Mount your React app to the shadow root
+
 const reactRoot = ReactDOM.createRoot(root);
 reactRoot.render(
   <React.StrictMode>

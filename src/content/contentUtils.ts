@@ -5,7 +5,7 @@ import { calculateHash } from '../common/utils';
 
 import { getTextElementsAndIndexDOM, replaceWebpageText, getTextNodesInRange } from './domUtils';
 
-export const setUpListeners = () => {
+export const useContentSetup = () => {
   const [textElements, setTextElements] = useState<TextNode[]>([]);
   const [pageMetadata, setPageMetadata] = useState<PageMetadata | null>(null);
 
