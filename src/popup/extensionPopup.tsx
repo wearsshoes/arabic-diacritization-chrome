@@ -58,6 +58,10 @@ const App: React.FC = () => {
 
   }, []);
 
+  useEffect(() => {
+    calculateCost();
+  }, [outputTokenCount, characterCount, promptLength]);
+
   const getWebsiteData = async () => {
     interface WebsiteData {
       characterCount: number;
@@ -72,9 +76,8 @@ const App: React.FC = () => {
         setPageLanguage(lang + ' (' + lang_ar + ')');
       };
       
-      //   setCharacterCount(response.characterCount);
-      //   setOutputTokenCount(response.batches);
-      
+        setCharacterCount(response.characterCount);
+        setOutputTokenCount(response.characterCount * 2.3);      
     });  
   };
 
@@ -118,7 +121,9 @@ const App: React.FC = () => {
 
   const calculateCostEstimate = (): number => {
     const inputCost = 0.25 / 1000000;
-    const inputSubtotal = (promptLength * outputTokenCount + characterCount) * inputCost;
+    const batchLength = 750;
+    const batches = Math.ceil(characterCount / batchLength);
+    const inputSubtotal = ((promptLength * batches) + characterCount) * inputCost;
     const outputCost = 1.25 / 1000000;
     const outputSubtotal = characterCount * 2.3 * outputCost;
     const totalCostPlusTax = (inputSubtotal + outputSubtotal) * 1.1;
@@ -173,7 +178,7 @@ const App: React.FC = () => {
                   </Card>
                   <Card>
                     <Text fontWeight={'bold'}>Estimated output: </Text>
-                    <Text>{outputTokenCount || 'NaN'} tokens</Text>
+                    <Text>{outputTokenCount.toFixed(0) || 'NaN'} tokens</Text>
                   </Card>
                   <Card>
                     <Text fontWeight={'bold'}>Model used: </Text>
@@ -183,7 +188,6 @@ const App: React.FC = () => {
                 <Card>
                   <HStack>
                     <Text fontWeight={'bold'}>Estimated cost:</Text>
-                    <Button size='xs' onClick={calculateCost}>Calculate</Button>
                   </HStack>
                   <Text>{costEstimate}</Text>
                 </Card>
