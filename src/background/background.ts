@@ -21,6 +21,19 @@ chrome.runtime.onInstalled.addListener(function (details) {
   }
 });
 
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+      id: "processSelectedText",
+      title: "Fully Diacritize Selected Text",
+      contexts: ["selection"]
+  }, () => {
+      if (chrome.runtime.lastError) {
+          console.error(`Error creating context menu: ${chrome.runtime.lastError.message}`);
+      }
+  });
+});
+
+
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
@@ -140,12 +153,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     return true;
 
   }
-});
-
-chrome.contextMenus.create({
-  id: "processSelectedText",
-  title: "Fully Diacritize Selected Text",
-  contexts: ["selection"]
 });
 
 chrome.contextMenus.onClicked.addListener(async function (info, tab) {
