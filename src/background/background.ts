@@ -65,7 +65,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
         if (tab.id === undefined) throw new Error('No active tab found');
         const urlHash = await calculateHash(tab.url as string);
         await dataManager.getWebPageData(urlHash)
-        // send the keys of the existing response?.diacritizations for the webpage
+          // send the keys of the existing response?.diacritizations for the webpage
           .then((response) => {
             const savedDiacritizations = (Object.keys(response?.diacritizations || {}))
             console.log('Saved diacritizations:', savedDiacritizations);
@@ -93,6 +93,27 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
         sendResponse({ error: 'Failed to process diacritization.' });
       });
 
+    return true;
+  }
+
+  // Clear the current webpage data
+  if (request.action === "clearWebPageData") {
+    async function clearWebsiteData() {
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab.id === undefined) throw new Error('No active tab found');
+        console.log('Clearing data for:', tab.url);
+        await dataManager.clearWebPageData(tab.url as string)
+          .then(() => {
+            sendResponse({ message: 'Database cleared.' });
+          });
+        return true;
+      } catch (error) {
+        console.error('Failed to clear database:', error);
+        sendResponse({ message: 'Failed to clear database.' });
+      }
+    }
+    clearWebsiteData();
     return true;
   }
 

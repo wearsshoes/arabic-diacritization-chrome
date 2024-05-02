@@ -78,10 +78,10 @@ const App: React.FC = () => {
         const lang_ar = languageNamesInArabic.of(response.language) || 'unknown';
         setPageLanguage(lang + ' (' + lang_ar + ')');
       };
-      
-        setCharacterCount(response.characterCount);
-        setOutputTokenCount(response.characterCount * 2.3);      
-    });  
+
+      setCharacterCount(response.characterCount);
+      setOutputTokenCount(response.characterCount * 2.3);
+    });
   };
 
   const getSelectedPrompt = () => {
@@ -105,7 +105,11 @@ const App: React.FC = () => {
       // set saved info to all the methods for which there are saved diacritizations
       console.log('Saved info:', response);
       const savedInfo = response.join(', ');
-      setSavedInfo('Existing diacritizations: ' + savedInfo);
+      if (savedInfo === '') {
+        setSavedInfo('No saved diacritizations.');
+      } else {
+        setSavedInfo('Existing diacritizations: ' + savedInfo);
+      }
     });
   }
 
@@ -144,6 +148,15 @@ const App: React.FC = () => {
 
   const clearSaved = () => {
     setSavedInfo('clearing cache info for page');
+    chrome.runtime.sendMessage({ action: 'clearWebPageData' }, (response) => {
+      if (response.message) {
+        console.log('Cleared saved data:', response);
+        setSavedInfo('No saved diacritizations.');
+      } else {
+        console.error('Failed to clear saved data:', response);
+        setSavedInfo('Failed to clear saved data.');
+      }
+    });
   };
 
   return (
