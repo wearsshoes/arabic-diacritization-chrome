@@ -10,49 +10,43 @@ export const useContentSetup = () => {
   const [textElements, setTextElements] = useState<TextNode[]>([]);
   const [pageMetadata, setPageMetadata] = useState<PageMetadata | null>(null);
   const [diacritizedStatus, setDiacritizedStatus] = useState<string>('original');
+  const [mainNode, setMainNode] = useState<HTMLElement>(document.body);
 
   // Event listener for messages from background script
   useEffect(() => {
+    chrome.runtime.onMessage.addListener(listener);
+    waitForContentLoaded;
+    return () => {
+      chrome.runtime.onMessage.removeListener(listener);
+    };
+  }, [contentLoaded, textElements, pageMetadata, diacritizedStatus]);
+
     const listener = (request: any, _sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
 
-      console.log('Received request for ', request);
-
-      const { original, diacritization, method }: {
+    const { action, original, diacritization, method }: {
+      action: string,
         original: TextNode[],
         diacritization: string[],
         method: string
       } = request;
-
-      switch (request.action) {
-
-        // Get the website state (called by popup.ts)
-        case 'getWebsiteData':
-          waitForContentLoaded.then(() => {
             const language = document.documentElement.lang;
-            const mainNode = document.querySelector('main, #main') as HTMLElement || document.body;
             const characterCount = mainNode.innerText?.length || 0;
+
+    console.log('Received request for ', action);
+    switch (action) {
+
+      case 'getWebsiteData':
             sendResponse({ language, characterCount });
-            scrapeContent(mainNode);
-          });
           return true;
 
-      // Get metadata about the website (called by background.ts)
       case 'getWebsiteMetadata':
-        if (pageMetadata) {
           sendResponse({ pageMetadata, diacritizedStatus });
-        } else {
-          console.error('Metadata not found.');
-          sendResponse({ error: 'Metadata not found.' });
-        }
         return true;
 
-      // When diacritization is requested, returns the APIBatches
       case 'getWebsiteText':
         sendResponse({ websiteText: textElements });
         return true;
 
-      // When diacritization is requested, returns the selected elements
-      // Assumes that the webpage was already processed
       case 'getSelectedNodes':
         const selection = window.getSelection();
         if (selection !== null) {
@@ -74,13 +68,20 @@ export const useContentSetup = () => {
       }
     };
 
-    chrome.runtime.onMessage.addListener(listener);
-
-    // Clean up the listener when the component unmounts
-    return () => {
-      chrome.runtime.onMessage.removeListener(listener);
-    };
-  }, [contentLoaded, textElements, pageMetadata, diacritizedStatus]);
+  const waitForContentLoaded = new Promise<void>((resolve) => {
+    if (contentLoaded) {
+      resolve();
+    } else {
+      const onContentLoaded = () => {
+        setContentLoaded(true);
+        setMainNode(document.querySelector('main, #main') as HTMLElement || document.body);
+        scrapeContent(mainNode);
+        chrome.runtime.sendMessage({ action: 'contentLoaded' });
+        resolve();
+      };
+      document.addEventListener('DOMContentLoaded', onContentLoaded, { once: true });
+    }
+  });
 
   // Scrape webpage data for the content script
   const scrapeContent = async (mainNode: HTMLElement) => {
@@ -121,18 +122,6 @@ export const useContentSetup = () => {
     id?: string;
     className?: string; // space separated list of classes, not an array
   }
-
-  const waitForContentLoaded = new Promise<void>((resolve) => {
-    if (contentLoaded) {
-      resolve();
-    } else {
-      const onContentLoaded = () => {
-        setContentLoaded(true);
-        resolve();
-      };
-      document.addEventListener('DOMContentLoaded', onContentLoaded, { once: true });
-    }
-  });
 
   async function summarizeMetadata(): Promise<{ [key: string]: ElementAttributes }> {
     const content = document.body.querySelector('main')?.querySelectorAll('*') || document.body.querySelectorAll('*');
