@@ -15,24 +15,29 @@ export const useContentSetup = () => {
   useEffect(() => {
     const listener = (request: any, _sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
 
-      // Get the website state (called by popup.ts)
-      if (request.action === 'getWebsiteData') {
-        console.log('Received request for website data...');
+      console.log('Received request for ', request);
 
-        waitForContentLoaded.then(() => {
-          const language = document.documentElement.lang;
-          const mainNode = document.querySelector('main, #main') as HTMLElement || document.body;
-          const characterCount = mainNode.innerText?.length || 0;
-          sendResponse({ language, characterCount });
-          scrapeContent(mainNode);
-        });
+      const { original, diacritization, method }: {
+        original: TextNode[],
+        diacritization: string[],
+        method: string
+      } = request;
 
-        return true;
-      }
+      switch (request.action) {
+
+        // Get the website state (called by popup.ts)
+        case 'getWebsiteData':
+          waitForContentLoaded.then(() => {
+            const language = document.documentElement.lang;
+            const mainNode = document.querySelector('main, #main') as HTMLElement || document.body;
+            const characterCount = mainNode.innerText?.length || 0;
+            sendResponse({ language, characterCount });
+            scrapeContent(mainNode);
+          });
+          return true;
 
       // Get metadata about the website (called by background.ts)
-      if (request.action === 'getWebsiteMetadata') {
-        console.log('Received request for website metadata...');
+      case 'getWebsiteMetadata':
         if (pageMetadata) {
           sendResponse({ pageMetadata, diacritizedStatus });
         } else {
@@ -40,17 +45,15 @@ export const useContentSetup = () => {
           sendResponse({ error: 'Metadata not found.' });
         }
         return true;
-      }
 
       // When diacritization is requested, returns the APIBatches
-      if (request.action === "getWebsiteText") {
-        console.log('Received request for website text...');
+      case 'getWebsiteText':
         sendResponse({ websiteText: textElements });
-      }
+        return true;
 
       // When diacritization is requested, returns the selected elements
       // Assumes that the webpage was already processed
-      if (request.action === "getSelectedNodes") {
+      case 'getSelectedNodes':
         const selection = window.getSelection();
         if (selection !== null) {
           console.log(selection.toString());
@@ -58,10 +61,9 @@ export const useContentSetup = () => {
           const textNodes = getTextNodesInRange(range);
           sendResponse({ nodes: textNodes, diacritizedStatus });
         }
-      }
+        return true;
 
-      if (request.action === "diacritizationChunkFinished") {
-        const { original, diacritization, method } = request;
+      case 'diacritizationChunkFinished':
         console.log("updating:", original, diacritization, method);
         if (original && diacritization && method) {
           replaceWebpageText(original, diacritization, method);
@@ -71,28 +73,9 @@ export const useContentSetup = () => {
           sendResponse({ error: 'Original or diacritization or method not found.' });
         }
         return true;
-      }
-      if (request.action === "diacritizationChunkFinished") {
-        const { original, diacritization, method } = request;
-        console.log("updating:", original, diacritization, method);
-        if (original && diacritization && method) {
-          replaceWebpageText(original, diacritization, method);
-          sendResponse({ success: 'Text replaced.' });
-        } else {
-          console.error('Original or diacritization or method not found.');
-          sendResponse({ error: 'Original or diacritization or method not found.' });
-        }
-        return true;
-      }
 
       // Updates website when told to.
-      if (request.action === "updateWebsiteText") {
-        console.log('Received request to update website text...');
-        const { original, diacritization, method }: {
-          original: TextNode[],
-          diacritization: string[],
-          method: string
-        } = request;
+      case 'updateWebsiteText':
         console.log("updating:", original, diacritization, method);
         if (original && diacritization && method) {
           replaceWebpageText(original, diacritization, method);
@@ -105,7 +88,6 @@ export const useContentSetup = () => {
       }
     };
 
-    chrome.runtime.onMessage.addListener(listener);
     chrome.runtime.onMessage.addListener(listener);
 
     // Clean up the listener when the component unmounts
@@ -186,5 +168,5 @@ export const useContentSetup = () => {
     );
   }
 
-  return { contentLoaded, textElements, pageMetadata, diacritizedStatus };
+  return;
 };
