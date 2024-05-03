@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { ChakraProvider } from '@chakra-ui/react';
+import React, { useEffect, useState, useCallback } from "react";
+import { ChakraProvider, useDisclosure } from '@chakra-ui/react';
 import {
   Box,
   Card,
@@ -18,50 +18,43 @@ const ContentOverlay: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [finished, setFinished] = useState(0);
   const [timeElapsed, setTimeElapsed] = useState(0);
-  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
-  const [isMinimized, setIsMinimized] = useState(true);
+  const { isOpen: isMinimized, onToggle: handleMinimizeToggle } = useDisclosure({ defaultIsOpen: true });
+  const progressPercent = total > 0 ? (finished / total) * 100 : 0;
+  
+  const handleMessageListener = useCallback(
+    (message: any) => {
+      const { action, batches } = message;
+      switch (action) {
+        
+        case "diacritizationBatchesStarted":
+          setTotal(batches);
+          setFinished(0);
+          setTimeElapsed(0);
+          handleMinimizeToggle();
+          const intervalId = window.setInterval(() => {
+            setTimeElapsed((prevTime) => prevTime + 1);
+          }, 1000);
+          return () => window.clearInterval(intervalId);
+
+        case "diacritizationChunkFinished":
+          setFinished((prevFinished) => prevFinished + 1);
+          break;
+
+        case "updateWebsiteText":
+          setFinished(total);
+          break;
+      }
+    },
+    [total, handleMinimizeToggle]
+  );
 
   useEffect(() => {
-
-    const messageListener = (message: any, _sender: any, _sendResponse: (response?: any) => void) => {
-      const { action, batches } = message;
-
-      if (action === 'diacritizationBatchesStarted') {
-        setTotal(batches);
-        setFinished(0);
-        setTimeElapsed(0);
-        setIsMinimized(false);
-        const id = setInterval(() => {
-          setTimeElapsed((prevTime) => prevTime + 1);
-        }, 1000);
-        setIntervalId(id);
-      } else if (action === 'diacritizationChunkFinished') {
-        setFinished((prevFinished) => prevFinished + 1);
-      } else if (action === 'updateWebsiteText') {
-        setFinished(total);
-        if (intervalId) {
-          clearInterval(intervalId);
-          setIntervalId(null);
-        }
-      }
-    };
-
-    chrome.runtime.onMessage.addListener(messageListener);
+    chrome.runtime.onMessage.addListener(handleMessageListener);
 
     return () => {
-      chrome.runtime.onMessage.removeListener(messageListener);
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
+      chrome.runtime.onMessage.removeListener(handleMessageListener);
     };
-  }, [total]);
-
-
-  const progressPercent = total > 0 ? (finished / total) * 100 : 0;
-
-  const handleMinimizeToggle = () => {
-    setIsMinimized(!isMinimized);
-  };
+  }, [handleMessageListener]);
 
   return (
     <ChakraProvider theme={theme}>
