@@ -215,6 +215,7 @@ async function processDiacritizationRequest(method: string) {
 
         } else {
           console.log('Webpage is unchanged, generating', method, 'from saved data');
+          console.log('Method queried:', method, 'Saved data:', retrievedPageData.diacritizations);
           webPageDiacritizationData.diacritizations = retrievedPageData.diacritizations
         }
 

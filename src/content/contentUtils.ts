@@ -40,7 +40,7 @@ export const useContentSetup = () => {
     // When diacritization is requested, returns the APIBatches
     if (request.action === "getWebsiteText") {
       console.log('Received request for website text...');
-      sendResponse({textElements});
+      sendResponse({websiteText: textElements});
     }
 
     // When diacritization is requested, returns the selected elements
@@ -110,8 +110,8 @@ const scrapeContent = async (mainNode: HTMLElement) => {
     setPageMetadata(metadata);
     console.log('Initializing...', metadata);
     if (diacritizedStatus === 'original') {
-    const { textElements } = getTextElementsAndIndexDOM(mainNode as Node);
-    setTextElements(textElements);
+      const { textElements } = getTextElementsAndIndexDOM(mainNode as Node);
+      setTextElements(textElements);
     }
     console.log('Text elements:', textElements);
   } catch (error) {
