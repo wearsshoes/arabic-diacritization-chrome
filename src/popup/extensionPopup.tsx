@@ -35,13 +35,14 @@ const App: React.FC = () => {
   const [diacritizeStatus, setDiacritizeStatus] = useState('');
   const [savedInfo, setSavedInfo] = useState('');
   const [loadState, setLoadState] = useState(false);
+  const [method, setMethod] = useState('fullDiacritics');
 
   useEffect(() => {
     // Check API key
     // TODO: just get it from the background worker instead
     (async () => {
       const apiKey: string = await chrome.runtime.sendMessage({ action: 'getAPIKey' });
-      if (!apiKey) {  
+      if (!apiKey) {
         const button = document.createElement('Button');
         button.textContent = 'Please set your API key in the options page.';
         document.getElementById('main')?.replaceChildren(button);
@@ -115,7 +116,7 @@ const App: React.FC = () => {
     });
   }
 
-  const beginDiacritization = async (method: string) => {
+  const beginDiacritization = async () => {
     try {
       setDiacritizeStatus('Diacritizing, see progress bar modal...');
       const response = await chrome.runtime.sendMessage({ action: 'sendToDiacritize', method });
@@ -240,11 +241,16 @@ const App: React.FC = () => {
           </Center>
           <Card padding='2'>
             <HStack>
-              <Select size='sm' id="diacritizationSelector">
-                <option value="diacritize">Full Diacritization</option>
+              <Select
+                size='sm'
+                id="diacritizationSelector"
+                value={method}
+                onChange={(e) => setMethod(e.target.value)}
+              >
+                <option value='fullDiacritics'>Full Diacritization</option>
                 <option value="arabizi">Arabizi</option>
               </Select>
-              <Button size='sm' onClick={() => beginDiacritization('fullDiacritics')}>Start</Button>
+              <Button size='sm' onClick={beginDiacritization}>Start</Button>
             </HStack>
             <Text>{diacritizeStatus}</Text>
           </Card>
