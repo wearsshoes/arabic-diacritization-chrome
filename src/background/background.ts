@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import prompts from '../../public/defaultPrompts.json';
+import prompts from './defaultPrompts.json';
 
 import { Prompt } from '../common/types'
 import { calculateHash } from "../common/utils";

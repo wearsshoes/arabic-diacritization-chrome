@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import defaultPrompts from '../../public/defaultPrompts.json';
+import defaultPrompts from '../background/defaultPrompts.json';
 import { Prompt } from '../common/types';
 
 import { Box, Center, Card, HStack, VStack, Input, Textarea, Select, Heading, Button } from '@chakra-ui/react'
@@ -21,6 +21,7 @@ const LLMOptions: React.FC = () => {
       const selected = data.selectedPrompt?.name;
       setCustomPrompt(defaultPrompts[0].text || '');
       if (selected) {
+        //TODO: this should just ask the background worker for the prompt text
         const selectedPrompt = defaultPrompts.find((prompt) => prompt.name === selected);
         if (selectedPrompt) {
           setCustomPrompt(selectedPrompt.text);
