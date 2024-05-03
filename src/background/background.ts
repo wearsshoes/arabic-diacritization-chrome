@@ -2,7 +2,6 @@ import Anthropic from '@anthropic-ai/sdk';
 import prompts from './defaultPrompts.json';
 
 import { Prompt } from '../common/types'
-import { calculateHash } from "../common/utils";
 import { PageMetadata, TextNode, WebPageDiacritizationData } from '../common/dataClass';
 
 import { arabicToArabizi } from './arabizi';
@@ -56,8 +55,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.action === "getWebsiteData") {
     async function getWebsiteData() {
       try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab.id === undefined) throw new Error('No active tab found');
+        const tab = await getActiveTab();
         const response = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteData' });
         console.log('Website data at background:', response);
         sendResponse(response);
@@ -72,10 +70,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.action === "getSavedInfo") {
     async function getSavedInfo() {
       try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab.id === undefined) throw new Error('No active tab found');
-        const urlHash = await calculateHash(tab.url as string);
-        await dataManager.getWebPageData(urlHash)
+        const tab = await getActiveTab();
+        await dataManager.getWebPageData(tab.url)
           // send the keys of the existing response?.diacritizations for the webpage
           .then((response) => {
             const savedDiacritizations = (Object.keys(response?.diacritizations || {}))
@@ -111,8 +107,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.action === "clearWebPageData") {
     async function clearWebsiteData() {
       try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab.id === undefined) throw new Error('No active tab found');
+        const tab = await getActiveTab();
         console.log('Clearing data for:', tab.url);
         await dataManager.clearWebPageData(tab.url as string)
         .then(() => {
@@ -170,6 +165,12 @@ const delimiter = '|';
 const sentenceRegex = /[.!?؟]+\s*\n*/g;
 const defaultPrompt: Prompt = prompts[1];
 
+async function getActiveTab(): Promise<{ id: number, url: string }> {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (tab.id === undefined) throw new Error('No active tab found');
+  return { id: tab.id as number, url: tab.url as string };
+}
+
 async function getPrompt(): Promise<Prompt> {
   return new Promise((resolve, reject) => {
     chrome.storage.sync.get(['selectedPrompt'], (data: { selectedPrompt?: Prompt }) => {
@@ -186,11 +187,7 @@ async function getPrompt(): Promise<Prompt> {
 async function processDiacritizationRequest(method: string) {
   try {
     // Get the active tab
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab.id === undefined) throw new Error('No active tab found');
-    else console.log('Active tab found:', tab.url, tab.id);
-    const pageUrl = tab.url as string;
-    const urlHash = await calculateHash(pageUrl);
+    const tab = await getActiveTab();
 
     // Get the site's current metadata
     console.log('Getting website metadata');
@@ -201,7 +198,7 @@ async function processDiacritizationRequest(method: string) {
 
     // Load the saved data for the current webpage
     console.log('Checking for saved data');
-    const retrievedPageData = await dataManager.getWebPageData(urlHash);
+    const retrievedPageData = await dataManager.getWebPageData(tab.url);
     console.log('Retrieved page data:', retrievedPageData);
 
     // check current and saved data
@@ -254,7 +251,7 @@ async function processDiacritizationRequest(method: string) {
 
     // Update the saved metadata
     console.log('Updating saved web page data');
-    await dataManager.updateWebPageData(urlHash, webPageDiacritizationData)
+    await dataManager.updateWebPageData(tab.url, webPageDiacritizationData)
       .catch((error) => console.error('Failed to update web page data:', error))
       .then(() => console.log('Saved webpage data updated:', webPageDiacritizationData));
 

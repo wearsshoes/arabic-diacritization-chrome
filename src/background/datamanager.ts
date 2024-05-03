@@ -49,11 +49,12 @@ export class DiacritizationDataManager {
     return this.instance;
   }
 
-  async getWebPageData(urlHash: string): Promise<WebPageDiacritizationData | undefined> {
+  async getWebPageData(url: string): Promise<WebPageDiacritizationData | undefined> {
     if (!this.db) {
       throw new Error("Database not initialized");
     }
     try {
+      const urlHash = await calculateHash(url);
       console.log("Getting data for", urlHash);
       const serializedData = await loadData<string>(this.db, "diacritizations_msa", urlHash);
       if (serializedData) {
@@ -68,11 +69,12 @@ export class DiacritizationDataManager {
     }
   }
 
-  async updateWebPageData(urlHash: string, data: WebPageDiacritizationData): Promise<void> {
+  async updateWebPageData(url: string, data: WebPageDiacritizationData): Promise<void> {
     if (!this.db) {
       throw new Error("Database not initialized");
     } else {
       try {
+        const urlHash = await calculateHash(url);
         const pageData = await this.getWebPageData(urlHash);
         const serializedData = JSON.stringify(data);
         await saveData(this.db, "diacritizations_msa", { id: data.id, data: serializedData });
