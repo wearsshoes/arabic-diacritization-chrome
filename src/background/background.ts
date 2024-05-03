@@ -33,21 +33,27 @@ chrome.runtime.onInstalled.addListener(function (details) {
 });
 
 // Listen for messages from content scripts
-chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
-  if (request.action === "getAPIKey") {
+  if (message.action === "contentLoaded") {
+    console.log('Content loaded:', message);
+    contentLoaded = true;
+    return true;
+  }
+
+  if (message.action === "getAPIKey") {
     getAPIKey().then((key) => sendResponse(key));
     return true;
   }
 
   // Get the system prompt length
-  if (request.action === "getSystemPromptLength") {
-    const prompt = request.prompt;
+  if (message.action === "getSystemPromptLength") {
+    const prompt = message.prompt;
     countSysPromptTokens(prompt).then((tokens) => sendResponse(tokens));
     return true;
   }
 
-  if (request.action === "getWebsiteData") {
+  if (message.action === "getWebsiteData") {
     async function getWebsiteData() {
       try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -63,7 +69,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     return true;
   }
 
-  if (request.action === "getSavedInfo") {
+  if (message.action === "getSavedInfo") {
     async function getSavedInfo() {
       try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -86,10 +92,10 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   }
 
   // Handle the diacritization request
-  if (request.action === "sendToDiacritize" && request.method) {
+  if (message.action === "sendToDiacritize" && message.method) {
     console.log('Received diacritization request');
 
-    processDiacritizationRequest(request.method)
+    processDiacritizationRequest(message.method)
       .then((result) => {
         sendResponse(result);
       })
@@ -102,7 +108,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   }
 
   // Clear the current webpage data
-  if (request.action === "clearWebPageData") {
+  if (message.action === "clearWebPageData") {
     async function clearWebsiteData() {
       try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -123,7 +129,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   }
 
   // Clear the database
-  if (request.action === "clearDatabase") {
+  if (message.action === "clearDatabase") {
     dataManager.clearAllData()
       .then(() => {
         sendResponse({ message: 'Database cleared.' });
@@ -158,6 +164,7 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
 
 // ----------------- Functions ----------------- //
 
+let contentLoaded = false;
 const dataManager = DiacritizationDataManager.getInstance();
 const delimiter = '|';
 const sentenceRegex = /[.!?؟]+\s*\n*/g;
