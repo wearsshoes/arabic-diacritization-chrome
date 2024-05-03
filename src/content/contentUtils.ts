@@ -16,31 +16,33 @@ export const useContentSetup = () => {
   useEffect(() => {
     chrome.runtime.onMessage.addListener(listener);
     waitForContentLoaded;
+    observer.observe(mainNode, observerOptions);
     return () => {
       chrome.runtime.onMessage.removeListener(listener);
+      observer.disconnect();
     };
   }, [contentLoaded, textElements, pageMetadata, diacritizedStatus]);
 
-    const listener = (request: any, _sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
+  const listener = (request: any, _sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
 
     const { action, original, diacritization, method }: {
       action: string,
-        original: TextNode[],
-        diacritization: string[],
-        method: string
-      } = request;
-            const language = document.documentElement.lang;
-            const characterCount = mainNode.innerText?.length || 0;
+      original: TextNode[],
+      diacritization: string[],
+      method: string
+    } = request;
+    const language = document.documentElement.lang;
+    const characterCount = mainNode.innerText?.length || 0;
 
     console.log('Received request for ', action);
     switch (action) {
 
       case 'getWebsiteData':
-            sendResponse({ language, characterCount });
-          return true;
+        sendResponse({ language, characterCount });
+        return true;
 
       case 'getWebsiteMetadata':
-          sendResponse({ pageMetadata, diacritizedStatus });
+        sendResponse({ pageMetadata, diacritizedStatus });
         return true;
 
       case 'getWebsiteText':
@@ -65,8 +67,8 @@ export const useContentSetup = () => {
           sendResponse({ success: 'Text replaced.' });
         });
         return true;
-      }
-    };
+    }
+  };
 
   const waitForContentLoaded = new Promise<void>((resolve) => {
     if (contentLoaded) {
@@ -142,6 +144,27 @@ export const useContentSetup = () => {
       contentKeys.map((key, index) => [key, elementAttributes[contentSummaries[index]]])
     );
   }
+  
+  const observer = new MutationObserver((mutations) => {
+    // Check if the mutations indicate a significant content change
+    const significantChange = mutations.some((mutation) => {
+      return (
+        mutation.type === 'childList' ||
+        (mutation.type === 'characterData' && mutation.target.parentElement?.tagName !== 'SCRIPT')
+      );
+    });
+
+    if (significantChange && diacritizedStatus === 'original') {
+      // If a significant change is detected, call scrapeContent again
+      scrapeContent(mainNode);
+    }
+  });
+
+  const observerOptions = {
+    childList: true,
+    characterData: true,
+    subtree: true,
+  };
 
   return;
 };
