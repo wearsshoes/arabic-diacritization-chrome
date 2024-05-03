@@ -56,10 +56,14 @@ function getTextElementsAndIndexDOM(node: Node = document.body, index: number = 
     const element = node as Element;
     if (element.hasChildNodes() && isVisible(element)) {
       let innerIndex = 0;
-      elementId = 'element-' + iterator + '-' + element.tagName;
-      element.setAttribute('data-element-id', elementId);
+      
+      if (Array.from(element.childNodes).some(childNode => childNode.nodeType === Node.TEXT_NODE)) {
+        elementId = 'element-' + iterator + '-' + element.tagName;
+        element.setAttribute('data-element-id', elementId);
+      }
+
       for (const childNode of Array.from(element.childNodes)) {
-        const innerText = getTextElementsAndIndexDOM(childNode, innerIndex, elementId, iterator++);
+        const innerText = getTextElementsAndIndexDOM(childNode, innerIndex++, elementId, iterator++);
         textElements.push(...innerText.textElements);
         innerIndex += innerText.textElements.length;
         iterator = innerText.iterator;
