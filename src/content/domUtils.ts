@@ -106,8 +106,8 @@ function isVisible(element: Element): boolean {
 }
 
 // DOM Manipulation
-function replaceWebpageText(originals: NodeHashDict | TextNode[], replacements: NodeHashDict | string[], method: string): void {
-  console.log('Replacing text using method:', method);
+function replaceWebpageText(originals: NodeHashDict | TextNode[], replacements: NodeHashDict | string[], method: string): Promise<void> {
+  console.log(`Replacing text with ${method}`, originals, replacements);
 
   const originalEntries = Array.isArray(originals) ? originals : Object.values(originals);
   const replacementEntries = Array.isArray(replacements) ? replacements : Object.values(replacements);
@@ -137,7 +137,9 @@ function replaceWebpageText(originals: NodeHashDict | TextNode[], replacements: 
   if (method === 'arabizi') {
       directionLTR();
   }
+  return Promise.resolve();
 }
+
 // Forces LTR. Only gets called for Arabizi
 function directionLTR() {
   // document.documentElement.setAttribute("lang", "en");

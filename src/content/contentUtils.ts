@@ -63,27 +63,13 @@ export const useContentSetup = () => {
         }
         return true;
 
-      case 'diacritizationChunkFinished':
-        console.log("updating:", original, diacritization, method);
-        if (original && diacritization && method) {
-          replaceWebpageText(original, diacritization, method);
-          sendResponse({ success: 'Text replaced.' });
-        } else {
-          console.error('Original or diacritization or method not found.');
-          sendResponse({ error: 'Original or diacritization or method not found.' });
-        }
-        return true;
-
-      // Updates website when told to.
-      case 'updateWebsiteText':
-        console.log("updating:", original, diacritization, method);
-        if (original && diacritization && method) {
-          replaceWebpageText(original, diacritization, method);
-          sendResponse({ success: 'Text replaced.' });
+      case 'updateWebsiteText' || 'diacritizationChunkFinished':
+        setDiacritizedStatus(`inProgress:${method}`)
+        replaceWebpageText(original, diacritization, method).then(() => {
           setDiacritizedStatus(method);
-        } else {
-          sendResponse({ error: 'Original or diacritization or method not found.' });
-        }
+          // TODO: also set whether the whole page is diacritized
+          sendResponse({ success: 'Text replaced.' });
+        });
         return true;
       }
     };
