@@ -1,4 +1,4 @@
-import arabizi from '../../public/arabizi.json';
+import arabizi from './arabizi.json';
 
 interface TransliterationDict {
     [key: string]: string[];
