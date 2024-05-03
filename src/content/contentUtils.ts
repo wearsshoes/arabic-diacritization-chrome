@@ -67,6 +67,18 @@ export const useContentSetup = () => {
       }
       return true;
     }
+    if (request.action === "diacritizationChunkFinished") {
+      const { original, diacritization, method } = request;
+      console.log("updating:", original, diacritization, method);
+      if (original && diacritization && method) {
+        replaceWebpageText(original, diacritization, method);
+        sendResponse({ success: 'Text replaced.' });
+      } else {
+        console.error('Original or diacritization or method not found.');
+        sendResponse({ error: 'Original or diacritization or method not found.' });
+      }
+      return true;
+    }
 
     // Updates website when told to.
     if (request.action === "updateWebsiteText") {
@@ -88,6 +100,7 @@ export const useContentSetup = () => {
     }
   };
 
+  chrome.runtime.onMessage.addListener(listener);
   chrome.runtime.onMessage.addListener(listener);
 
   // Clean up the listener when the component unmounts
