@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client'
 
 import { Prompt } from '../common/types';
-import { getAPIKey } from '../background/datamanager';
 
 import theme from '../assets/theme';
 import Fonts from '../assets/fonts';
@@ -40,17 +39,19 @@ const App: React.FC = () => {
   useEffect(() => {
     // Check API key
     // TODO: just get it from the background worker instead
-    const apiKey = chrome.runtime.sendMessage({ action: 'getAPIKey' });
-    if (!apiKey) {
-      const button = document.createElement('Button');
-      button.textContent = 'Please set your API key in the options page.';
-      document.getElementById('main')?.replaceChildren(button);
-      button.addEventListener('click', () => chrome.runtime.openOptionsPage());
-    }
+    (async () => {
+      const apiKey: string = await chrome.runtime.sendMessage({ action: 'getAPIKey' });
+      if (!apiKey) {  
+        const button = document.createElement('Button');
+        button.textContent = 'Please set your API key in the options page.';
+        document.getElementById('main')?.replaceChildren(button);
+        button.addEventListener('click', () => chrome.runtime.openOptionsPage());
+      }
 
-    // Update model display
-    setModel('Claude Haiku');
-    setLoadState(true);
+      // Update model display
+      setModel('Claude Haiku');
+      setLoadState(true);
+    })();
 
   }, []);
 

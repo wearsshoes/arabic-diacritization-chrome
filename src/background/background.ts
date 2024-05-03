@@ -35,6 +35,11 @@ chrome.runtime.onInstalled.addListener(function (details) {
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
+  if (request.action === "getAPIKey") {
+    getAPIKey().then((key) => sendResponse(key));
+    return true;
+  }
+
   // Get the system prompt length
   if (request.action === "getSystemPromptLength") {
     const prompt = request.prompt;
@@ -104,9 +109,9 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
         if (tab.id === undefined) throw new Error('No active tab found');
         console.log('Clearing data for:', tab.url);
         await dataManager.clearWebPageData(tab.url as string)
-          .then(() => {
-            sendResponse({ message: 'Database cleared.' });
-          });
+        .then(() => {
+          sendResponse({ message: 'Database cleared.' });
+        });
         chrome.tabs.reload(tab.id)
       } catch (error) {
         console.error('Failed to clear database:', error);
