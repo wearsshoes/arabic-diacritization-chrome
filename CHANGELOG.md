@@ -1,7 +1,13 @@
 # Changelog
 
-## Current
+## Current (under development)
+- Arabizi now enabled again.
+- Fewer extraneous vowels in Arabizi.
 - Selects main content with more accuracy now.
+- Cost estimate displayed in popup again.
+- Added option to clear cache for current webpage in popup.
+- Continued to improve program structuring and flow for clearer communication.
+- Many bugfixes, as always.
 
 ## 0.3.3 (2024-04-25)
 - Implemented a popup progress bar to show how many batches the API has completed.
@@ -17,7 +23,7 @@
 - Cleanup unnoticed problems from previous merge.
 
 ## 0.3.1 (2024-04-24)
-- All previously existing features are re-enabled.
+- All previously existing features are re-enabled (some are broken).
 - Codebase is a bit cleaner now.
 
 ## 0.3.0 (2024-04-24)

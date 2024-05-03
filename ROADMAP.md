@@ -4,26 +4,30 @@
 
 ### Bugs
 
-- arabizi doesn't work right now.
+- if popup is activated before page is fully loaded, listeners do not connect properly.
+- diacritizations will often re-initiate despite an existing save.
+- Saving arabizi removes existing fullDiacritization save in some cases.
+- still attempts translation sometimes; check that number of non-diacritic arabic letters in prompt matches number of arabic letters in response.
 
 #### Arabizi
 
-- arabizi transliterate al- rules, etc.
+- arabizi transliterate al- rules
+- stream arabizi edits, just like with fullDiacritization
 
 ### UI
 
-#### Overlay
-
-- cancel button
-
-#### Options page
-
-- have custom prompts stored by task
+- Redesign UI elements to be simpler and cleaner.
+- Add cancel button to overlay.
+- Minimize overlay on finish.
+- Option to show/hide overlay entirely.
+- Add FAQs/tooltips to options page.
+- Track DOMContentLoaded in popup/overlay and prevent diacritization until then.
 
 ## Future
 
 ### Features
 
+- partial diacritization
 - dialect detection
 - option to translate arabic pages by default (needs to be cheaper first? implement stat tracking first?)
 
@@ -49,6 +53,7 @@
 
 #### options page
 
+- have custom prompts stored by task
 - arabizi style chooser
 - more stats on usage
 - choose how many max tokens you want to send to claude
