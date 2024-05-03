@@ -35,11 +35,12 @@ const App: React.FC = () => {
   const [costEstimate, setCostEstimate] = useState('');
   const [diacritizeStatus, setDiacritizeStatus] = useState('');
   const [savedInfo, setSavedInfo] = useState('');
+  const [loadState, setLoadState] = useState(false);
 
   useEffect(() => {
     // Check API key
     // TODO: just get it from the background worker instead
-    const apiKey = getAPIKey()
+    const apiKey = chrome.runtime.sendMessage({ action: 'getAPIKey' });
     if (!apiKey) {
       const button = document.createElement('Button');
       button.textContent = 'Please set your API key in the options page.';
@@ -47,19 +48,20 @@ const App: React.FC = () => {
       button.addEventListener('click', () => chrome.runtime.openOptionsPage());
     }
 
-    // Get website data
-    getWebsiteData();
-
-    // Get selected prompt
-    getSelectedPrompt();
-
-    // Get saved info
-    getSavedInfo();
-
     // Update model display
     setModel('Claude Haiku');
+    setLoadState(true);
 
   }, []);
+
+  useEffect(() => {
+    if (loadState) {
+      getWebsiteData();
+      getSelectedPrompt();
+      getSavedInfo();
+      setLoadState(false);
+    }
+  });
 
   useEffect(() => {
     calculateCost();
@@ -94,8 +96,7 @@ const App: React.FC = () => {
             if (response) {
               setPromptLength(response);
             }
-          }
-        );
+          });
       }
     });
   };
@@ -151,7 +152,8 @@ const App: React.FC = () => {
     chrome.runtime.sendMessage({ action: 'clearWebPageData' }, (response) => {
       if (response.message) {
         console.log('Cleared saved data:', response);
-        setSavedInfo('No saved diacritizations.');
+        setSavedInfo('Cleared saved data.');
+        setLoadState(true);
       } else {
         console.error('Failed to clear saved data:', response);
         setSavedInfo('Failed to clear saved data.');

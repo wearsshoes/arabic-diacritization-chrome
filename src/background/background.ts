@@ -107,7 +107,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
           .then(() => {
             sendResponse({ message: 'Database cleared.' });
           });
-        return true;
+        chrome.tabs.reload(tab.id)
       } catch (error) {
         console.error('Failed to clear database:', error);
         sendResponse({ message: 'Failed to clear database.' });
