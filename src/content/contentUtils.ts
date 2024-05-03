@@ -94,8 +94,7 @@ export const useContentSetup = () => {
   return () => {
     chrome.runtime.onMessage.removeListener(listener);
   };
-}, [textElements, pageMetadata]);
-
+}, [textElements, pageMetadata, diacritizedStatus]);
 
 // Scrape webpage data for the content script
 const scrapeContent = async (mainNode: HTMLElement) => {
@@ -110,9 +109,10 @@ const scrapeContent = async (mainNode: HTMLElement) => {
     };
     setPageMetadata(metadata);
     console.log('Initializing...', metadata);
-
+    if (diacritizedStatus === 'original') {
     const { textElements } = getTextElementsAndIndexDOM(mainNode as Node);
     setTextElements(textElements);
+    }
     console.log('Text elements:', textElements);
   } catch (error) {
     console.error('Error during initialization:', error);
@@ -156,5 +156,5 @@ async function summarizeMetadata(): Promise<{ [key: string]: ElementAttributes }
   );
 }
 
-return { textElements, pageMetadata };
+return { textElements, pageMetadata, diacritizedStatus };
 };
