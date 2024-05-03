@@ -8,6 +8,7 @@ import { getTextElementsAndIndexDOM, replaceWebpageText, getTextNodesInRange } f
 export const useContentSetup = () => {
   const [textElements, setTextElements] = useState<TextNode[]>([]);
   const [pageMetadata, setPageMetadata] = useState<PageMetadata | null>(null);
+  const [diacritizedStatus, setDiacritizedStatus] = useState<string>('original');
 
   // Event listener for messages from background script
   useEffect(() => {
@@ -28,7 +29,7 @@ export const useContentSetup = () => {
     if (request.action === 'getWebsiteMetadata') {
       console.log('Received request for website metadata...');
       if (pageMetadata) {
-        sendResponse(pageMetadata);
+        sendResponse({pageMetadata, diacritizedStatus});
       } else {
         console.error('Metadata not found.');
         sendResponse({ error: 'Metadata not found.' });
@@ -39,7 +40,7 @@ export const useContentSetup = () => {
     // When diacritization is requested, returns the APIBatches
     if (request.action === "getWebsiteText") {
       console.log('Received request for website text...');
-      sendResponse(textElements);
+      sendResponse({textElements});
     }
 
     // When diacritization is requested, returns the selected elements
@@ -50,7 +51,7 @@ export const useContentSetup = () => {
         console.log(selection.toString());
         const range = selection.getRangeAt(0);
         const textNodes = getTextNodesInRange(range);
-        sendResponse({ nodes: textNodes });
+        sendResponse({ nodes: textNodes, diacritizedStatus });
       }
     }
 
@@ -79,6 +80,7 @@ export const useContentSetup = () => {
       if (original && diacritization && method) {
         replaceWebpageText(original, diacritization, method);
         sendResponse({ success: 'Text replaced.' });
+        setDiacritizedStatus(method);
       } else {
         sendResponse({ error: 'Original or diacritization or method not found.' });
       }

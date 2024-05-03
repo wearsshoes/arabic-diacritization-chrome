@@ -187,7 +187,8 @@ async function processDiacritizationRequest(method: string) {
 
     // Get the site's current metadata
     console.log('Getting website metadata');
-    const pageMetadata: PageMetadata = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteMetadata' })
+    const response = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteMetadata' })
+    const { pageMetadata, diacritizedStatus } = response;
     const webPageDiacritizationData = await WebPageDiacritizationData.build(pageMetadata);
     console.log('Website metadata:', pageMetadata);
 
@@ -229,7 +230,8 @@ async function processDiacritizationRequest(method: string) {
     // Get the website text
     if (!webPageDiacritizationData.diacritizations['original']) {
       console.log('Getting website text');
-      const websiteText: TextNode[] = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteText' });
+      const response = await chrome.tabs.sendMessage(tab.id, { action: 'getWebsiteText' });
+      const { websiteText } = response;
       console.log('Website text:', websiteText);
       await webPageDiacritizationData.createOriginal(websiteText);
     }

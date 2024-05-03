@@ -3,7 +3,7 @@
 ## MVP
 
 ### Bugs
-- deleting cache and re-diacritizing causes some alarming bugs. may need to refresh page at that moment.
+
 - arabizi doesn't work right now.
 
 #### Arabizi
