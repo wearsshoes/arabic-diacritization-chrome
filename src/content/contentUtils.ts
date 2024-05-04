@@ -56,15 +56,15 @@ export const useContentSetup = () => {
         const language = document.documentElement.lang;
         const characterCount = mainNode.innerText?.length || 0;
         sendResponse({ language, characterCount });
-        return true;
+        break;
 
       case 'getWebsiteMetadata':
         sendResponse({ pageMetadata, diacritizedStatus });
-        return true;
+        break;
 
       case 'getWebsiteText':
         sendResponse({ websiteText: textElements });
-        return true;
+        break;
 
       case 'getSelectedNodes':
         const selection = window.getSelection();
@@ -74,7 +74,7 @@ export const useContentSetup = () => {
           const textNodes = getTextNodesInRange(range);
           sendResponse({ nodes: textNodes, diacritizedStatus });
         }
-        return true;
+        break;
 
       case 'updateWebsiteText' || 'diacritizationChunkFinished':
         setDiacritizedStatus(`inProgress:${method}`)
