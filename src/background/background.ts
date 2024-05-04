@@ -29,9 +29,9 @@ chrome.runtime.onInstalled.addListener(function (details) {
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.action === "contentLoaded") {
-    console.log('Content loaded:', message);
-    contentLoaded = true;
-    return true;
+    console.log('Content loaded.');
+    contentScriptReady = true;
+    processQueuedMessages();
   }
 
   if (message.action === "getAPIKey") {
@@ -170,4 +170,15 @@ export function messageContentScript(tabId: number, message: any): Promise<any> 
     });
   }
 }
+
+async function processQueuedMessages() {
+  while (messageQueue.length > 0) {
+    const { tabId, message, resolve } = messageQueue.shift();
+    const response = await new Promise((innerResolve) => {
+      chrome.tabs.sendMessage(tabId, message, (response) => {
+        innerResolve(response);
+      });
+    });
+    resolve(response);
+  }
 }
