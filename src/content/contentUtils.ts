@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 import { PageMetadata, TextNode } from '../common/dataClass';
 import { calculateHash } from '../common/utils';
@@ -6,19 +6,20 @@ import { calculateHash } from '../common/utils';
 import { getTextElementsAndIndexDOM, replaceWebpageText, getTextNodesInRange } from './domUtils';
 
 export const useContentSetup = () => {
-  const [contentLoaded, setContentLoaded] = useState<boolean>(false);
   const [textElements, setTextElements] = useState<TextNode[]>([]);
   const [pageMetadata, setPageMetadata] = useState<PageMetadata | null>(null);
   const [diacritizedStatus, setDiacritizedStatus] = useState<string>('original');
   const [mainNode, setMainNode] = useState<HTMLElement>(document.body);
+  let editingContent = false;
 
   useEffect(() => {
     const onContentLoaded = () => {
       console.log('Content loaded');
-      setContentLoaded(true);
       setMainNode(document.querySelector('main, #main') as HTMLElement || document.body);
-      chrome.runtime.sendMessage({ action: 'contentLoaded' });
-      scrapeContent(mainNode);
+      scrapeContent(mainNode).then(() => {
+        chrome.runtime.sendMessage({ action: 'contentLoaded' });
+        observer.observe(document.body, observerOptions);
+      });
       document.removeEventListener('DOMContentLoaded', onContentLoaded);
     };
 
@@ -28,17 +29,21 @@ export const useContentSetup = () => {
       onContentLoaded();
     }
 
+    return () => {
+      document.removeEventListener('DOMContentLoaded', onContentLoaded);
+      observer.disconnect();
+    };
+
   }, []);
 
   // Event listener for messages from background script
   useEffect(() => {
     chrome.runtime.onMessage.addListener(listener);
-    observer.observe(mainNode, observerOptions);
+
     return () => {
       chrome.runtime.onMessage.removeListener(listener);
-      observer.disconnect();
     };
-  }, [contentLoaded, textElements, pageMetadata, diacritizedStatus]);
+  }, []);
 
   const listener = (request: any, _sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
 
@@ -53,6 +58,7 @@ export const useContentSetup = () => {
     switch (action) {
 
       case 'getWebsiteData':
+        console.log({'Main node': mainNode, 'PageMetadata': pageMetadata, 'Text elements': textElements});
         const language = document.documentElement.lang;
         const characterCount = mainNode.innerText?.length || 0;
         sendResponse({ language, characterCount });
@@ -63,7 +69,8 @@ export const useContentSetup = () => {
         break;
 
       case 'getWebsiteText':
-        sendResponse({ websiteText: textElements });
+      console.log('Sending textElements:', textElements)  
+      sendResponse({ websiteText: textElements });
         break;
 
       case 'getSelectedNodes':
@@ -78,10 +85,16 @@ export const useContentSetup = () => {
 
       case 'updateWebsiteText' || 'diacritizationChunkFinished':
         setDiacritizedStatus(`inProgress:${method}`)
+        editingContent = true;
         replaceWebpageText(original, diacritization, method).then(() => {
           setDiacritizedStatus(method);
+          editingContent = false;
           // TODO: also set whether the whole page is diacritized
           sendResponse({ success: 'Text replaced.' });
+        })
+        .catch((error) => {
+          sendResponse({ error });
+          editingContent = false;
         });
         return true;
     }
@@ -89,38 +102,38 @@ export const useContentSetup = () => {
 
   // Scrape webpage data for the content script
   const scrapeContent = async (mainNode: HTMLElement) => {
-    try {
-      if (diacritizedStatus === 'original') {
-        setDiacritizedStatus('initializing');
-        const structuralMetadata = await summarizeMetadata();
-        const contentSignature = await calculateContentSignature();
-        const metadata: PageMetadata = {
-          pageUrl: window.location.href,
-          lastVisited: new Date(),
-          contentSignature,
-          structuralMetadata,
-        };
-        setPageMetadata(metadata);
-        console.log('Initializing...', metadata);
-
-        const { textElements } = getTextElementsAndIndexDOM(mainNode as Node);
-        setTextElements(textElements);
-        setDiacritizedStatus('original');
-        console.log('Text elements:', textElements);
+    return new Promise<void>(async (resolve, reject) => {
+      editingContent = true;
+      try {
+        if (diacritizedStatus === 'original') {
+          const structuralMetadata = await summarizeMetadata();
+          const contentSignature = await calculateContentSignature();
+          const metadata: PageMetadata = {
+            pageUrl: window.location.href,
+            lastVisited: new Date(),
+            contentSignature,
+            structuralMetadata,
+          };
+          setPageMetadata(metadata);
+          const { textElements } = getTextElementsAndIndexDOM(mainNode as Node);
+          setTextElements(textElements);
+          resolve();
+          editingContent = false;
+        }
+      } catch (error) {
+        console.error('Error during initialization:', error);
+        reject(error);
+        editingContent = false;
       }
-    } catch (error) {
-      console.error('Error during initialization:', error);
-    }
+    });
   };
 
   async function calculateContentSignature(): Promise<string> {
     // for any *remotely* dynamic content, this will be different every time
     // might be able to do it as part of newRecurseDOM
     const content = document.body.querySelector('main')?.querySelectorAll('*') || document.body.querySelectorAll('*')
-    console.log('Calculating content signature...');
     const textContent = Array.from(content).map((element) => element.textContent).join("");
     const signature = await calculateHash(textContent);
-    console.log('Content signature:', signature);
     return signature;
   }
 
@@ -159,10 +172,18 @@ export const useContentSetup = () => {
       );
     });
 
-    if (contentLoaded && significantChange && diacritizedStatus === 'original') {
-      // If a significant change is detected *that wasn't us*, call scrapeContent again
-      console.log('Significant change detected:', mutations);
-      scrapeContent(mainNode);
+    if (significantChange && !editingContent) {
+      console.log('Significant change, reindexing DOM');
+      // Disconnect the observer before making DOM changes
+      observer.disconnect();
+      scrapeContent(mainNode)
+        .finally(() => {
+          observer.observe(document.body, observerOptions);
+        })
+        .catch((error) => {
+          console.error('Error during scrapeContent:', error);
+          observer.observe(document.body, observerOptions);
+        });
     }
   });
 
