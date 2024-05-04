@@ -12,10 +12,27 @@ export const useContentSetup = () => {
   const [diacritizedStatus, setDiacritizedStatus] = useState<string>('original');
   const [mainNode, setMainNode] = useState<HTMLElement>(document.body);
 
+  useEffect(() => {
+    const onContentLoaded = () => {
+      console.log('Content loaded');
+      setContentLoaded(true);
+      setMainNode(document.querySelector('main, #main') as HTMLElement || document.body);
+      chrome.runtime.sendMessage({ action: 'contentLoaded' });
+      scrapeContent(mainNode);
+      document.removeEventListener('DOMContentLoaded', onContentLoaded);
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', onContentLoaded);
+    } else {
+      onContentLoaded();
+    }
+
+  }, []);
+
   // Event listener for messages from background script
   useEffect(() => {
     chrome.runtime.onMessage.addListener(listener);
-    waitForContentLoaded;
     observer.observe(mainNode, observerOptions);
     return () => {
       chrome.runtime.onMessage.removeListener(listener);
@@ -31,13 +48,13 @@ export const useContentSetup = () => {
       diacritization: string[],
       method: string
     } = request;
-    const language = document.documentElement.lang;
-    const characterCount = mainNode.innerText?.length || 0;
 
     console.log('Received request for ', action);
     switch (action) {
 
       case 'getWebsiteData':
+        const language = document.documentElement.lang;
+        const characterCount = mainNode.innerText?.length || 0;
         sendResponse({ language, characterCount });
         return true;
 
@@ -70,39 +87,27 @@ export const useContentSetup = () => {
     }
   };
 
-  const waitForContentLoaded = new Promise<void>((resolve) => {
-    if (contentLoaded) {
-      resolve();
-    } else {
-      const onContentLoaded = () => {
-        setContentLoaded(true);
-        setMainNode(document.querySelector('main, #main') as HTMLElement || document.body);
-        scrapeContent(mainNode);
-        chrome.runtime.sendMessage({ action: 'contentLoaded' });
-        resolve();
-      };
-      document.addEventListener('DOMContentLoaded', onContentLoaded, { once: true });
-    }
-  });
-
   // Scrape webpage data for the content script
   const scrapeContent = async (mainNode: HTMLElement) => {
     try {
-      const structuralMetadata = await summarizeMetadata();
-      const contentSignature = await calculateContentSignature();
-      const metadata: PageMetadata = {
-        pageUrl: window.location.href,
-        lastVisited: new Date(),
-        contentSignature,
-        structuralMetadata,
-      };
-      setPageMetadata(metadata);
-      console.log('Initializing...', metadata);
       if (diacritizedStatus === 'original') {
+        setDiacritizedStatus('initializing');
+        const structuralMetadata = await summarizeMetadata();
+        const contentSignature = await calculateContentSignature();
+        const metadata: PageMetadata = {
+          pageUrl: window.location.href,
+          lastVisited: new Date(),
+          contentSignature,
+          structuralMetadata,
+        };
+        setPageMetadata(metadata);
+        console.log('Initializing...', metadata);
+
         const { textElements } = getTextElementsAndIndexDOM(mainNode as Node);
         setTextElements(textElements);
+        setDiacritizedStatus('original');
+        console.log('Text elements:', textElements);
       }
-      console.log('Text elements:', textElements);
     } catch (error) {
       console.error('Error during initialization:', error);
     }
@@ -144,7 +149,7 @@ export const useContentSetup = () => {
       contentKeys.map((key, index) => [key, elementAttributes[contentSummaries[index]]])
     );
   }
-  
+
   const observer = new MutationObserver((mutations) => {
     // Check if the mutations indicate a significant content change
     const significantChange = mutations.some((mutation) => {
@@ -154,8 +159,9 @@ export const useContentSetup = () => {
       );
     });
 
-    if (significantChange && diacritizedStatus === 'original') {
-      // If a significant change is detected, call scrapeContent again
+    if (contentLoaded && significantChange && diacritizedStatus === 'original') {
+      // If a significant change is detected *that wasn't us*, call scrapeContent again
+      console.log('Significant change detected:', mutations);
       scrapeContent(mainNode);
     }
   });
