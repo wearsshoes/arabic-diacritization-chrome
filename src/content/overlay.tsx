@@ -20,9 +20,9 @@ const ContentOverlay: React.FC = () => {
   const progressPercent = total > 0 ? (finished / total) * 100 : 0;
 
   const handleMessageListener = useCallback(
+    // TODO: merge these listeners back into contentUtils listeners
     (message: any, _sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
       const { action, batches } = message;
-      console.log("Overlay received message:", action);
       switch (action) {
         case "diacritizationBatchesStarted":
           setTotal(batches);

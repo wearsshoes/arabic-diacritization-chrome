@@ -4,7 +4,6 @@
 
 ### Bugs
 
-- 0.3.4 fix the re-indexing after update problem. might be an async thing...
 - 0.4: Claude still attempts translation sometimes. Check that the number of non-diacritic arabic letters in prompt matches number of arabic letters in response.
 - 0.4.3 only claude haiku is enabled.
 - 0.4.3 only default prompt is enabled.

@@ -37,7 +37,7 @@ const App: React.FC = () => {
   const [loadState, setLoadState] = useState(false);
   const [method, setMethod] = useState('fullDiacritics');
   const [contentLoaded, setContentLoaded] = useState(false);
-  const [apiKeyFound, setApiKeyFound] = useState(true);
+  // const [apiKeyFound, setApiKeyFound] = useState(true);
 
   useEffect(() => {
     //   // Check API key
@@ -178,7 +178,7 @@ const App: React.FC = () => {
           </Center>
           <Card padding='2'>
             <Text>This extension adds diacritics (taškīl) to Arabic text via Claude Haiku.</Text>
-            {!apiKeyFound ? (<Text>Please remember to set your API key in the options page.</Text>) : <Text>API Key found.</Text>}
+            {/* {!apiKeyFound ? (<Text>Please remember to set your API key in the options page.</Text>) : <Text>API Key found.</Text>} */}
             <Button size='xs' onClick={() => chrome.runtime.openOptionsPage()}>Open Options Page</Button>
           </Card>
         </Card>

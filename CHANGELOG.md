@@ -1,12 +1,13 @@
 # Changelog
 
-## Current (under development)
+## 0.3.4 (2024-05-05)
 - Arabizi now enabled again, somewhat better but still beta.
 - Fewer extraneous vowels in Arabizi.
 - Selects main content with more accuracy now.
 - Cost estimate displayed in popup again.
 - Saves and retrieves data with more consistency.
 - Added option to clear saved data for current webpage in popup.
+- Re-indexing after deliberate change fixed (removed some unnecessarily reloading React components)
 - Continued to improve program structuring and flow for clearer communication.
 - Many bugfixes, as always.
 
