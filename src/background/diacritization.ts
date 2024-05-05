@@ -14,103 +14,132 @@ export const defaultPrompt: Prompt = prompts[1];
 const promptText = defaultPrompt.text;
 
 export async function getPrompt(): Promise<Prompt> {
-  return new Promise((resolve, reject) => {
-    chrome.storage.sync.get(['selectedPrompt'], (data: { selectedPrompt?: Prompt }) => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        const prompt: Prompt = data.selectedPrompt || defaultPrompt;
-        resolve(prompt);
-      }
-    });
-  });
-}
 
+export async function processFullWebpage(method: string) {
+  // Get the active tab
+  const tab = await getActiveTab();
+  const response = await messageContentScript(tab.id, { action: 'getWebsiteMetadata' });
+  const { pageMetadata } = response;
+  const webPageDiacritizationData = await WebPageDiacritizationData.build(pageMetadata);
+  console.log('Website metadata:', pageMetadata);
 
-export async function processDiacritizationRequest(method: string) {
-  try {
-    // Get the active tab
-    const tab = await getActiveTab();
+  // Load the saved data for the current webpage
+  const retrievedPageData = await dataManager.getWebPageData(tab.url);
+  console.log('Retrieved page data:', retrievedPageData);
 
-    // Get the site's current metadata
-    console.log('Getting website metadata');
-    const response = await messageContentScript(tab.id, { action: 'getWebsiteMetadata' });
-    const { pageMetadata } = response;
-    const webPageDiacritizationData = await WebPageDiacritizationData.build(pageMetadata);
-    console.log('Website metadata:', pageMetadata);
-
-    // Load the saved data for the current webpage
-    console.log('Checking for saved data');
-    const retrievedPageData = await dataManager.getWebPageData(tab.url);
-    console.log('Retrieved page data:', retrievedPageData);
-
-    // check current and saved data
-    if (retrievedPageData) {
-      console.log('current:', pageMetadata.contentSignature, 'saved:', retrievedPageData.metadata.contentSignature);
-
-      if (retrievedPageData.metadata.contentSignature === pageMetadata.contentSignature) {
-        if (!!retrievedPageData.diacritizations[method]) {
-          console.log(typeof retrievedPageData);
-          await messageContentScript(tab.id, {
-            action: 'updateWebsiteText',
-            original: retrievedPageData.getDiacritization(method),
-            diacritization: retrievedPageData.getDiacritization(method),
-            method: method
-          });
-          console.log('No changes detected, returning saved data.');
-          return ({ message: 'No changes detected, returning saved data.' });
-
-        } else {
-          console.log('Webpage is unchanged, generating', method, 'from saved data');
-          console.log('Method queried:', method, 'Saved data:', retrievedPageData.diacritizations);
-          webPageDiacritizationData.diacritizations = retrievedPageData.diacritizations;
-        }
+  // check current and saved data
+  if (retrievedPageData) {
+    console.log('current:', pageMetadata.contentSignature, 'saved:', retrievedPageData.metadata.contentSignature);
+    if (retrievedPageData.metadata.contentSignature === pageMetadata.contentSignature) {
+      if (!!retrievedPageData.diacritizations[method]) {
+        console.log(typeof retrievedPageData);
+        await messageContentScript(tab.id, {
+          action: 'updateWebsiteText',
+          original: retrievedPageData.getDiacritization(method),
+          diacritization: retrievedPageData.getDiacritization(method),
+          method: method
+        });
+        console.log('No changes detected, returning saved data.');
+        return ({ message: 'No changes detected, returning saved data.' });
 
       } else {
-        console.log('Content has changed, will update the saved data, continuing');
-        logChanges(retrievedPageData.metadata, pageMetadata);
+        console.log('Webpage is unchanged, generating', method, 'from saved data');
+        console.log('Method queried:', method, 'Saved data:', retrievedPageData.diacritizations);
+        webPageDiacritizationData.diacritizations = retrievedPageData.diacritizations;
       }
 
     } else {
-      console.log('No saved data found for the current webpage, continuing');
+      console.log('Content has changed, will update the saved data, continuing');
+      logChanges(retrievedPageData.metadata, pageMetadata);
     }
 
-    // Get the website text
-    if (!webPageDiacritizationData.diacritizations['original']) {
-      console.log('Getting website text');
-      const response = await messageContentScript(tab.id, { action: 'getWebsiteText' });
-      const { websiteText } = response;
-      console.log('Website text:', websiteText);
-      await webPageDiacritizationData.createOriginal(websiteText);
-    }
-    const diacritizedText = await processWebpage(promptText, method, webPageDiacritizationData, tab.id);
-
-    // Process the diacritization batches
-    console.log('Processing diacritization');
-
-    // Wait until original is loaded on webPageDiacritizationData, then addDiacritization
-    console.log('Adding diacritization to saved data');
-    await webPageDiacritizationData.addDiacritization(diacritizedText, method);
-
-    // Update the saved metadata
-    console.log('Updating saved web page data');
-    await dataManager.updateWebPageData(tab.url, webPageDiacritizationData)
-      .catch((error) => console.error('Failed to update web page data:', error))
-      .then(() => console.log('Saved webpage data updated:', webPageDiacritizationData));
-
-    // Update the website text
-    const original = webPageDiacritizationData.getDiacritization('original');
-    const diacritization = webPageDiacritizationData.getDiacritization(method);
-    console.log('Updating website text');
-    await messageContentScript(tab.id, { action: 'updateWebsiteText', original, diacritization, method });
-    console.log('Website text updated');
-
-    return ({ message: 'Completed.' });
-
-  } catch (error) {
-    throw (error);
+  } else {
+    console.log('No saved data found for the current webpage, continuing');
   }
-}// API Call for Diacritization
+
+  // Get the website text
+  if (!webPageDiacritizationData.diacritizations['original']) {
+    console.log('Getting website text');
+    const response = await messageContentScript(tab.id, { action: 'getWebsiteText' });
+    const { websiteText } = response;
+    console.log('Website text:', websiteText);
+    await webPageDiacritizationData.createOriginal(websiteText);
+  }
+
+  const data = await processWebpage(promptText, method, webPageDiacritizationData, tab.id);
+  webPageDiacritizationData.addDiacritization(data.getDiacritization(method), method)
+
+  // Update the saved metadata
+  console.log('Updating saved web page data');
+  await dataManager.updateWebPageData(tab.url, webPageDiacritizationData)
+    .catch((error) => console.error('Failed to update web page data:', error))
+    .then(() => console.log('Saved webpage data updated:', webPageDiacritizationData));
+
+  // Update the website text
+  const original = webPageDiacritizationData.getDiacritization('original');
+  const diacritization = webPageDiacritizationData.getDiacritization(method);
+  console.log('Updating website text');
+  await messageContentScript(tab.id, { action: 'updateWebsiteText', original, diacritization, method });
+  console.log('Website text updated');
+
+  return ({ message: 'Completed.' });
+
+}
+
+export async function fullDiacritization(promptText: string, websiteText: TextNode[], tabId: number): Promise<TextNode[]> {
+  const diacritizationBatches = createDiacritizationElementBatches(websiteText, 750);
+  const texts = createAPIBatches(diacritizationBatches);
+  const resultBatches = await diacritizeTexts(promptText, texts, diacritizationBatches, tabId);
+  console.log('resultBatches:', resultBatches);
+  const result = resultBatches.flatMap((batch) => batch.split(delimiter));
+  const diacritizedNodes: TextNode[] = websiteText.map((node, index) => {
+    return {
+      ...node,
+      text: result[index]
+    };
+  });
+  return diacritizedNodes;
+}
+
+// Async worker for API call
+export async function processWebpage(promptText: string, method: string, data: WebPageDiacritizationData, tabId: number): Promise<WebPageDiacritizationData> {
+
+  // If the method is 'fullDiacritics' and saved data exists for the current webpage, return the saved results
+  if (method === 'fullDiacritics') {
+    console.log('Received diacritization request and data, processing');
+    const fullDiacritics: TextNode[] = data.getDiacritization('original');
+    console.log('Full diacritics:', fullDiacritics);
+    data.addDiacritization(fullDiacritics, 'fullDiacritics');
+    return data;
+
+  } else if (method === 'arabizi') {
+
+    console.log('Received arabizi request and data, processing');
+    let fullDiacritics: TextNode[] = [];
+
+    if (!data.diacritizations['fullDiacritics']) {
+      console.log('Diacritizing text first');
+      data = await processWebpage(promptText, 'fullDiacritics', data, tabId);
+    }
+
+    fullDiacritics = data.getDiacritization('fullDiacritics');
+    const result = arabicToArabizi(fullDiacritics.map((element) => element.text));
+    const arabizi: TextNode[] = fullDiacritics.map((node, index) => {
+      return {
+        ...node,
+        text: result[index]
+      };
+    });
+    data.addDiacritization(arabizi, 'arabizi');
+    return data;
+
+  } else {
+    console.error(method + ' is not implemented yet');
+    throw new Error(method + ' is not implemented yet');
+  }
+};
+
+// API Call for Diacritization
 export async function diacritizeTexts(promptText: string, texts: string[], textElementBatches: TextNode[][], tabId: number): Promise<string[]> {
   const apiKey = await getAPIKey();
   const sysPromptLength = await countSysPromptTokens(promptText) || 0;
@@ -173,62 +202,7 @@ export async function diacritizeTexts(promptText: string, texts: string[], textE
   console.log('Finished diacritizing.');
   return diacritizedTexts;
 }
-// Async worker for API call
 
-export async function processWebpage(promptText: string, method: string, data: WebPageDiacritizationData, tabId: number): Promise<TextNode[]> {
-
-  // If the method is 'fullDiacritics' and saved data exists for the current webpage, return the saved results
-  if (method === 'fullDiacritics') {
-    console.log('Received diacritization request and data, processing');
-    const websiteText: TextNode[] = data.getDiacritization('original');
-    return await fullDiacritization(promptText, websiteText, tabId);
-
-  } else if (method === 'arabizi') {
-
-    console.log('Received arabizi request and data, processing');
-    let fullDiacritics: TextNode[] = [];
-
-    if (data.diacritizations['fullDiacritics']) {
-      fullDiacritics = data.getDiacritization('fullDiacritics');
-      console.log('Diacritization inferred to exist, transliterating');
-
-    } else {
-      console.log('Diacritizing text first');
-      fullDiacritics = await processWebpage(promptText, 'fullDiacritics', data, tabId);
-      // wait!!! but we want it to store the results! or we need to pass them out of here somehow!!!
-    }
-
-    console.log('Full diacritics:', fullDiacritics);
-    const result = arabicToArabizi(fullDiacritics.map((element) => element.text));
-    const diacritizedNodes: TextNode[] = fullDiacritics.map((node, index) => {
-      return {
-        ...node,
-        text: result[index]
-      };
-    });
-    return diacritizedNodes;
-
-  } else {
-    console.error(method + ' is not implemented yet');
-    throw new Error(method + ' is not implemented yet');
-  }
-
-}
-;
-export async function fullDiacritization(promptText: string, websiteText: TextNode[], tabId: number): Promise<TextNode[]> {
-  const diacritizationBatches = createDiacritizationElementBatches(websiteText, 750);
-  const texts = createAPIBatches(diacritizationBatches);
-  const resultBatches = await diacritizeTexts(promptText, texts, diacritizationBatches, tabId);
-  console.log('resultBatches:', resultBatches);
-  const result = resultBatches.flatMap((batch) => batch.split(delimiter));
-  const diacritizedNodes: TextNode[] = websiteText.map((node, index) => {
-    return {
-      ...node,
-      text: result[index]
-    };
-  });
-  return diacritizedNodes;
-}
 
 export function logChanges(saved: PageMetadata, current: PageMetadata): void {
   const currentStructure = current.structuralMetadata;
@@ -252,6 +226,7 @@ export function logChanges(saved: PageMetadata, current: PageMetadata): void {
     console.log('No differences found.');
   }
 }
+
 function isEqual(a: unknown, b: unknown): boolean {
   if (typeof a !== typeof b) {
     return false;
@@ -276,6 +251,7 @@ function isEqual(a: unknown, b: unknown): boolean {
 
   return a === b;
 }
+
 // Create batches of elements according to sentence boundaries and API character limit.
 function createDiacritizationElementBatches(textElements: TextNode[], maxChars: number): TextNode[][] {
   console.log('starting batching on', textElements.length, 'elements');
@@ -318,11 +294,13 @@ function createDiacritizationElementBatches(textElements: TextNode[], maxChars: 
 
   return textElementBatches;
 }
+
 // Check whether there are any Arabic characters. Not used
 // function containsArabicCharacters(text: string): boolean {
 //   const arabicRegex = /[\u0600-\u06FF]/;
 //   return arabicRegex.test(text);
 // }
+
 // Prepare batches for API by extracting the text with delimiters.
 function createAPIBatches(textElementBatches: TextNode[][]): string[] {
   const diacritizationBatches: string[] = [];
@@ -335,9 +313,8 @@ function createAPIBatches(textElementBatches: TextNode[][]): string[] {
 
   return diacritizationBatches;
 }
+
 // Function to construct the message and make the API call
-
-
 export async function callAnthropicAPI(
   arabicTextChunk: string,
   promptText: string,
@@ -364,15 +341,5 @@ export async function callAnthropicAPI(
 
   const response: Anthropic.Message = await anthropicAPICall(msg, apiKey);
   return response;
-
 }
 
-export async function processSelectedText(tab: chrome.tabs.Tab): Promise<void> {
-  if (!tab.id) return;
-  const request = await messageContentScript(tab.id, { action: "getSelectedNodes" });
-  const selectedNodes: TextNode[] = request.nodes;
-  console.log("Selected Nodes:", selectedNodes);
-  const diacritization = await fullDiacritization(promptText, selectedNodes, tab.id);
-  console.log('result:', diacritization);
-  await messageContentScript(tab.id, { action: 'updateWebsiteText', original: selectedNodes, diacritization, method: 'fullDiacritics' });
-}

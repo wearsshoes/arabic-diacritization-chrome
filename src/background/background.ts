@@ -1,6 +1,6 @@
 import { countSysPromptTokens } from './anthropicCaller'
 import { getAPIKey, DiacritizationDataManager } from './datamanager';
-import { processDiacritizationRequest, processSelectedText } from './processDiacritizationRequest';
+import { processFullWebpage, processSelectedText } from './diacritization';
 
 // ----------------- Event Listeners ----------------- //
 
@@ -33,16 +33,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     switch (message.action) {
       case 'contentLoaded':
-    console.log('Content loaded.');
-    contentScriptReady = true;
-    processQueuedMessages();
-    return true;
+        console.log('Content loaded.');
+        contentScriptReady = true;
+        processQueuedMessages();
+        return true;
 
       case 'getAPIKey':
         getAPIKey()
           .then((key) => sendResponse({ key }))
           .catch((error) => sendResponse({ error }));
-    return true;
+        return true;
 
       case 'getSystemPromptLength':
         if (message.prompt) {
@@ -50,11 +50,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             .then((tokens) => sendResponse({ tokens }))
             .catch((error) => sendResponse({ error }));
         };
-    return true;
+        return true;
 
       case 'getWebsiteData':
         (async () => {
-        const tab = await getActiveTab();
+          const tab = await getActiveTab();
           messageContentScript(tab.id, { action: 'getWebsiteData' })
             .then((websiteData) => sendResponse({ websiteData }))
             .catch((error) => sendResponse({ error }));
@@ -65,27 +65,27 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         getSavedInfo()
           .then((savedInfo) => sendResponse({ savedInfo }))
           .catch((error) => sendResponse({ error }));
-    return true;
+        return true;
 
-  // Handle the diacritization request
+      // Handle the diacritization request
       case 'sendToDiacritize':
         if (message.method) {
           processFullWebpage(message.method)
             .then((result) => sendResponse({ result }));
         };
-    return true;
+        return true;
 
-  // Clear the current webpage data
+      // Clear the current webpage data
       case 'clearWebPageData':
         clearWebsiteData()
           .then((result) => sendResponse({ result }))
-    return true;
+        return true;
 
-  // Clear the database
+      // Clear the database
       case 'clearDatabase':
-    dataManager.clearAllData()
+        dataManager.clearAllData()
           .then((result) => sendResponse({ result }))
-    return true;
+        return true;
 
       default:
         throw new Error('Invalid action');
@@ -157,8 +157,8 @@ async function processQueuedMessages() {
     const { tabId, message, resolve } = messageQueue.shift();
     const response = await new Promise((innerResolve) => {
       try {
-      chrome.tabs.sendMessage(tabId, message, (response) => {
-        innerResolve(response);
+        chrome.tabs.sendMessage(tabId, message, (response) => {
+          innerResolve(response);
         })
       } catch (error) {
         innerResolve({ error });
