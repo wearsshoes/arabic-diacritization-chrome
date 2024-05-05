@@ -106,19 +106,16 @@ function isVisible(element: Element): boolean {
 }
 
 // DOM Manipulation
-function replaceWebpageText(originals: NodeHashDict | TextNode[], replacements: NodeHashDict | string[], method: string): Promise<void> {
+function replaceWebpageText(originals: TextNode[], replacements: TextNode[], method: string): Promise<void> {
   console.log(`Replacing text with ${method}`, originals, replacements);
 
-  const originalEntries = Array.isArray(originals) ? originals : Object.values(originals);
-  const replacementEntries = Array.isArray(replacements) ? replacements : Object.values(replacements);
-
-  if (originalEntries.length !== replacementEntries.length) {
+  if (originals.length !== replacements.length) {
       throw new Error('originals and replacements should have the same length.');
   }
 
-  originalEntries.forEach((textNode, index) => {
+  originals.forEach((textNode, index) => {
       const { elementId, index: nodeIndex } = textNode;
-      const replacementEntry = replacementEntries[index];
+      const replacementEntry = replacements[index];
       const replacementText = typeof replacementEntry === 'string' ? replacementEntry : replacementEntry.text;
 
       const element = document.querySelector(`[data-element-id="${elementId}"]`);
