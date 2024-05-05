@@ -49,7 +49,7 @@ const App: React.FC = () => {
     //     } else {
     //       setApiKeyFound(false);
     //     }
-      setLoadState(true);
+    setLoadState(true);
     //   })();
   });
 
@@ -71,18 +71,19 @@ const App: React.FC = () => {
       characterCount: number;
       language: string;
     }
-    chrome.runtime.sendMessage({ action: 'getWebsiteData' }, (response: WebsiteData) => {
-      if (response.language) {
+    chrome.runtime.sendMessage({ action: 'getWebsiteData' }, (response) => {
+      const { websiteData }: { websiteData: WebsiteData } = response;
+      if (websiteData.language) {
         const languageNamesInEnglish = new Intl.DisplayNames(['en'], { type: 'language' });
         const languageNamesInArabic = new Intl.DisplayNames(['ar'], { type: 'language' });
-        const lang = languageNamesInEnglish.of(response.language) || 'unknown';
-        const lang_ar = languageNamesInArabic.of(response.language) || 'unknown';
+        const lang = languageNamesInEnglish.of(websiteData.language) || 'unknown';
+        const lang_ar = languageNamesInArabic.of(websiteData.language) || 'unknown';
         setPageLanguage(lang + ' (' + lang_ar + ')');
       };
-      
+
       setContentLoaded(true);
-      setCharacterCount(response.characterCount);
-      setOutputTokenCount(response.characterCount * 2.3);
+      setCharacterCount(websiteData.characterCount);
+      setOutputTokenCount(websiteData.characterCount * 2.3);
     });
   };
 
@@ -93,25 +94,29 @@ const App: React.FC = () => {
         chrome.runtime.sendMessage(
           { action: 'getSystemPromptLength', prompt: data.selectedPrompt.text },
           (response) => {
-            if (response) {
-              setPromptLength(response);
+            if (response.tokens) {
+              setPromptLength(response.tokens);
             }
           });
       }
     });
   };
 
-  const getSavedInfo = () => {
-    chrome.runtime.sendMessage({ action: 'getSavedInfo' }, (response) => {
-      // set saved info to all the methods for which there are saved diacritizations
-      console.log('Saved info:', response);
-      const savedInfo = response.join(', ');
-      if (savedInfo === '') {
-        setSavedInfo('No saved diacritizations.');
-      } else {
-        setSavedInfo('Existing diacritizations: ' + savedInfo);
-      }
-    });
+  const getSavedDiacrititizations = () => {
+    try {
+      chrome.runtime.sendMessage({ action: 'getSavedDiacritizations' }, (response) => {
+        console.log('Saved info:', response);
+        if (response.savedInfo && response.savedInfo.length > 0) {
+          const savedInfo = response.savedInfo.join(', ');
+          setSavedInfo('Existing diacritizations: ' + savedInfo);
+        } else {
+          setSavedInfo('No saved diacritizations.');
+        }
+      });
+    } catch (error) {
+      console.error('Error getting saved info:', error);
+      setSavedInfo('Error getting saved info.');
+    }
   }
 
   const beginDiacritization = async () => {
@@ -153,7 +158,7 @@ const App: React.FC = () => {
       if (response.message) {
         console.log('Cleared saved data:', response);
         setSavedInfo('Cleared saved data.');
-        setLoadState(true);
+        setLoadState(false);
       } else {
         console.error('Failed to clear saved data:', response);
         setSavedInfo('Failed to clear saved data.');
@@ -164,7 +169,6 @@ const App: React.FC = () => {
   return (
     <Card bg='#c2a25d' padding='2' w='360px'>
       <VStack spacing={2} align="start">
-
         <Card bg='#fbeed7' padding='2' width='100%'>
           <Center>
             <VStack>
@@ -173,12 +177,14 @@ const App: React.FC = () => {
             </VStack>
           </Center>
           <Card padding='2'>
-            <Text>This extension adds diacritics (taškīl) to Arabic text via Claude Haiku. Remember to add your Anthropic API Key on the options page.</Text>
+            <Text>This extension adds diacritics (taškīl) to Arabic text via Claude Haiku.</Text>
+            {!apiKeyFound ? (<Text>Please remember to set your API key in the options page.</Text>) : <Text>API Key found.</Text>}
             <Button size='xs' onClick={() => chrome.runtime.openOptionsPage()}>Open Options Page</Button>
           </Card>
         </Card>
 
         <Card bg='#fbeed7' width={'100%'}>
+
           <Accordion allowToggle>
             <AccordionItem width='100%'>
               <AccordionButton justifyContent="center">
