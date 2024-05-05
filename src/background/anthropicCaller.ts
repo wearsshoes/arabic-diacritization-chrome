@@ -14,7 +14,7 @@ export class Claude {
 
   escalateModel(n: number = 1) {
     const models = Object.values(claude);
-    const baseModel = models.find(model => model = this.model);
+    const baseModel = models.find(model => model.currentVersion = this.model.currentVersion);
     if (!baseModel) { throw new Error('Model not found'); }
     const newModel = models.find(model => model.level === baseModel.level + n);
     newModel ? this.model = newModel : this.model = baseModel;
