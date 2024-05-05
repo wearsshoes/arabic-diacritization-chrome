@@ -4,71 +4,73 @@
 
 ### Bugs
 
-- if popup is activated before page is fully loaded, listeners do not connect properly.
-- diacritizations will often re-initiate despite an existing save.
-- Saving arabizi removes existing fullDiacritization save in some cases.
-- still attempts translation sometimes; check that number of non-diacritic arabic letters in prompt matches number of arabic letters in response.
+- 0.3.4 fix the re-indexing after update problem. might be an async thing...
+- 0.4: Claude still attempts translation sometimes. Check that the number of non-diacritic arabic letters in prompt matches number of arabic letters in response.
+- 0.4.3 only claude haiku is enabled.
+- 0.4.3 only default prompt is enabled.
 
 #### Arabizi
 
-- arabizi transliterate al- rules
-- stream arabizi edits, just like with fullDiacritization
+- 0.3.4: make arabizi translation look more natural
+- 0.4: add alternate romanization to ISO 233-2 (actually might be easier than arabizi)
+- 0.4.1: incremental arabizi updates, just like with fullDiacritization
 
 ### UI
 
-- Redesign UI elements to be simpler and cleaner.
-- Add cancel button to overlay.
-- Minimize overlay on finish.
-- Option to show/hide overlay entirely.
-- Add FAQs/tooltips to options page.
-- Track DOMContentLoaded in popup/overlay and prevent diacritization until then.
+- 0.4: add toggle between standard diacritization
+- 0.4.2 Add cancel button to overlay.
+- 0.4.2 Minimize overlay on finish.
+- 0.4.2 Option to show/hide overlay entirely.
+- 0.4.3 Redesign UI elements to be simpler and cleaner.
+- 0.4.3 Add FAQs/tooltips to options page.
 
 ## Future
 
+### Bugs
+
+- 1.1.x something's messing with browser's back/forward cache and forcing reload 
+- 1.1.x processing selected text should also save results to IndexedDB.
+
 ### Features
 
-- partial diacritization
-- dialect detection
-- option to translate arabic pages by default (needs to be cheaper first? implement stat tracking first?)
+- 1.1.x partial diacritization
+- 1.1.x option to translate arabic pages by default (needs to be cheaper first? implement stat tracking first?)
+- 1.2.x when there's saved results, partially update based on hashes
+- 1.2.x streaming from claude API
+- 2.x dialect detection
+- 2.x option to use other models besides Claudes
 
 #### Arabizi
 
-- lebanese arabizi support
-- in dialect -- handle proper nouns? Qatar and not 'atar
-- other dialects
-- let people write custom diacritizations
+- 1.2.x lebanese arabizi support
+- 1.2.x in dialect -- handle proper nouns? Qatar and not 'atar
+- 2.x other dialects
+- 1.3.x let people write custom diacritizations
 
 ### UI
 
-- nicer styling overall
+- 1.2.x extension UI elements in bilingual Arabic/English 
 
 #### overlay
 
-- field for entering text for on-the-fly diacritization (much easier api call)
+- 1.1.x field for entering text for on-the-fly diacritization (much easier api call)
+- 1.4.x have translations to arabizi and english in hovering popup
 
 #### popup
 
-- choose among saved prompts before clicking start
-- button to re-show overlay if it disappeared
+- 1.1.x choose among saved prompts before clicking start
 
 #### options page
 
-- have custom prompts stored by task
-- arabizi style chooser
-- more stats on usage
-- choose how many max tokens you want to send to claude
+- 1.1.x have custom prompts stored by task
+- 1.1.x basic arabizi transliteration preferences (eg kh vs 7')
+- 1.1.x choose how many max tokens you want to send to claude
+- 1.3.x more stats on usage
 
-### Under the hood
-
-- processing selected text should also save results to IndexedDB.
-- some parts of background.ts are real spaghetti code that need to be cleaned up.
-- stuff is loading a lot slower since the react migration.
 
 ## Pie in sky
 
-- local inference
-- take wrong-word feedback and do something useful with it
-- hebrew support?
-- subscription pricing and/or free api access
-- do hovertext support
-- have translations to english in popup
+- 2.x take wrong-word feedback and do something useful with it
+- 3.x hebrew support?
+- 3.x subscription pricing and/or free API access
+- x.x option to do local inference instead of API
