@@ -43,35 +43,34 @@ export const useContentSetup = () => {
     return () => {
       chrome.runtime.onMessage.removeListener(listener);
     };
-  }, []);
+  }, [textElements, pageMetadata, diacritizedStatus, mainNode]);
 
   const listener = (request: any, _sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
 
-    const { action, original, diacritization, method }: {
+    const { action, originals, replacements, method }: {
       action: string,
-      original: TextNode[],
-      diacritization: string[],
+      originals: TextNode[],
+      replacements: TextNode[],
       method: string
     } = request;
 
-    console.log('Received request for ', action);
+    console.log('contentUtils received message:', action);
     switch (action) {
 
       case 'getWebsiteData':
-        console.log({'Main node': mainNode, 'PageMetadata': pageMetadata, 'Text elements': textElements});
+        console.log({ 'Main node': mainNode, 'PageMetadata': pageMetadata, 'Text elements': textElements });
         const language = document.documentElement.lang;
         const characterCount = mainNode.innerText?.length || 0;
         sendResponse({ language, characterCount });
-        break;
+        return true;
 
       case 'getWebsiteMetadata':
         sendResponse({ pageMetadata, diacritizedStatus });
-        break;
+        return true;
 
       case 'getWebsiteText':
-      console.log('Sending textElements:', textElements)  
-      sendResponse({ websiteText: textElements });
-        break;
+        sendResponse({ websiteText: textElements });
+        return true;
 
       case 'getSelectedNodes':
         const selection = window.getSelection();
@@ -81,40 +80,35 @@ export const useContentSetup = () => {
           const textNodes = getTextNodesInRange(range);
           sendResponse({ selectedNodes: textNodes, diacritizedStatus });
         }
-        break;
+        return true;
 
       case 'updateWebsiteText' || 'diacritizationChunkFinished':
-        setDiacritizedStatus(`inProgress:${method}`)
+        console.log('Updating website text', originals, replacements, method);
         editingContent = true;
-        replaceWebpageText(original, diacritization, method).then(() => {
-          setDiacritizedStatus(method);
-          editingContent = false;
-          // TODO: also set whether the whole page is diacritized
-          sendResponse({ success: 'Text replaced.' });
-        })
-        .catch((error) => {
-          sendResponse({ error });
-          editingContent = false;
-        });
-        return true;
+        replaceWebpageText(originals, replacements, method);
+        setDiacritizedStatus(method);
+        editingContent = false;
+        // TODO: also set whether the whole page is diacritized
+        // sendResponse({ method, result: 'success' });
+        return false;
     }
   };
 
   // Scrape webpage data for the content script
   const scrapeContent = async (mainNode: HTMLElement) => {
     return new Promise<void>(async (resolve, reject) => {
-      editingContent = true;
       try {
+        const structuralMetadata = await summarizeMetadata();
+        const contentSignature = await calculateContentSignature();
+        const metadata: PageMetadata = {
+          pageUrl: window.location.href,
+          lastVisited: new Date(),
+          contentSignature,
+          structuralMetadata,
+        };
+        setPageMetadata(metadata);
         if (diacritizedStatus === 'original') {
-          const structuralMetadata = await summarizeMetadata();
-          const contentSignature = await calculateContentSignature();
-          const metadata: PageMetadata = {
-            pageUrl: window.location.href,
-            lastVisited: new Date(),
-            contentSignature,
-            structuralMetadata,
-          };
-          setPageMetadata(metadata);
+          editingContent = true;
           const { textElements } = getTextElementsAndIndexDOM(mainNode as Node);
           setTextElements(textElements);
           resolve();
