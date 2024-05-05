@@ -37,34 +37,30 @@ const App: React.FC = () => {
   const [loadState, setLoadState] = useState(false);
   const [method, setMethod] = useState('fullDiacritics');
   const [contentLoaded, setContentLoaded] = useState(false);
+  const [apiKeyFound, setApiKeyFound] = useState(true);
 
   useEffect(() => {
-    // Check API key
-    // TODO: just get it from the background worker instead
-    (async () => {
-      const apiKey: string = await chrome.runtime.sendMessage({ action: 'getAPIKey' });
-      if (!apiKey) {
-        const button = document.createElement('Button');
-        button.textContent = 'Please set your API key in the options page.';
-        document.getElementById('main')?.replaceChildren(button);
-        button.addEventListener('click', () => chrome.runtime.openOptionsPage());
-      }
-
-      // Update model display
-      setModel('Claude Haiku');
+    //   // Check API key
+    //   (async () => {
+    //     const response = await chrome.runtime.sendMessage({ action: 'getAPIKey' });
+    //     console.log('API key response:', response);
+    //     if (response.key) {
+    //       setApiKeyFound(true);
+    //     } else {
+    //       setApiKeyFound(false);
+    //     }
       setLoadState(true);
-    })();
-
-  }, []);
+    //   })();
+  });
 
   useEffect(() => {
     if (loadState) {
       getWebsiteData();
       getSelectedPrompt();
-      getSavedInfo();
-      setLoadState(false);
+      getSavedDiacrititizations();
+      setModel('Claude Haiku');
     }
-  });
+  }, [loadState]);
 
   useEffect(() => {
     calculateCost();
