@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 
 import { PageMetadata, TextNode } from '../common/dataClass';
 import { calculateHash } from '../common/utils';
@@ -79,7 +79,7 @@ export const useContentSetup = () => {
           console.log(selection.toString());
           const range = selection.getRangeAt(0);
           const textNodes = getTextNodesInRange(range);
-          sendResponse({ nodes: textNodes, diacritizedStatus });
+          sendResponse({ selectedNodes: textNodes, diacritizedStatus });
         }
         break;
 
