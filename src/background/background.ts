@@ -36,7 +36,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         console.log('Content loaded.');
         contentScriptReady = true;
         processQueuedMessages();
-        return true;
+        sendResponse({ success: true });
+        break;
 
       case 'getAPIKey':
         getAPIKey()
@@ -54,26 +55,32 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
       case 'getWebsiteData':
         (async () => {
-          const tab = await getActiveTab();
+          tab = await getActiveTab();
           messageContentScript(tab.id, { action: 'getWebsiteData' })
             .then((websiteData) => sendResponse({ websiteData }))
-            .catch((error) => sendResponse({ error }));
+            .catch((error) => sendResponse({ error: error.message }));
         })();
         return true;
 
-      case 'getSavedInfo':
+      case 'getSavedDiacritizations':
         getSavedInfo()
-          .then((savedInfo) => sendResponse({ savedInfo }))
-          .catch((error) => sendResponse({ error }));
+          .then((savedInfo) => {
+            console.log(savedInfo)
+            sendResponse({ savedInfo })
+          })
+          .catch((error) => {
+            console.log(error);
+            sendResponse({ error: error.message })
+          });
         return true;
 
       // Handle the diacritization request
       case 'sendToDiacritize':
         if (message.method) {
           processFullWebpage(message.method)
-            .then((result) => sendResponse({ result }));
         };
-        return true;
+        sendResponse({ success: true });
+        break;
 
       // Clear the current webpage data
       case 'clearWebPageData':
@@ -112,20 +119,20 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
 // ----------------- Functions ----------------- //
 
 let contentScriptReady = false;
+export let tab: { id: number, url: string } = { id: 0, url: '' };
 const messageQueue: any = [];
 export const dataManager = DiacritizationDataManager.getInstance();
 
 async function getSavedInfo() {
-  const tab = await getActiveTab();
   await dataManager.getWebPageData(tab.url)
     .then((response) => {
-      const savedDiacritizations = (Object.keys(response?.diacritizations || {}))
+      const savedDiacritizations = (Object.keys(response?.diacritizations || {})).filter((key) => (key !== 'original'));
       return (savedDiacritizations);
     })
+    .catch((error) => { throw error });
 }
 
 async function clearWebsiteData() {
-  const tab = await getActiveTab();
   await dataManager.clearWebPageData(tab.url as string)
     .then(() => { return 'Website data cleared.' });
   chrome.tabs.reload(tab.id)
@@ -139,9 +146,14 @@ export async function getActiveTab(): Promise<{ id: number, url: string }> {
 
 export function messageContentScript(tabId: number, message: any): Promise<any> {
   if (contentScriptReady) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       chrome.tabs.sendMessage(tabId, message, (response) => {
-        resolve(response);
+        if (chrome.runtime.lastError) {
+          console.log('Error sending message:', message);
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(response !== undefined ? response : null);
+        }
       });
     });
   } else {
@@ -155,16 +167,13 @@ export function messageContentScript(tabId: number, message: any): Promise<any> 
 async function processQueuedMessages() {
   while (messageQueue.length > 0) {
     const { tabId, message, resolve } = messageQueue.shift();
-    const response = await new Promise((innerResolve) => {
-      try {
-        chrome.tabs.sendMessage(tabId, message, (response) => {
-          innerResolve(response);
-        })
-      } catch (error) {
-        innerResolve({ error });
-      }
+    try {
+      const response = await messageContentScript(tabId, message);
       resolve(response);
-    });
+    } catch (error) {
+      console.error('Error processing queued message:', error);
+      resolve(null); // Resolve with null to indicate an error occurred
+    }
   }
 }
 
