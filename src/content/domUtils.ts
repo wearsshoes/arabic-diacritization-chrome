@@ -106,7 +106,7 @@ function isVisible(element: Element): boolean {
 }
 
 // DOM Manipulation
-function replaceWebpageText(originals: TextNode[], replacements: TextNode[], method: string): Promise<void> {
+function replaceWebpageText(originals: TextNode[], replacements: TextNode[], method: string) {
   console.log(`Replacing text with ${method}`, originals, replacements);
 
   if (originals.length !== replacements.length) {
@@ -134,7 +134,6 @@ function replaceWebpageText(originals: TextNode[], replacements: TextNode[], met
   if (method === 'arabizi') {
       directionLTR();
   }
-  return Promise.resolve();
 }
 
 // Forces LTR. Only gets called for Arabizi
