@@ -11,37 +11,32 @@ import {
   IconButton,
 } from "@chakra-ui/react";
 import { ChevronUpIcon, ChevronDownIcon } from "@chakra-ui/icons";
-
 import theme from '../assets/theme';
 
 const ContentOverlay: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [finished, setFinished] = useState(0);
-  const [timeElapsed, setTimeElapsed] = useState(0);
   const { isOpen: isMinimized, onToggle: handleMinimizeToggle } = useDisclosure({ defaultIsOpen: true });
   const progressPercent = total > 0 ? (finished / total) * 100 : 0;
-  
+
   const handleMessageListener = useCallback(
-    (message: any) => {
+    (message: any, _sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
       const { action, batches } = message;
+      console.log("Overlay received message:", action);
       switch (action) {
-        
         case "diacritizationBatchesStarted":
           setTotal(batches);
           setFinished(0);
-          setTimeElapsed(0);
           handleMinimizeToggle();
-          const intervalId = window.setInterval(() => {
-            setTimeElapsed((prevTime) => prevTime + 1);
-          }, 1000);
-          return () => window.clearInterval(intervalId);
-
-        case "diacritizationChunkFinished":
-          setFinished((prevFinished) => prevFinished + 1);
+          sendResponse({ success: true });
           break;
-
+          case "diacritizationChunkFinished":
+          setFinished((prevFinished) => prevFinished + 1);
+          sendResponse({ success: true });
+          break;
         case "updateWebsiteText":
           setFinished(total);
+          sendResponse({ success: true });
           break;
       }
     },
@@ -50,7 +45,6 @@ const ContentOverlay: React.FC = () => {
 
   useEffect(() => {
     chrome.runtime.onMessage.addListener(handleMessageListener);
-
     return () => {
       chrome.runtime.onMessage.removeListener(handleMessageListener);
     };
@@ -88,9 +82,6 @@ const ContentOverlay: React.FC = () => {
                   </Text>
                   <Text fontWeight="bold">{progressPercent.toFixed(0)}%</Text>
                 </Flex>
-                <Text fontSize="sm" color="gray.500">
-                  Time elapsed: {timeElapsed}s
-                </Text>
               </VStack>
             </>
           )}
