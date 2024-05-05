@@ -28,127 +28,108 @@ chrome.runtime.onInstalled.addListener(function (details) {
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
-  if (message.action === "contentLoaded") {
+  console.log('Received message:', message.action);
+  try {
+
+    switch (message.action) {
+      case 'contentLoaded':
     console.log('Content loaded.');
     contentScriptReady = true;
     processQueuedMessages();
-  }
-
-  if (message.action === "getAPIKey") {
-    getAPIKey().then((key) => sendResponse(key));
     return true;
-  }
 
-  // Get the system prompt length
-  if (message.action === "getSystemPromptLength") {
-    const prompt = message.prompt;
-    countSysPromptTokens(prompt).then((tokens) => sendResponse(tokens));
+      case 'getAPIKey':
+        getAPIKey()
+          .then((key) => sendResponse({ key }))
+          .catch((error) => sendResponse({ error }));
     return true;
-  }
 
-  if (message.action === "getWebsiteData") {
-    async function getWebsiteData() {
-      try {
+      case 'getSystemPromptLength':
+        if (message.prompt) {
+          countSysPromptTokens(message.prompt)
+            .then((tokens) => sendResponse({ tokens }))
+            .catch((error) => sendResponse({ error }));
+        };
+    return true;
+
+      case 'getWebsiteData':
+        (async () => {
         const tab = await getActiveTab();
-        const response = await messageContentScript(tab.id, { action: 'getWebsiteData' });
-        console.log('Website data at background:', response);
-        sendResponse(response);
-      } catch (error) {
-        console.error('Failed to get complete website data:', error);
-      };
-    };
-    getWebsiteData();
-    return true;
-  }
+          messageContentScript(tab.id, { action: 'getWebsiteData' })
+            .then((websiteData) => sendResponse({ websiteData }))
+            .catch((error) => sendResponse({ error }));
+        })();
+        return true;
 
-  if (message.action === "getSavedInfo") {
-    async function getSavedInfo() {
-      try {
-        const tab = await getActiveTab();
-        await dataManager.getWebPageData(tab.url)
-          // send the keys of the existing response?.diacritizations for the webpage
-          .then((response) => {
-            const savedDiacritizations = (Object.keys(response?.diacritizations || {}))
-            console.log('Saved diacritizations:', savedDiacritizations);
-            sendResponse(savedDiacritizations);
-          })
-          .catch((error) => console.error('Failed to get saved info:', error));
-      } catch (error) {
-        throw (error)
-      }
-    }
-    getSavedInfo();
+      case 'getSavedInfo':
+        getSavedInfo()
+          .then((savedInfo) => sendResponse({ savedInfo }))
+          .catch((error) => sendResponse({ error }));
     return true;
-  }
 
   // Handle the diacritization request
-  if (message.action === "sendToDiacritize" && message.method) {
-    console.log('Received diacritization request');
-
-    processDiacritizationRequest(message.method)
-      .then((result) => {
-        sendResponse(result);
-      })
-      .catch((error) => {
-        console.error('Error processing diacritization:', error);
-        sendResponse({ error: 'Failed to process diacritization.' });
-      });
-
+      case 'sendToDiacritize':
+        if (message.method) {
+          processFullWebpage(message.method)
+            .then((result) => sendResponse({ result }));
+        };
     return true;
-  }
 
   // Clear the current webpage data
-  if (message.action === "clearWebPageData") {
-    async function clearWebsiteData() {
-      try {
-        const tab = await getActiveTab();
-        console.log('Clearing data for:', tab.url);
-        await dataManager.clearWebPageData(tab.url as string)
-          .then(() => {
-            sendResponse({ message: 'Database cleared.' });
-          });
-        chrome.tabs.reload(tab.id)
-      } catch (error) {
-        console.error('Failed to clear database:', error);
-        sendResponse({ message: 'Failed to clear database.' });
-      }
-    }
-    clearWebsiteData();
+      case 'clearWebPageData':
+        clearWebsiteData()
+          .then((result) => sendResponse({ result }))
     return true;
-  }
 
   // Clear the database
-  if (message.action === "clearDatabase") {
+      case 'clearDatabase':
     dataManager.clearAllData()
-      .then(() => {
-        sendResponse({ message: 'Database cleared.' });
-      })
-      .catch((error) => {
-        console.error('Failed to clear database:', error);
-        sendResponse({ message: 'Failed to clear database.' });
-      });
+          .then((result) => sendResponse({ result }))
     return true;
 
+      default:
+        throw new Error('Invalid action');
+    }
+  } catch (error) {
+    console.error('Error processing message:', error);
+    sendResponse({ error });
   }
 });
 
 chrome.contextMenus.onClicked.addListener(async function (info, tab) {
   if (info.menuItemId === "processSelectedText") {
     console.log("Diacritizing selected text...");
-    if (tab) {
-      await processSelectedText(tab).then(() => {
+    processSelectedText(tab!)
+      .then(() => {
         console.log('Website text updated');
+      })
+      .catch((error) => {
+        handleError(error);
       });
-    }
   }
 });
-
 
 // ----------------- Functions ----------------- //
 
 let contentScriptReady = false;
 const messageQueue: any = [];
 export const dataManager = DiacritizationDataManager.getInstance();
+
+async function getSavedInfo() {
+  const tab = await getActiveTab();
+  await dataManager.getWebPageData(tab.url)
+    .then((response) => {
+      const savedDiacritizations = (Object.keys(response?.diacritizations || {}))
+      return (savedDiacritizations);
+    })
+}
+
+async function clearWebsiteData() {
+  const tab = await getActiveTab();
+  await dataManager.clearWebPageData(tab.url as string)
+    .then(() => { return 'Website data cleared.' });
+  chrome.tabs.reload(tab.id)
+}
 
 export async function getActiveTab(): Promise<{ id: number, url: string }> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
