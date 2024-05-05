@@ -36,6 +36,7 @@ const App: React.FC = () => {
   const [savedInfo, setSavedInfo] = useState('');
   const [loadState, setLoadState] = useState(false);
   const [method, setMethod] = useState('fullDiacritics');
+  const [contentLoaded, setContentLoaded] = useState(false);
 
   useEffect(() => {
     // Check API key
@@ -82,7 +83,8 @@ const App: React.FC = () => {
         const lang_ar = languageNamesInArabic.of(response.language) || 'unknown';
         setPageLanguage(lang + ' (' + lang_ar + ')');
       };
-
+      
+      setContentLoaded(true);
       setCharacterCount(response.characterCount);
       setOutputTokenCount(response.characterCount * 2.3);
     });
@@ -185,6 +187,7 @@ const App: React.FC = () => {
             <AccordionItem width='100%'>
               <AccordionButton justifyContent="center">
                 <Heading size='md'>Page information</Heading>
+                <Text>{contentLoaded ? 'Success' : 'Loading...'}</Text>
                 <AccordionIcon />
               </AccordionButton>
               <AccordionPanel padding='2'>
