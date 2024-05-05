@@ -1,16 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
-import { useContentSetup } from "./contentUtils";
+import contentUtils from "./contentUtils";
 import ContentOverlay from "./overlay";
 
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
-
-const Content: React.FC = () => {
- useContentSetup();
-  return null;
-};
 
 // Create the main container
 const appContainer = document.createElement("div");
@@ -40,7 +35,6 @@ reactRoot.render(
     <CacheProvider value={emotionCache}>
       <ContentOverlay />
     </CacheProvider>
-      <Content />
   </React.StrictMode>
 );
 
@@ -49,3 +43,5 @@ window.addEventListener('error', (event) => {
     window.location.reload();
   }
 });
+
+contentUtils()
