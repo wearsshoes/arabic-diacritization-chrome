@@ -14,6 +14,24 @@ export const defaultPrompt: Prompt = prompts[1];
 const promptText = defaultPrompt.text;
 
 export async function getPrompt(): Promise<Prompt> {
+  try {
+    const { selectedPrompt } = await chrome.storage.sync.get('selectedPrompt');
+    return selectedPrompt;
+  } catch (error) {
+    console.error(`Error retrieving prompt: ${error}, using default prompt.`);
+    return defaultPrompt;
+  }
+}
+
+export async function processSelectedText(tab: chrome.tabs.Tab): Promise<void> {
+  if (!tab.id) return;
+  const request = await messageContentScript(tab.id, { action: "getSelectedNodes" });
+  const { selectedNodes } = request;
+  console.log("Selected Nodes:", selectedNodes);
+  const diacritization = await fullDiacritization(promptText, selectedNodes, tab.id);
+  console.log('Result:', diacritization);
+  await messageContentScript(tab.id, { action: 'updateWebsiteText', original: selectedNodes, diacritization, method: 'fullDiacritics' });
+}
 
 export async function processFullWebpage(method: string) {
   // Get the active tab
