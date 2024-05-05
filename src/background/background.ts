@@ -23,6 +23,16 @@ chrome.runtime.onInstalled.addListener(function (details) {
     }
   });
 
+  chrome.contextMenus.create({
+    id: "romanizeSelectedText",
+    title: "Romanize Selected Text",
+    contexts: ["selection"]
+  }, () => {
+    if (chrome.runtime.lastError) {
+      console.error(`Error creating context menu: ${chrome.runtime.lastError.message}`);
+    }
+  });
+
 });
 
 // Listen for messages from content scripts
@@ -106,9 +116,18 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 chrome.contextMenus.onClicked.addListener(async function (info, tab) {
   if (info.menuItemId === "processSelectedText") {
     console.log("Diacritizing selected text...");
-    processSelectedText(tab!)
+    processSelectedText(tab!, 'fullDiacritics')
       .then(() => {
-        console.log('Website text updated');
+        console.log('Website text updated with diacritics.');
+      })
+      .catch((error) => {
+        handleError(error);
+      });
+  } else if (info.menuItemId === "romanizeSelectedText") {
+    console.log("Romanizing selected text...");
+    processSelectedText(tab!, 'arabizi')
+      .then(() => {
+        console.log('Website text updated to romanization.');
       })
       .catch((error) => {
         handleError(error);

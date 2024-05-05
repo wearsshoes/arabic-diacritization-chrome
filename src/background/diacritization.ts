@@ -7,6 +7,7 @@ import { getAPIKey } from "./datamanager";
 import { Prompt } from '../common/types'
 import prompts from './defaultPrompts.json';
 import { sentenceRegex } from '../common/utils';
+import { m } from "framer-motion";
 
 const delimiter = '|';
 export const defaultPrompt: Prompt = prompts[1];
@@ -22,14 +23,19 @@ export async function getPrompt(): Promise<Prompt> {
   }
 }
 
-export async function processSelectedText(tab: chrome.tabs.Tab): Promise<void> {
+export async function processSelectedText(tab: chrome.tabs.Tab, method: string = 'fullDiacritics'): Promise<void> {
   if (!tab.id) return;
   const request = await messageContentScript(tab.id, { action: "getSelectedNodes" });
   const { selectedNodes } : { selectedNodes: TextNode[] } = request;
-  console.log("Selected Nodes:", selectedNodes);
-  const diacritization = await fullDiacritization(defaultPrompt, selectedNodes, tab.id);
-  console.log('Result:', diacritization);
-  await messageContentScript(tab.id, { action: 'updateWebsiteText', originals: selectedNodes, replacements: diacritization, method: 'fullDiacritics' });
+  console.log("Doing ", method, "for selected nodes:", selectedNodes);
+  const replacementText = await fullDiacritization(defaultPrompt, selectedNodes, tab.id);
+  console.log('Diacritization result:', replacementText);
+  if (method === 'arabizi') {
+    replacementText.forEach((node) => {
+      node.text = arabicToArabizi([node.text])[0];
+    });
+  }
+  await messageContentScript(tab.id, { action: 'updateWebsiteText', originals: selectedNodes, replacements: replacementText, method });
 }
 
 export async function processFullWebpage(method: string) {
