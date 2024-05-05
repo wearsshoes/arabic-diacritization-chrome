@@ -156,10 +156,25 @@ async function processQueuedMessages() {
   while (messageQueue.length > 0) {
     const { tabId, message, resolve } = messageQueue.shift();
     const response = await new Promise((innerResolve) => {
+      try {
       chrome.tabs.sendMessage(tabId, message, (response) => {
         innerResolve(response);
-      });
+        })
+      } catch (error) {
+        innerResolve({ error });
+      }
+      resolve(response);
     });
-    resolve(response);
   }
+}
+
+function handleError(error: Error) {
+  console.error('An error occurred:', error.message);
+  // Display a user-friendly error message
+  chrome.notifications.create({
+    type: 'basic',
+    title: 'Error',
+    message: 'An error occurred. Please try again later.',
+    iconUrl: 'icon-128.png'
+  });
 }
