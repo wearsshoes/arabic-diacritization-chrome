@@ -6,10 +6,9 @@ import { getActiveTab, messageContentScript, dataManager } from './background';
 import { getAPIKey } from "./datamanager";
 import { Prompt } from '../common/types'
 import prompts from './defaultPrompts.json';
+import { sentenceRegex } from '../common/utils';
 
-export const sentenceRegex = /[.!?؟]+\s*\n*/g;
-export const delimiter = '|';
-
+const delimiter = '|';
 export const defaultPrompt: Prompt = prompts[1];
 const promptText = defaultPrompt.text;
 

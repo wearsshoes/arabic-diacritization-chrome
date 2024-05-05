@@ -24,3 +24,5 @@ export async function calculateHash(input: string | string[]): Promise<string | 
     return hash64Hex;
   }
 }
+
+export const sentenceRegex = /[.!?؟]+\s*\n*/g;
