@@ -17,10 +17,13 @@ export interface NodeHashDict {
     [nodeHash: string]: TextNode
 }
 
+export interface Diacritizations
+{
+    [method: string]: NodeHashDict
+}
+
 export class WebPageDiacritizationData {
-    diacritizations: {
-        [method: string]: NodeHashDict
-    } = {};
+    diacritizations: Diacritizations = {};
 
     private constructor(
         public id: string,
