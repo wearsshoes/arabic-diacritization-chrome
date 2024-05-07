@@ -63,6 +63,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         };
         return true;
 
+      case 'openOptionsPage':
+        chrome.runtime.openOptionsPage();
+        break;
+        
       case 'getWebsiteData':
         (async () => {
           tab = await getActiveTab();
