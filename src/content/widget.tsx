@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { ChakraProvider, useDisclosure } from '@chakra-ui/react';
-import { Stack, Container, Button, ButtonGroup, Text, IconButton, Progress, Tooltip } from '@chakra-ui/react'
+import { Stack, Container, Button, ButtonGroup, Text, IconButton, Progress } from '@chakra-ui/react'
 import { SettingsIcon, ChevronUpIcon, CheckIcon, MinusIcon, CloseIcon, ArrowForwardIcon, SpinnerIcon } from '@chakra-ui/icons'
 import { Languages, translations } from "./widget_i18n";
 
 const ContentWidget: React.FC = () => {
 
-  const { isOpen: isExpanded, getDisclosureProps, getButtonProps } = useDisclosure({ defaultIsOpen: true })
+  const { onOpen: onExpanded, isOpen: isExpanded, getDisclosureProps, getButtonProps } = useDisclosure({ defaultIsOpen: true })
   const { onOpen, onClose, onToggle, getDisclosureProps: getCloseItem } = useDisclosure({ defaultIsOpen: false })
   const buttonProps = getButtonProps()
   const disclosureProps = getDisclosureProps()
@@ -18,14 +18,12 @@ const ContentWidget: React.FC = () => {
   const [pageRenders, setPageRenders] = useState(['original']);
   const [pageState, setPageState] = useState('original');
 
+  // const [diacritizeStatus, setDiacritizeStatus] = useState('');
+
   const [totalBatches, setTotalBatches] = useState(0);
   const [finishedBatches, setFinishedBatches] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const progressPercent = totalBatches > 0 ? (finishedBatches / totalBatches) * 100 : 0;
-
-  const expandWidget = () => {
-    disclosureProps.onOpen();
-  };
 
   const toggleLanguage = () => {
     setLanguage(prevLang => prevLang === 'en' ? 'ar' : 'en');
@@ -38,25 +36,35 @@ const ContentWidget: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (isAnimating) {
-      const interval = setInterval(() => {
-        setFinishedBatches((finishedBatches) => {
-          if (finishedBatches >= totalBatches) {
-            clearInterval(interval);
-            setIsAnimating(false);
-            setPageRenders([method, ...pageRenders]);
-            setPageState(method);
-            return 100;
-          }
-          return finishedBatches + 1;
-        });
-      }, 100);
-
-      return () => {
-        clearInterval(interval);
-      };
+    if (finishedBatches >= totalBatches && isAnimating) {
+      setIsAnimating(false);
+      setPageRenders([method, ...pageRenders]);
+      setPageState(method);
+      // setDiacritizeStatus('Page updated.');
     }
-  }, [isAnimating]);
+  }, [isAnimating, totalBatches, finishedBatches]);
+
+  // useEffect(() => {
+  //   if (isAnimating) {
+  //     const interval = setInterval(() => {
+  //       setFinishedBatches((finishedBatches) => {
+  //         if (finishedBatches >= totalBatches) {
+  //           clearInterval(interval);
+  //           setIsAnimating(false);
+  //           setPageRenders([method, ...pageRenders]);
+  //           setPageState(method);
+  //           setDiacritizeStatus('Page updated.');
+  //           return 100;
+  //         }
+  //         return finishedBatches + 1;
+  //       });
+  //     }, 100);
+
+  //     return () => {
+  //       clearInterval(interval);
+  //     };
+  //   }
+  // }, [isAnimating]);
 
   const taskChoiceHandler = (task: string) => {
     setMethod(task);
@@ -67,19 +75,14 @@ const ContentWidget: React.FC = () => {
   };
 
   const beginDiacritization = () => {
-    setFinishedBatches(0);
-    setTotalBatches(10)
-    setIsAnimating(true);
-
-    // try {
-    //   setDiacritizeStatus('Diacritizing, see progress bar modal...');
-    //   const response = await chrome.runtime.sendMessage({ action: 'sendToDiacritize', method });
-    //   console.log(`${method} response:`, response);
-    //   setDiacritizeStatus('Diacritization complete, page updated.');
-    // } catch (error) {
-    //   console.error(`Error in ${method}:`, error);
-    //   setDiacritizeStatus('Error diacritizing:' + error);
-    // }
+    try {
+      // setDiacritizeStatus('Processing ...');
+      chrome.runtime.sendMessage({ action: 'sendToDiacritize', method });
+      // console.log(`${method} response:`, response);
+    } catch (error) {
+      // setDiacritizeStatus(`Error processing ${method}:` + error);
+      console.error(`Error in ${method}:`, error);
+    }
   };
 
   const listener =
@@ -90,7 +93,9 @@ const ContentWidget: React.FC = () => {
         case "diacritizationBatchesStarted":
           setTotalBatches(batches);
           setFinishedBatches(0);
-          expandWidget();
+          setIsAnimating(true);
+          onOpen();
+          onExpanded();
           sendResponse({ success: true });
           break;
         case "diacritizationChunkFinished":
@@ -190,15 +195,13 @@ const ContentWidget: React.FC = () => {
                 icon={isExpanded ? <MinusIcon /> : <ChevronUpIcon boxSize={6} />}
                 {...buttonProps}
               />
-              <Tooltip hasArrow label='Ctrl+Shift+2 to reopen' bg='blue' closeDelay={10000}>
-                <IconButton
-                  aria-label='Close'
-                  onClick={onClose}
-                  size="xs"
-                  variant="ghost"
-                  icon={<CloseIcon />}
-                />
-              </Tooltip>
+              <IconButton
+                aria-label='Close'
+                onClick={onClose}
+                size="xs"
+                variant="ghost"
+                icon={<CloseIcon />}
+              />
             </Stack>
           </Stack>
           <Stack id="content" width="100%" paddingBottom={"4px"}>
@@ -243,15 +246,16 @@ const ContentWidget: React.FC = () => {
               </ButtonGroup>
               {/* <Text fontSize={"12px"}>{diacritizeStatus}</Text> */}
             </Stack>
-            <Progress
-              width="100%"
-              value={progressPercent}
-              colorScheme={isAnimating ? "blue" : "green"}
-              hasStripe={isAnimating}
-              isAnimated={isAnimating}
-              size="xs"
-              alignSelf="stretch"
-            />
+            <Stack direction={"row"} spacing={"0px"} width={"100%"}>
+              <Progress
+                value={progressPercent}
+                colorScheme={isAnimating ? "blue" : "green"}
+                hasStripe={isAnimating}
+                isAnimated={isAnimating}
+                size="xs"
+                flex={1}
+              />
+            </Stack>
           </Stack>
         </Stack>
       </Container>
