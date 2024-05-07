@@ -8,7 +8,8 @@
     "tabs",
     "contextMenus",
     "storage",
-    "scripting"
+    "scripting",
+    "commands"
   ],
   "background": {
     "service_worker": "src/background/background.ts"
@@ -29,6 +30,15 @@
   "action": {
     "default_popup": "src/popup/extensionPopup.html",
     "default_title": "ArabEasy"
+  },
+  "commands": {
+    "toggle-widget": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+2",
+        "mac": "Command+Shift+2"
+      },
+      "description": "Toggle the widget."
+    }
   },
   "host_permissions": [
     "<all_urls>"

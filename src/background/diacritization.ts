@@ -7,7 +7,6 @@ import { getAPIKey } from "./datamanager";
 import { Prompt } from '../common/types'
 import prompts from './defaultPrompts.json';
 import { sentenceRegex } from '../common/utils';
-import { m } from "framer-motion";
 
 const delimiter = '|';
 export const defaultPrompt: Prompt = prompts[1];
@@ -236,7 +235,7 @@ export async function diacritizeTexts(prompt: Prompt, texts: string[], textEleme
   const claude = new Claude(defaultModel, apiKey);
   const sysPromptLength = await countSysPromptTokens(promptText) || 0;
 
-  // for the overlay
+  // for the widget
   messageContentScript(tabId, { action: 'diacritizationBatchesStarted', batches: texts.length });
 
   // parameters for retrying

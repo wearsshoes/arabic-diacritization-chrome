@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { ChakraProvider, useDisclosure } from '@chakra-ui/react';
-import { Stack, Container, Button, ButtonGroup, Text, IconButton, Progress } from '@chakra-ui/react'
+import { Stack, Container, Button, ButtonGroup, Text, IconButton, Progress, Tooltip } from '@chakra-ui/react'
 import { SettingsIcon, ChevronUpIcon, CheckIcon, MinusIcon, CloseIcon, ArrowForwardIcon, SpinnerIcon } from '@chakra-ui/icons'
-import { Languages, translations } from "./popover_i18n";
+import { Languages, translations } from "./widget_i18n";
 
-const ContentPopover: React.FC = () => {
+const ContentWidget: React.FC = () => {
 
-  const { isOpen, getDisclosureProps, getButtonProps } = useDisclosure({ defaultIsOpen: true })
+  const { isOpen: isExpanded, getDisclosureProps, getButtonProps } = useDisclosure({ defaultIsOpen: true })
+  const { onOpen, onClose, onToggle, getDisclosureProps: getCloseItem } = useDisclosure({ defaultIsOpen: false })
   const buttonProps = getButtonProps()
   const disclosureProps = getDisclosureProps()
+  const closeProps = getCloseItem()
 
   const [language, setLanguage] = useState<Languages>('en');
 
@@ -21,13 +23,19 @@ const ContentPopover: React.FC = () => {
   const [isAnimating, setIsAnimating] = useState(false);
   const progressPercent = totalBatches > 0 ? (finishedBatches / totalBatches) * 100 : 0;
 
-  const expandPopover = () => {
+  const expandWidget = () => {
     disclosureProps.onOpen();
   };
 
   const toggleLanguage = () => {
     setLanguage(prevLang => prevLang === 'en' ? 'ar' : 'en');
   };
+
+  useEffect(() => {
+    chrome.runtime.sendMessage({ action: 'widgetHandshake' }, (response) => {
+      response.success ? onOpen() : onClose();
+    });
+  }, []);
 
   useEffect(() => {
     if (isAnimating) {
@@ -82,7 +90,7 @@ const ContentPopover: React.FC = () => {
         case "diacritizationBatchesStarted":
           setTotalBatches(batches);
           setFinishedBatches(0);
-          expandPopover();
+          expandWidget();
           sendResponse({ success: true });
           break;
         case "diacritizationChunkFinished":
@@ -91,6 +99,10 @@ const ContentPopover: React.FC = () => {
           break;
         case "updateWebsiteText":
           setFinishedBatches(totalBatches);
+          sendResponse({ success: true });
+          break;
+        case "toggleWidget":
+          onToggle();
           sendResponse({ success: true });
           break;
       }
@@ -112,9 +124,10 @@ const ContentPopover: React.FC = () => {
         zIndex="9999"
         width="auto"
         style={{ direction: "ltr" }}
+        {...closeProps}
       >
         <Stack
-          id="popover"
+          id="widget"
           padding="4px"
           borderTopRadius="8px"
           justify="flex-start"
@@ -157,7 +170,7 @@ const ContentPopover: React.FC = () => {
               </Button>
             </Stack>
             <Text
-              paddingLeft={isOpen ? "0px" : "8px"}
+              paddingLeft={isExpanded ? "0px" : "8px"}
               fontFamily="sans-serif"
               lineHeight="1.33"
               fontWeight="black"
@@ -167,22 +180,25 @@ const ContentPopover: React.FC = () => {
               flex="1"
               textAlign="center"
             >
-              {isOpen ? translations.easyPeasyArabizi[language] : translations.arabizi[language]}
+              {isExpanded ? translations.easyPeasyArabizi[language] : translations.arabizi[language]}
             </Text>
             <Stack direction="row" spacing="4px">
               <IconButton
                 aria-label='Minimize'
                 size="xs"
                 variant="ghost"
-                icon={isOpen ? <MinusIcon /> : <ChevronUpIcon boxSize={6} />}
+                icon={isExpanded ? <MinusIcon /> : <ChevronUpIcon boxSize={6} />}
                 {...buttonProps}
               />
-              <IconButton
-                aria-label='Close'
-                size="xs"
-                variant="ghost"
-                icon={<CloseIcon />}
-              />
+              <Tooltip hasArrow label='Ctrl+Shift+2 to reopen' bg='blue' closeDelay={10000}>
+                <IconButton
+                  aria-label='Close'
+                  onClick={onClose}
+                  size="xs"
+                  variant="ghost"
+                  icon={<CloseIcon />}
+                />
+              </Tooltip>
             </Stack>
           </Stack>
           <Stack id="content" width="100%" paddingBottom={"4px"}>
@@ -243,4 +259,4 @@ const ContentPopover: React.FC = () => {
   );
 };
 
-export default ContentPopover; 
+export default ContentWidget; 

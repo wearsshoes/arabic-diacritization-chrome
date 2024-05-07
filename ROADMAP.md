@@ -17,9 +17,9 @@
 ### UI
 
 - 0.4: add toggle between standard diacritization
-- 0.4.2 Add cancel button to overlay.
-- 0.4.2 Minimize overlay on finish.
-- 0.4.2 Option to show/hide overlay entirely.
+- 0.4.2 Add cancel button to widget.
+- 0.4.2 Minimize widget on finish.
+- 0.4.2 Option to show/hide widget entirely.
 - 0.4.3 Redesign UI elements to be simpler and cleaner.
 - 0.4.3 Add FAQs/tooltips to options page.
 
@@ -50,7 +50,7 @@
 
 - 1.2.x extension UI elements in bilingual Arabic/English 
 
-#### overlay
+#### widget
 
 - 1.1.x field for entering text for on-the-fly diacritization (much easier api call)
 - 1.4.x have translations to arabizi and english in hovering popup

@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 
 import contentUtils from "./contentUtils";
-import ContentPopover from "./popover";
+import ContentWidget from "./widget";
 
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
@@ -33,7 +33,7 @@ const reactRoot = ReactDOM.createRoot(root);
 reactRoot.render(
   <React.StrictMode>
     <CacheProvider value={emotionCache}>
-      <ContentPopover />
+      <ContentWidget />
     </CacheProvider>
   </React.StrictMode>
 );

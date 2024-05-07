@@ -42,6 +42,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   try {
 
     switch (message.action) {
+      case 'widgetHandshake':
+        console.log('Widget handshake received.');
+        sendResponse({ success: true });
+        break;
+
       case 'contentLoaded':
         console.log('Content loaded.');
         contentScriptReady = true;
@@ -66,7 +71,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       case 'openOptionsPage':
         chrome.runtime.openOptionsPage();
         break;
-        
+
       case 'getWebsiteData':
         (async () => {
           tab = await getActiveTab();
@@ -136,6 +141,17 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
       .catch((error) => {
         handleError(error);
       });
+  }
+});
+
+chrome.commands.onCommand.addListener((command) => {
+  console.log(`Command entered: ${command}`);
+  switch (command) {
+    case 'toggle-widget':
+      getActiveTab().then((tab) => {
+        messageContentScript(tab.id, { action: 'toggleWidget' });
+      });
+      break;
   }
 });
 
