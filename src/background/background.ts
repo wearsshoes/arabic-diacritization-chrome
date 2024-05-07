@@ -36,7 +36,7 @@ chrome.runtime.onInstalled.addListener(function (details) {
 });
 
 // Listen for messages from content scripts
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   console.log('Received message:', message.action);
   try {
@@ -74,7 +74,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
       case 'getWebsiteData':
         (async () => {
+          if (tab.id === 0) {
           tab = await getActiveTab();
+          }
           messageContentScript(tab.id, { action: 'getWebsiteData' })
             .then((websiteData) => sendResponse({ websiteData }))
             .catch((error) => sendResponse({ error: error.message }));
@@ -95,7 +97,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
       // Handle the diacritization request
       case 'sendToDiacritize':
-        if (message.method) {
+      if (sender.tab) {
+        tab.id = sender.tab.id || 0;
+        tab.url = sender.tab.url || "";
+      } 
+      if (message.method) {
           processFullWebpage(message.method)
         };
         sendResponse({ success: true });
