@@ -23,7 +23,7 @@ const observerOptions = {
 
 const onContentLoaded = () => {
   console.log('Content loaded');
-  mainNode = (document.querySelector('main, #main') as HTMLElement || document.body);
+  mainNode = (document.body.querySelector('main, #main') as HTMLElement || document.body);
   scrapeContent(mainNode).then(() => {
     chrome.runtime.sendMessage({ action: 'contentLoaded' });
     observer.observe(document.body, observerOptions);
