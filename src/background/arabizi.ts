@@ -17,10 +17,11 @@ export function arabicToArabizi(texts: string[], dialect: string = "msa"): strin
 
       return arabicText
         // use shadda and sukkoon to do sun/moon transformation
+        .replace(/اللَّه/g, 'Allah')
         .replace(/(اَ?ل)([\u0621-\u064A])([\u064B-\u0652]*)(\u0651)/g, 'a$2-$2$3')
-        .replace(/([\u0621-\u0652])(اَ?لْ?)/g, '$1\'al-')
-        .replace(/([\s])(اَ?لْ?)/g, '$1al-')
-
+        // .replace(/([\u0621-\u0652])(اَ?لْ?)/g, '$1\'l-')
+        .replace(/(^|\s)(اَ?لْ?)/g, '$1al-')
+        
         // replace all other cases of shadda with previous letter
         .replace(/([\u0621-\u064A])([\u064B-\u0652]*)(\u0651)/g, '$1$1$2')
 
