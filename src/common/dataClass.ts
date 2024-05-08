@@ -1,10 +1,11 @@
 import { calculateHash } from "./utils";
+import { ElementAttributes } from "./types";
 
 export interface PageMetadata {
     pageUrl: string,
     lastVisited: Date,
     contentSignature: string,
-    structuralMetadata: { [key: string]: any },
+    structuralMetadata: { [key: string]: ElementAttributes },
 }
 
 export interface TextNode {
@@ -17,8 +18,7 @@ export interface NodeHashDict {
     [nodeHash: string]: TextNode
 }
 
-export interface Diacritizations
-{
+export interface Diacritizations {
     [method: string]: NodeHashDict
 }
 
@@ -28,14 +28,14 @@ export class WebPageDiacritizationData {
     private constructor(
         public id: string,
         public metadata: PageMetadata,
-    ) { };
+    ) { }
 
     static async build(
         metadata: PageMetadata,
     ) {
         const id = await calculateHash(metadata.pageUrl)
         return new WebPageDiacritizationData(id, metadata)
-    };
+    }
 
     async createOriginal(websiteText: TextNode[]) {
         const textlist = websiteText.map((textNode) => (textNode.elementId + textNode.text))
@@ -46,7 +46,7 @@ export class WebPageDiacritizationData {
             return dict;
         }, {} as NodeHashDict);
         this.diacritizations = { ['original']: original };
-    };
+    }
 
     async addDiacritization(diacritizedText: TextNode[], method: string) {
         if (this.diacritizations['original'] === undefined) {
@@ -74,7 +74,7 @@ export class WebPageDiacritizationData {
             if (diacritization === undefined) {
                 throw new Error('Diacritization method not found.');
             } else {
-                let acc: TextNode[] = [];
+                const acc: TextNode[] = [];
                 Object.keys(diacritization).forEach((key, index) => {
                     acc[index] = diacritization[key];
                 });
@@ -88,8 +88,8 @@ export class WebPageDiacritizationData {
     }
 
     // Deserialization method
-    static fromJSON(json: any): WebPageDiacritizationData {
-        const parsedData = JSON.parse(json.data);
+    static fromJSON(json: string): WebPageDiacritizationData {
+        const parsedData = JSON.parse(json);
         const { id, metadata, diacritizations } = parsedData;
         const instance = new WebPageDiacritizationData(id, metadata);
         instance.diacritizations = diacritizations;

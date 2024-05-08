@@ -25,7 +25,16 @@ export async function getPrompt(): Promise<Prompt> {
 export async function processSelectedText(tab: chrome.tabs.Tab, method: string = 'fullDiacritics'): Promise<void> {
   if (!tab.id) return;
   const request = await messageContentScript(tab.id, { action: "getSelectedNodes" });
-  const { selectedNodes } : { selectedNodes: TextNode[] } = request;
+  if (request.status === 'error') {
+    console.error('Error getting selected nodes:', request.error);
+    return;
+  }
+  const { selectedNodes = [] } = request;
+  if (selectedNodes.length === 0) {
+    console.log("No text selected, processing full webpage.");
+    await processFullWebpage(method);
+    return;
+  }
   console.log("Doing ", method, "for selected nodes:", selectedNodes);
   const replacementText = await fullDiacritization(defaultPrompt, selectedNodes, tab.id);
   console.log('Diacritization result:', replacementText);
@@ -40,7 +49,15 @@ export async function processSelectedText(tab: chrome.tabs.Tab, method: string =
 export async function processFullWebpage(method: string) {
 
   const response = await messageContentScript(tab.id, { action: 'getWebsiteMetadata' });
-  const { pageMetadata }: { pageMetadata: PageMetadata } = response;
+  if (response.status === 'error') {
+    console.error('Error getting website metadata:', response.error);
+    return;
+  }
+  const { pageMetadata }: { pageMetadata?: PageMetadata } = response;
+  if (!pageMetadata) {
+    console.error('No metadata found');
+    return;
+  }
   const webPageDiacritizationData = await WebPageDiacritizationData.build(pageMetadata);
   console.log('Website metadata:', pageMetadata);
 
@@ -77,7 +94,7 @@ export async function processFullWebpage(method: string) {
     const diacritization = retrievedPageData.getDiacritization(method);
     messageContentScript(tab.id, { action: 'updateWebsiteText', originals: original, replacements: diacritization, method })
       .then((response) => {
-        console.log(`Website text updated with saved ${method} data, result: ${response.result}`);
+        console.log(`Update with saved ${method} data: ${response.status}`);
         return true;
       })
       .catch((error) => {
@@ -94,9 +111,17 @@ export async function processFullWebpage(method: string) {
   // Get the website text
   if (!webPageDiacritizationData.diacritizations['original']) {
     const response = await messageContentScript(tab.id, { action: 'getWebsiteText' });
-    const { websiteText } = response;
-    console.log('Retrieved original website text:', websiteText);
-    await webPageDiacritizationData.createOriginal(websiteText);
+    if (response.status === 'error') {
+      console.error('Error getting website text:', response.error);
+      return;
+    }
+    const { selectedNodes } = response;
+    if (!selectedNodes) {
+      console.error('No website text found');
+      return;
+    }
+    console.log('Retrieved original website text:', selectedNodes);
+    await webPageDiacritizationData.createOriginal(selectedNodes);
   }
 
   // Process the webpage
@@ -131,7 +156,7 @@ export async function processWebpage(method: string, data: WebPageDiacritization
         });
       break;
 
-    case 'arabizi':
+    case 'arabizi': {
       if (!data.diacritizations['fullDiacritics']) {
         console.log("Full diacritization doesn't exist, Diacritizing text first");
         await fullDiacritization(defaultPrompt, data.getDiacritization('original'), tabId)
@@ -146,12 +171,13 @@ export async function processWebpage(method: string, data: WebPageDiacritization
       }));
       data.addDiacritization(arabiziNodes, method);
       break;
+    }
 
     default:
       throw new Error(method + ' is not implemented yet');
   }
   return data.diacritizations;
-};
+}
 
 // Full diacritization
 export async function fullDiacritization(prompt: Prompt, websiteText: TextNode[], tabId: number): Promise<TextNode[]> {
@@ -176,7 +202,7 @@ function createDiacritizationElementBatches(textElements: TextNode[], maxChars: 
   const textElementBatches: TextNode[][] = [];
   let currentBatch: TextNode[] = [];
   let currentBatchLength = 0;
-  let batchLengths: [number, string, TextNode[]][] = [];
+  const batchLengths: [number, string, TextNode[]][] = [];
 
   textElements.forEach((textElement, index) => {
     const text = textElement.text;
@@ -202,7 +228,7 @@ function createDiacritizationElementBatches(textElements: TextNode[], maxChars: 
         currentBatch.push(textElement);
         currentBatchLength += textLength;
 
-        // handle sentence breaks as new batch        
+        // handle sentence breaks as new batch
         if ((text.match(sentenceRegex) && (currentBatchLength > (maxChars * 2 / 3))) || index === (textElements.length - 1)) {
           batchLengths.push([currentBatchLength, 'end of sentence', currentBatch]);
           textElementBatches.push(currentBatch);
@@ -271,7 +297,7 @@ export async function diacritizeTexts(prompt: Prompt, texts: string[], textEleme
           const rightDelimiters = separatorsInDiacritized + fudgefactor >= separatorsInOriginal;
 
           if (enoughTokens && rightDelimiters) {
-            
+
             const originals: TextNode[] = textElementBatches[index];
             const replacements: TextNode[] = diacritizedText.split(delimiter).map((text, index) => ({
               ...originals[index],

@@ -47,16 +47,16 @@ function getTextNodeIndex(textNode: Text): number {
   return index;
 }
 
-// Builds element list according to interface. Recurses through DOM and put the in the right order. 
+// Builds element list according to interface. Recurses through DOM and put the in the right order.
 function getTextElementsAndIndexDOM(node: Node = document.body, index: number = 0, elementId: string = '', iterator: number = 0): { textElements: TextNode[], iterator: number } {
-  
+
   const textElements: TextNode[] = [];
   if (node.nodeType === Node.ELEMENT_NODE) {
 
     const element = node as Element;
     if (element.hasChildNodes() && isVisible(element)) {
       let innerIndex = 0;
-      
+
       if (Array.from(element.childNodes).some(childNode => childNode.nodeType === Node.TEXT_NODE)) {
         elementId = 'element-' + iterator + '-' + element.tagName;
         element.setAttribute('data-element-id', elementId);
@@ -90,7 +90,7 @@ function getTextElementsAndIndexDOM(node: Node = document.body, index: number = 
     });
 
     node.parentNode?.replaceChild(fragment, node);
-  };
+  }
 
   return { textElements, iterator };
 }

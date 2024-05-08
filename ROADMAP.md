@@ -9,7 +9,11 @@
 
 ### Bugs
 - 0.4.1 Some problems with DOM element matching; cannot always find correct element to replace.
+- 0.4.1 If you navigate away from the page, the diacritization doesn't stop, and there's some chance of messing up the new page.
+- 0.4.1 When replacing with original, re-indexes DOM.
+- 0.4.1 The widget doesn't know when re-indexing has happened.
 - 0.4.2 Webpage saves don't work properly, and don't show up properly.
+- 0.4.2 The partial diacritization doesn't work sometimes.
 - 0.4.2 Repeated requests lead to really weird results.
 - 0.4.3 Claude still giving malformed results pretty often.
 - 1.0 Claude still attempts translation sometimes. Check that the number of non-diacritic arabic letters in prompt matches number of arabic letters in response.
@@ -29,7 +33,7 @@
 
 ### Bugs
 
-- 1.1.x something's messing with browser's back/forward cache and forcing reload 
+- 1.1.x something's messing with browser's back/forward cache and forcing reload
 - 1.1.x processing selected text should also save results to IndexedDB.
 
 ### Features
@@ -50,7 +54,7 @@
 
 ### UI
 
-- 1.2.x extension UI elements in bilingual Arabic/English 
+- 1.2.x extension UI elements in bilingual Arabic/English
 
 #### widget
 

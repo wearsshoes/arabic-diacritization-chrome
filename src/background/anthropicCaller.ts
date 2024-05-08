@@ -10,7 +10,7 @@ export class Claude {
   constructor(
     public model: Model,
     public apiKey: string
-  ) { };
+  ) { }
 
   escalateModel(n: number = 1) {
     const models = Object.values(claude);
@@ -58,7 +58,7 @@ const claude: Models = {
 
 const defaultModel: Model = claude.haiku;
 
-async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: string): Promise<any> {
+async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: string): Promise<Anthropic.Message> {
 
   // generate a hash to identify the job
   const hash = await calculateHash(JSON.stringify(params));
@@ -77,7 +77,7 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
       console.log('Sent job', hash);
       const result = await anthropic.messages.create(params);
       console.log('Received result for:', hash);
-      return result;
+      return result as Anthropic.Message;
     } catch (error) {
       if (error instanceof Error) {
         console.error('Error message:', error.message);

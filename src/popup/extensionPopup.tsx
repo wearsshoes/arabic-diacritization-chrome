@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 
 import { Prompt } from '../common/types';
 
-import theme from '../assets/theme';
+// import theme from '../assets/theme';
 import Fonts from '../assets/fonts';
 import { ChakraProvider } from '@chakra-ui/react'
 import {
@@ -23,6 +23,7 @@ import {
   Text
 } from '@chakra-ui/react';
 
+/* eslint-disable react-refresh/only-export-components */
 const App: React.FC = () => {
 
   const [pageLanguage, setPageLanguage] = useState('');
@@ -39,6 +40,7 @@ const App: React.FC = () => {
   const [contentLoaded, setContentLoaded] = useState(false);
   // const [apiKeyFound, setApiKeyFound] = useState(true);
 
+
   useEffect(() => {
     //   // Check API key
     //   (async () => {
@@ -51,7 +53,7 @@ const App: React.FC = () => {
     //     }
     setLoadState(true);
     //   })();
-  });
+  }, []);
 
   useEffect(() => {
     if (loadState) {
@@ -63,6 +65,27 @@ const App: React.FC = () => {
   }, [loadState]);
 
   useEffect(() => {
+    const calculateCost = () => {
+      if (outputTokenCount && characterCount && promptLength) {
+        const costEstimate = calculateCostEstimate();
+        const costInDollars = costEstimate.toFixed(2);
+        setCostEstimate(`Estimated cost: $${costInDollars}`);
+      } else {
+        setCostEstimate('Estimated cost: Unknown');
+      }
+    };
+
+    const calculateCostEstimate = (): number => {
+      const inputCost = 0.25 / 1000000;
+      const batchLength = 750;
+      const batches = Math.ceil(characterCount / batchLength);
+      const inputSubtotal = ((promptLength * batches) + characterCount) * inputCost;
+      const outputCost = 1.25 / 1000000;
+      const outputSubtotal = characterCount * 2.3 * outputCost;
+      const totalCostPlusTax = (inputSubtotal + outputSubtotal) * 1.1;
+      return totalCostPlusTax;
+    };
+
     calculateCost();
   }, [outputTokenCount, characterCount, promptLength]);
 
@@ -79,7 +102,7 @@ const App: React.FC = () => {
         const lang = languageNamesInEnglish.of(websiteData.language) || 'unknown';
         const lang_ar = languageNamesInArabic.of(websiteData.language) || 'unknown';
         setPageLanguage(lang + ' (' + lang_ar + ')');
-      };
+      }
 
       setContentLoaded(true);
       setCharacterCount(websiteData.characterCount);
@@ -131,27 +154,6 @@ const App: React.FC = () => {
     }
   };
 
-  const calculateCost = () => {
-    if (outputTokenCount && characterCount && promptLength) {
-      const costEstimate = calculateCostEstimate();
-      const costInDollars = costEstimate.toFixed(2);
-      setCostEstimate(`Estimated cost: $${costInDollars}`);
-    } else {
-      setCostEstimate('Estimated cost: Unknown');
-    }
-  };
-
-  const calculateCostEstimate = (): number => {
-    const inputCost = 0.25 / 1000000;
-    const batchLength = 750;
-    const batches = Math.ceil(characterCount / batchLength);
-    const inputSubtotal = ((promptLength * batches) + characterCount) * inputCost;
-    const outputCost = 1.25 / 1000000;
-    const outputSubtotal = characterCount * 2.3 * outputCost;
-    const totalCostPlusTax = (inputSubtotal + outputSubtotal) * 1.1;
-    return totalCostPlusTax;
-  };
-
   const clearSaved = () => {
     setSavedInfo('clearing cache info for page');
     chrome.runtime.sendMessage({ action: 'clearWebPageData' }, (response) => {
@@ -174,6 +176,7 @@ const App: React.FC = () => {
             <VStack>
               <Heading fontFamily={'basmala'} padding={2} marginTop={5} marginBottom={0} lineHeight={0}>ArabEasy</Heading>
               <Text fontFamily={'arabic'} fontSize='xl' fontWeight={900} marginBottom={5} lineHeight={1}>بتِحكي عَرَبِيْزِي؟</Text>
+              <Text fontSize={'md'} justifyContent={'center'}> This popup is still under construction. Recommend using the onscreen widget (Control-Shift-2 / Command-Shift-2 to restore if closed).</Text>
             </VStack>
           </Center>
           <Card padding='2'>
@@ -268,7 +271,8 @@ const App: React.FC = () => {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ChakraProvider theme={theme}>
+    {/* <ChakraProvider theme={theme}> */}
+    <ChakraProvider>
       <Fonts />
       <App />
     </ChakraProvider>

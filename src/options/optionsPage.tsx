@@ -11,7 +11,8 @@ import { Box, Grid, GridItem, Center, Container, Heading, Card} from '@chakra-ui
 import Fonts from '../assets/fonts'
 import theme from '../assets/theme'
 
-const Options: React.FC = () => {
+/* eslint-disable react-refresh/only-export-components */
+const Options: React.FC= () => {
   return (
     <Box padding={5} marginTop={{ base: 5, md: 10, xl: 20 }}>
       <Fonts />

@@ -1,6 +1,7 @@
 import { countSysPromptTokens } from './anthropicCaller'
 import { getAPIKey, DiacritizationDataManager } from './datamanager';
 import { processFullWebpage, processSelectedText } from './diacritization';
+import { AppMessage, AppResponse } from '../common/types';
 
 // ----------------- Event Listeners ----------------- //
 
@@ -9,7 +10,7 @@ chrome.runtime.onInstalled.addListener(function (details) {
   if (details.reason == "install") {
     console.log("ArabEasy successfully installed! Thank you for using this app.");
   } else if (details.reason == "update") {
-    var thisVersion = chrome.runtime.getManifest().version;
+    const thisVersion = chrome.runtime.getManifest().version;
     console.log("Updated from " + details.previousVersion + " to " + thisVersion + "!");
   }
 
@@ -65,7 +66,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           countSysPromptTokens(message.prompt)
             .then((tokens) => sendResponse({ tokens }))
             .catch((error) => sendResponse({ error }));
-        };
+        }
         return true;
 
       case 'openOptionsPage':
@@ -75,7 +76,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       case 'getWebsiteData':
         (async () => {
           if (tab.id === 0) {
-          tab = await getActiveTab();
+            tab = await getActiveTab();
           }
           messageContentScript(tab.id, { action: 'getWebsiteData' })
             .then((websiteData) => sendResponse({ websiteData }))
@@ -97,13 +98,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       // Handle the diacritization request
       case 'sendToDiacritize':
-      if (sender.tab) {
-        tab.id = sender.tab.id || 0;
-        tab.url = sender.tab.url || "";
-      } 
-      if (message.method) {
+        if (sender.tab) {
+          tab.id = sender.tab.id || 0;
+          tab.url = sender.tab.url || "";
+        }
+        if (message.method) {
           processFullWebpage(message.method)
-        };
+        }
         sendResponse({ success: true });
         break;
 
@@ -129,9 +130,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 chrome.contextMenus.onClicked.addListener(async function (info, tab) {
+  if (!tab) {
+    console.error("No tab found.");
+    return;
+  }
   if (info.menuItemId === "processSelectedText") {
     console.log("Diacritizing selected text...");
-    processSelectedText(tab!, 'fullDiacritics')
+    processSelectedText(tab, 'fullDiacritics')
       .then(() => {
         console.log('Website text updated with diacritics.');
       })
@@ -140,7 +145,7 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
       });
   } else if (info.menuItemId === "romanizeSelectedText") {
     console.log("Romanizing selected text...");
-    processSelectedText(tab!, 'arabizi')
+    processSelectedText(tab, 'arabizi')
       .then(() => {
         console.log('Website text updated to romanization.');
       })
@@ -165,7 +170,7 @@ chrome.commands.onCommand.addListener((command) => {
 
 let contentScriptReady = false;
 export let tab: { id: number, url: string } = { id: 0, url: '' };
-const messageQueue: any = [];
+const messageQueue: { tabId: number, message: AppMessage, resolve: (value: AppResponse | PromiseLike<AppResponse>) => void }[] = [];
 export const dataManager = DiacritizationDataManager.getInstance();
 
 async function getSavedInfo() {
@@ -189,7 +194,7 @@ export async function getActiveTab(): Promise<{ id: number, url: string }> {
   return { id: tab.id as number, url: tab.url as string };
 }
 
-export function messageContentScript(tabId: number, message: any): Promise<any> {
+export function messageContentScript(tabId: number, message: AppMessage): Promise<AppResponse> {
   if (contentScriptReady) {
     return new Promise((resolve, reject) => {
       chrome.tabs.sendMessage(tabId, message, (response) => {
@@ -211,13 +216,16 @@ export function messageContentScript(tabId: number, message: any): Promise<any> 
 
 async function processQueuedMessages() {
   while (messageQueue.length > 0) {
-    const { tabId, message, resolve } = messageQueue.shift();
-    try {
-      const response = await messageContentScript(tabId, message);
-      resolve(response);
-    } catch (error) {
-      console.error('Error processing queued message:', error);
-      resolve(null); // Resolve with null to indicate an error occurred
+    const queuedMessage = messageQueue.shift();
+    if (queuedMessage) {
+      const { tabId, message, resolve } = queuedMessage;
+      try {
+        const response = await messageContentScript(tabId, message);
+        resolve(response);
+      } catch (error) {
+        console.error('Error processing queued message:', error);
+        resolve({status: 'error', error: error as Error});
+      }
     }
   }
 }

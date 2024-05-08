@@ -1,6 +1,7 @@
 import { PageMetadata, TextNode } from '../common/dataClass';
 import { calculateHash } from '../common/utils';
 import { getTextElementsAndIndexDOM, replaceWebpageText, getTextNodesInRange } from './domUtils';
+import { AppMessage, AppResponse, ElementAttributes } from '../common/types';
 
 console.log('Content being setup');
 let textElements: TextNode[] = [];
@@ -9,11 +10,6 @@ let mainNode = document.body;
 let diacritizedStatus = 'original';
 let editingContent = false;
 
-interface ElementAttributes {
-  tagName: string;
-  id?: string;
-  className?: string; // space separated list of classes, not an array
-}
 
 const observerOptions = {
   childList: true,
@@ -31,48 +27,51 @@ const onContentLoaded = () => {
   document.removeEventListener('DOMContentLoaded', onContentLoaded);
 };
 
-const listener = (request: any, _sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
+const listener = (request: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse) => void) => {
 
-  const { action, originals, replacements, method }: {
-    action: string,
-    originals: TextNode[],
-    replacements: TextNode[],
-    method: string
-  } = request;
+  const { action, originals, replacements, method } = request;
 
   console.log('contentUtils received message:', action);
   switch (action) {
 
-    case 'getWebsiteData':
+    case 'getWebsiteData': {
       console.log({ 'Main node': mainNode, 'PageMetadata': pageMetadata, 'Text elements': textElements });
       const language = document.documentElement.lang;
       const characterCount = mainNode.innerText?.length || 0;
-      sendResponse({ language, characterCount });
+      sendResponse({ status: 'success', language, characterCount });
       return true;
+    }
 
     case 'getWebsiteMetadata':
-      sendResponse({ pageMetadata, diacritizedStatus });
+      if (pageMetadata && diacritizedStatus) {
+      sendResponse({ status: 'success', pageMetadata, diacritizedStatus });
+      } else {
+        sendResponse({ status: 'error', error: new Error('No metadata available') });
+      }
       return true;
 
     case 'getWebsiteText':
-      sendResponse({ websiteText: textElements });
+      sendResponse({ status: 'success', selectedNodes: textElements });
       return true;
 
-    case 'getSelectedNodes':
+    case 'getSelectedNodes': {
       const selection = window.getSelection();
       if (selection !== null) {
         console.log(selection.toString());
         const range = selection.getRangeAt(0);
         const textNodes = getTextNodesInRange(range);
-        sendResponse({ selectedNodes: textNodes, diacritizedStatus });
+        sendResponse({ status: 'success', selectedNodes: textNodes, diacritizedStatus });
       }
       return true;
+    }
 
     case 'updateWebsiteText' || 'diacritizationChunkFinished':
       console.log('Updating website text', originals, replacements, method);
       editingContent = true;
-      replaceWebpageText(originals, replacements, method);
-      diacritizedStatus = method;
+      if (originals && replacements && method) {
+        replaceWebpageText(originals, replacements, method);
+        diacritizedStatus = method;
+      }
       editingContent = false;
       // TODO: also set whether the whole page is diacritized
       // sendResponse({ method, result: 'success' });
@@ -81,30 +80,30 @@ const listener = (request: any, _sender: chrome.runtime.MessageSender, sendRespo
 };
 
 // Scrape webpage data for the content script
-const scrapeContent = async (mainNode: HTMLElement) => {
-  return new Promise<void>(async (resolve, reject) => {
-    try {
-      const structuralMetadata = await summarizeMetadata();
-      const contentSignature = await calculateContentSignature();
-      const metadata: PageMetadata = {
-        pageUrl: window.location.href,
-        lastVisited: new Date(),
-        contentSignature,
-        structuralMetadata,
-      };
-      pageMetadata = metadata;
-      if (diacritizedStatus === 'original') {
-        editingContent = true;
-        ({ textElements } = getTextElementsAndIndexDOM(mainNode as Node));
-        resolve();
-        editingContent = false;
-      }
-    } catch (error) {
-      console.error('Error during initialization:', error);
-      reject(error);
+const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {
+  try {
+    const structuralMetadata = await summarizeMetadata();
+    const contentSignature = await calculateContentSignature();
+
+    const metadata: PageMetadata = {
+      pageUrl: window.location.href,
+      lastVisited: new Date(),
+      contentSignature,
+      structuralMetadata,
+    };
+
+    pageMetadata = metadata;
+
+    if (diacritizedStatus === 'original') {
+      editingContent = true;
+      ({ textElements } = getTextElementsAndIndexDOM(mainNode as Node));
       editingContent = false;
     }
-  });
+  } catch (error) {
+    console.error('Error during initialization:', error);
+    editingContent = false;
+    throw error;
+  }
 };
 
 async function calculateContentSignature(): Promise<string> {
@@ -163,12 +162,12 @@ const observer = new MutationObserver((mutations) => {
 
 // MAIN
 const main = () => {
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', onContentLoaded);
-} else {
-  onContentLoaded();
-}
-chrome.runtime.onMessage.addListener(listener);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', onContentLoaded);
+  } else {
+    onContentLoaded();
+  }
+  chrome.runtime.onMessage.addListener(listener);
 }
 
 export default main;

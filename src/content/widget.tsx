@@ -3,6 +3,7 @@ import { ChakraProvider, useDisclosure } from '@chakra-ui/react';
 import { Stack, Container, Button, ButtonGroup, Text, IconButton, Progress } from '@chakra-ui/react'
 import { SettingsIcon, ChevronUpIcon, CheckIcon, MinusIcon, CloseIcon, ArrowForwardIcon, SpinnerIcon } from '@chakra-ui/icons'
 import { Languages, translations } from "./widget_i18n";
+import { AppMessage, AppResponse } from "../common/types";
 
 const ContentWidget: React.FC = () => {
 
@@ -33,7 +34,7 @@ const ContentWidget: React.FC = () => {
     chrome.runtime.sendMessage({ action: 'widgetHandshake' }, (response) => {
       response.success ? onOpen() : onClose();
     });
-  }, []);
+  });
 
   useEffect(() => {
     if (finishedBatches >= totalBatches && isAnimating) {
@@ -42,29 +43,7 @@ const ContentWidget: React.FC = () => {
       setPageState(method);
       // setDiacritizeStatus('Page updated.');
     }
-  }, [isAnimating, totalBatches, finishedBatches]);
-
-  // useEffect(() => {
-  //   if (isAnimating) {
-  //     const interval = setInterval(() => {
-  //       setFinishedBatches((finishedBatches) => {
-  //         if (finishedBatches >= totalBatches) {
-  //           clearInterval(interval);
-  //           setIsAnimating(false);
-  //           setPageRenders([method, ...pageRenders]);
-  //           setPageState(method);
-  //           setDiacritizeStatus('Page updated.');
-  //           return 100;
-  //         }
-  //         return finishedBatches + 1;
-  //       });
-  //     }, 100);
-
-  //     return () => {
-  //       clearInterval(interval);
-  //     };
-  //   }
-  // }, [isAnimating]);
+  }, [method, pageRenders, isAnimating, totalBatches, finishedBatches]);
 
   const taskChoiceHandler = (task: string) => {
     setMethod(task);
@@ -85,40 +64,46 @@ const ContentWidget: React.FC = () => {
     }
   };
 
-  const listener =
+
+  useEffect(() => {
+    const listener =
     // TODO: merge these listeners back into contentUtils listeners
-    (message: any, _sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => {
+    (message: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse) => void) => {
       const { action, batches } = message;
       switch (action) {
-        case "diacritizationBatchesStarted":
+        case "diacritizationBatchesStarted": {
+          if (batches) {
           setTotalBatches(batches);
           setFinishedBatches(0);
           setIsAnimating(true);
           onOpen();
           onExpanded();
-          sendResponse({ success: true });
+          sendResponse({ status: 'success' });
+          } else {
+            sendResponse({ status: 'error', error: new Error('No batches provided') });
+          }
           break;
+        }
         case "diacritizationChunkFinished":
           setFinishedBatches((prevFinished) => prevFinished + 1);
-          sendResponse({ success: true });
+          sendResponse({ status: 'success' });
           break;
         case "updateWebsiteText":
           setFinishedBatches(totalBatches);
-          sendResponse({ success: true });
+          sendResponse({ status: 'success' });
           break;
         case "toggleWidget":
           onToggle();
-          sendResponse({ success: true });
+          sendResponse({ status: 'success' });
           break;
       }
-    };
+    }
 
-  useEffect(() => {
     chrome.runtime.onMessage.addListener(listener);
     return () => {
       chrome.runtime.onMessage.removeListener(listener);
     };
-  }, [listener]);
+  });
 
   return (
     <ChakraProvider>
@@ -263,4 +248,4 @@ const ContentWidget: React.FC = () => {
   );
 };
 
-export default ContentWidget; 
+export default ContentWidget;
