@@ -24,7 +24,7 @@ export const translations: Translations = {
     ar: "نص ساذج"
   },
   tashkil: {
-    en: "Tashkil",
+    en: "+Vowels",
     ar: "نص مشكول"
   },
   // Add translations for other text items
