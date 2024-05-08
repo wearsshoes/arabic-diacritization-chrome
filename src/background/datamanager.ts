@@ -3,28 +3,12 @@ import { calculateHash } from "../common/utils";
 
 export async function getAPIKey(): Promise<string> {
   try {
-    const { apiKey } = await chromeStorageGet<string>('apiKey');
+    const { apiKey } = await chrome.storage.sync.get('apiKey');
     return apiKey;
   }
   catch (error) {
     throw new Error(`Error getting API Key: ${error}`);
   }
-}
-
-function chromeStorageGet<T>(key: string): Promise<{ [key: string]: T }> {
-  return new Promise((resolve, reject) => {
-    chrome.storage.sync.get([key], result => {
-      chrome.runtime.lastError ? reject(chrome.runtime.lastError) : resolve(result);
-    });
-  });
-}
-
-function chromeStorageSet(items: { [key: string]: any }): Promise<void> {
-  return new Promise((resolve, reject) => {
-    chrome.storage.sync.set(items, () => {
-      chrome.runtime.lastError ? reject(chrome.runtime.lastError) : resolve();
-    });
-  });
 }
 
 export class DiacritizationDataManager {
@@ -75,11 +59,8 @@ export class DiacritizationDataManager {
     } else {
       try {
         const urlHash = await calculateHash(url);
-        const pageData = await this.getWebPageData(urlHash);
         const serializedData = JSON.stringify(data);
-        await saveData(this.db, "diacritizations_msa", { id: data.id, data: serializedData });
-        this.updateStorageSize(pageData ?? '', 'remove');
-        this.updateStorageSize(data, 'add');
+        await saveData(this.db, "diacritizations_msa", { item: serializedData, key: urlHash });
       } catch (error) {
         console.error(error);
         throw new Error("Failed to save data" + error);
@@ -87,39 +68,22 @@ export class DiacritizationDataManager {
     }
   }
 
-  // when called by an add/remove function, update storage size in chrome storage
-  async updateStorageSize(obj: Object, action: 'add' | 'remove'): Promise<void> {
-    const objectSize = getSizeInBytes(obj);
-
-    try {
-      const { storageSize = 0 } = await chromeStorageGet<number>('storageSize');
-      const updatedSize = action === 'add' ? storageSize + objectSize : storageSize - objectSize;
-      await chromeStorageSet({ storageSize: updatedSize });
-    } catch (error) {
-      console.error(error);
-      throw new Error(`Error updating storage size: ${error}`);
-    }
-  }
-
 
   // Remove all data related to a webpage
   async clearWebPageData(url: string): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      if (!this.db) {
-        throw new Error("Database not initialized");
-      } else {
-        try {
-          const urlHash = await calculateHash(url);
-          console.log("Clearing data for", urlHash);
-          await clearData(this.db, "diacritizations_msa", { id: urlHash });
-          resolve();
-        } catch (error) {
-          console.error(error);
-          reject(new Error("Failed to clear data" + error));
-        }
-
+    if (!this.db) {
+      throw new Error("Database not initialized");
+    } else {
+      try {
+        const urlHash = await calculateHash(url);
+        console.log("Clearing data for", urlHash);
+        await clearData(this.db, "diacritizations_msa", urlHash );
+        return Promise.resolve();
+      } catch (error) {
+        console.error(error);
+        throw new Error("Failed to clear data" + error);
       }
-    })
+    }
   }
 
   async clearAllData(): Promise<void> {
@@ -158,11 +122,11 @@ function openDatabase(dbName: string, storeName: string, version: number): Promi
   });
 }
 
-function saveData(db: IDBDatabase, storeName: string, data: any): Promise<void> {
+function saveData(db: IDBDatabase, storeName: string, { item, key }: { item: string, key: string }): Promise<void> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(storeName, 'readwrite');
     const store = transaction.objectStore(storeName);
-    const request = store.put(data);
+    const request = store.put(item, key);
 
     request.onerror = () => {
       reject(request.error);
@@ -174,11 +138,11 @@ function saveData(db: IDBDatabase, storeName: string, data: any): Promise<void> 
   });
 }
 
-function clearData(db: IDBDatabase, storeName: string, data: any): Promise<void> {
+function clearData(db: IDBDatabase, storeName: string, dataId: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(storeName, 'readwrite');
     const store = transaction.objectStore(storeName);
-    const request = store.delete(data.id);
+    const request = store.delete(dataId);
 
     request.onerror = () => {
       reject(request.error);
@@ -218,8 +182,4 @@ function deleteDatabase(database: string): Promise<void> {
       resolve();
     };
   });
-}
-
-function getSizeInBytes(obj: Object) {
-  return new Blob([JSON.stringify(obj)]).size;
 }
