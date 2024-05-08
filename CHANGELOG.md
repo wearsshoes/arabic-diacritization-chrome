@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.3.4 (2024-05-05)
+## 0.4 (2024-05-05)
+- New corner widget! Command+Option+2 to show/hide.
+- Option to toggle between original, diacritized, and arabizi.
+- Progress bar works now.
 - Arabizi now enabled again, somewhat better but still beta.
 - Fewer extraneous vowels in Arabizi.
 - Selects main content with more accuracy now.
@@ -10,6 +13,12 @@
 - Re-indexing after deliberate change fixed (removed some unnecessarily reloading React components)
 - Continued to improve program structuring and flow for clearer communication.
 - Many bugfixes, as always.
+
+Known bugs:
+- Webpage saves don't work properly, and don't show up properly.
+- Some problems with DOM element matching; cannot always find correct element to replace.
+- Claude still giving malformed results pretty often.
+- Repeated requests lead to really weird results.
 
 ## 0.3.3 (2024-04-25)
 - Implemented a popup progress bar to show how many batches the API has completed.

@@ -2,26 +2,28 @@
 
 ## MVP
 
-### Bugs
-
-- 0.4: Claude still attempts translation sometimes. Check that the number of non-diacritic arabic letters in prompt matches number of arabic letters in response.
-- 0.4.3 only claude haiku is enabled.
+## Features
+- 0.4.1 only claude haiku is enabled.
 - 0.4.3 only default prompt is enabled.
+- 1.0 when there's saved results, partially update based on hashes
+
+### Bugs
+- 0.4.1 Some problems with DOM element matching; cannot always find correct element to replace.
+- 0.4.2 Webpage saves don't work properly, and don't show up properly.
+- 0.4.2 Repeated requests lead to really weird results.
+- 0.4.3 Claude still giving malformed results pretty often.
+- 1.0 Claude still attempts translation sometimes. Check that the number of non-diacritic arabic letters in prompt matches number of arabic letters in response.
 
 #### Arabizi
 
-- 0.3.4: make arabizi translation look more natural
-- 0.4: add alternate romanization to ISO 233-2 (actually might be easier than arabizi)
 - 0.4.1: incremental arabizi updates, just like with fullDiacritization
 
 ### UI
 
-- 0.4: add toggle between standard diacritization
-- 0.4.2 Add cancel button to widget.
-- 0.4.2 Minimize widget on finish.
-- 0.4.2 Option to show/hide widget entirely.
-- 0.4.3 Redesign UI elements to be simpler and cleaner.
+- 0.4.1 Add cancel button to widget.
+- 0.4.3 Redesign options page to be simpler and cleaner.
 - 0.4.3 Add FAQs/tooltips to options page.
+- 0.4.3 Redesign extension popup to be simpler and cleaner.
 
 ## Future
 
@@ -34,13 +36,13 @@
 
 - 1.1.x partial diacritization
 - 1.1.x option to translate arabic pages by default (needs to be cheaper first? implement stat tracking first?)
-- 1.2.x when there's saved results, partially update based on hashes
 - 1.2.x streaming from claude API
 - 2.x dialect detection
 - 2.x option to use other models besides Claudes
 
 #### Arabizi
-
+- 1.1.x: make arabizi translation look more natural
+- 1.1.x: add alternate romanization to ISO 233-2 (actually might be easier than arabizi)
 - 1.2.x lebanese arabizi support
 - 1.2.x in dialect -- handle proper nouns? Qatar and not 'atar
 - 2.x other dialects
