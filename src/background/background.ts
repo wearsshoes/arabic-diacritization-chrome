@@ -81,10 +81,10 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
         (async () => {
           const tab = sender.tab ? sender.tab : await getActiveTab();
           getSavedInfo(tab)
-          .then((savedInfo) => {
+            .then((savedInfo) => {
               sendResponse({ status: 'success', savedInfo })
-          })
-          });
+            })
+        });
         return true;
 
       // Handle the diacritization request
@@ -92,7 +92,7 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
         if (sender.tab) {
           if (message.method) {
             processFullWebpage(sender.tab, message.method)
-        }
+          }
         }
         sendResponse({ status: 'success' });
         break;
@@ -125,7 +125,7 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
         throw new Error('Invalid action');
     }
   } catch (error) {
-    console.error('Error processing message:', error);
+    console.error(`Error processing ${message.action}: ${error}`);
     sendResponse({ status: 'error', error: error as Error });
   }
 });
@@ -142,16 +142,16 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
         console.log('Website text updated with diacritics.');
       })
       .catch((error) => {
-        handleError(error);
+        console.error(`Could not diacritize selected text: ${error}`);
       });
   } else if (info.menuItemId === "romanizeSelectedText") {
-    console.log("Romanizing selected text...");
+    console.log("Transliterating selected text...");
     processSelectedText(tab, 'arabizi')
       .then(() => {
-        console.log('Website text updated to romanization.');
+        console.log('Website text updated to transliteration.');
       })
       .catch((error) => {
-        handleError(error);
+        console.error(`Could not transliterate selected text: ${error}`);
       });
   }
 });
@@ -164,7 +164,7 @@ chrome.commands.onCommand.addListener((command) => {
         .then(([tab]) => {
           if (tab.id === undefined) throw new Error('No active tab found');
           chrome.tabs.sendMessage(tab.id, { action: 'toggleWidget' });
-      });
+        });
       break;
   }
 });
@@ -173,7 +173,7 @@ chrome.commands.onCommand.addListener((command) => {
 
 let contentScriptReady = false;
 
-const messageQueue: { tabId: number, message: AppMessage, resolve: (value: AppResponse | PromiseLike<AppResponse>) => void }[] = [];
+const messageQueue: { tabId: number, message: AppMessage, resolve: (value: AppResponse | Promise<AppResponse>) => void }[] = [];
 export const dataManager = DiacritizationDataManager.getInstance();
 
 async function getActiveTab(): Promise<chrome.tabs.Tab> {
@@ -183,7 +183,7 @@ async function getActiveTab(): Promise<chrome.tabs.Tab> {
 async function getSavedInfo(tab: chrome.tabs.Tab): Promise<string[]> {
   if (!tab.url) throw new Error('No URL to get saved info for.');
   const response = await dataManager.getWebPageData(tab.url);
-      const savedDiacritizations = (Object.keys(response?.diacritizations || {})).filter((key) => (key !== 'original'));
+  const savedDiacritizations = (Object.keys(response?.diacritizations || {})).filter((key) => (key !== 'original'));
   return savedDiacritizations;
 }
 
@@ -230,13 +230,12 @@ async function processQueuedMessages() {
   }
 }
 
-function handleError(error: Error) {
-  console.error('An error occurred:', error.message);
-  // Display a user-friendly error message
-  // chrome.notifications.create({
-  //   type: 'basic',
-  //   title: 'Error',
-  //   message: 'An error occurred. Please try again later.',
-  //   iconUrl: 'icon-128.png'
-  // });
+export const controllers = new Map();
+
+function cancelTask(tabId: number) {
+  if (controllers.has(tabId)) {
+    const controller = controllers.get(tabId);
+    controller.abort();
+    controllers.delete(tabId);
+  }
 }

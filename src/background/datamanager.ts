@@ -1,6 +1,5 @@
 import { WebPageDiacritizationData } from "../common/webpageDataClass";
 import { calculateHash } from "../common/utils";
-import { AppResponse } from "../common/types";
 
 export class DiacritizationDataManager {
   private static instance: DiacritizationDataManager;
@@ -52,8 +51,8 @@ export class DiacritizationDataManager {
         const urlHash = await calculateHash(url);
         const serializedData = JSON.stringify(data);
         await saveData(this.db, "diacritizations_msa", { item: serializedData, key: urlHash });
+        return Promise.resolve();
       } catch (error) {
-        console.error(error);
         throw new Error("Failed to save data" + error);
       }
     }
@@ -68,27 +67,24 @@ export class DiacritizationDataManager {
       try {
         const urlHash = await calculateHash(url);
         console.log("Clearing data for", urlHash);
-        await clearData(this.db, "diacritizations_msa", urlHash );
+        await clearData(this.db, "diacritizations_msa", urlHash);
         return Promise.resolve();
       } catch (error) {
-        console.error(error);
         throw new Error("Failed to clear data" + error);
       }
     }
   }
 
   async clearAllData(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        deleteDatabase("WebpageDiacritizations");
-        console.log("Database cleared, reinitializing...");
-        openDatabase("WebpageDiacritizations", "diacritizations_msa", 1)
-        resolve();
-      } catch (error) {
-        console.error(error);
-        reject(new Error("Failed to clear database" + error));
-      }
-    });
+    try {
+      deleteDatabase("WebpageDiacritizations");
+      console.log("Database cleared, reinitializing...");
+      openDatabase("WebpageDiacritizations", "diacritizations_msa", 1)
+      return Promise.resolve();
+    }
+    catch (error) {
+      throw new Error("Failed to clear database" + error);
+    }
   }
 }
 
