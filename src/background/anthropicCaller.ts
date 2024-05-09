@@ -2,16 +2,20 @@ import Anthropic from '@anthropic-ai/sdk';
 // @ts-expect-error No types for "bottleneck/light"
 import BottleneckLight from "bottleneck/light.js";
 import { calculateHash } from '../common/utils';
-import { getAPIKey } from './datamanager';
+import { getAPIKey } from "../common/utils";
 export { claude, defaultModel, anthropicAPICall, countSysPromptTokens };
-
-// some parts of these functions will get refactored back into background.ts
 
 export class Claude {
   constructor(
-    public model: Model,
-    public apiKey: string
-  ) { }
+    public model: Model = defaultModel,
+    public apiKey: string = ''
+  ) {
+    this.initialize();
+  }
+
+  async initialize() {
+    this.apiKey = await getAPIKey();
+  }
 
   escalateModel(n: number = 1) {
     const models = Object.values(claude);
