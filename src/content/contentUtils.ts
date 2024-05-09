@@ -1,4 +1,4 @@
-import { PageMetadata, TextNode } from '../common/dataClass';
+import { PageMetadata, TextNode } from '../common/webpageDataClass';
 import { calculateHash } from '../common/utils';
 import { getTextElementsAndIndexDOM, replaceWebpageText, getTextNodesInRange } from './domUtils';
 import { AppMessage, AppResponse, ElementAttributes } from '../common/types';
@@ -51,6 +51,7 @@ const listener = (request: AppMessage, _sender: chrome.runtime.MessageSender, se
       return true;
 
     case 'getWebsiteText':
+      console.log('Sending website text:', textElements);
       sendResponse({ status: 'success', selectedNodes: textElements });
       return true;
 

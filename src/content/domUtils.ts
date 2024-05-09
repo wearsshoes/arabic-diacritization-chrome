@@ -1,4 +1,4 @@
-import { TextNode } from "../common/dataClass";
+import { TextNode } from "../common/webpageDataClass";
 import { sentenceRegex } from "../common/utils";
 
 // -------------- Functions -------------- //

@@ -1,4 +1,4 @@
-import { WebPageDiacritizationData } from "../common/dataClass";
+import { WebPageDiacritizationData } from "../common/webpageDataClass";
 import { calculateHash } from "../common/utils";
 
 export async function getAPIKey(): Promise<string> {

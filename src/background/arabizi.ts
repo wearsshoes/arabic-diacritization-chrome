@@ -1,3 +1,4 @@
+import { TextNode } from '../common/webpageDataClass';
 import arabizi from './arabizi.json';
 
 interface TransliterationDict {
