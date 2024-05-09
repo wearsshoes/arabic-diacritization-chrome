@@ -3,7 +3,6 @@ import { calculateHash } from '../common/utils';
 import { getTextElementsAndIndexDOM, replaceWebpageText, getTextNodesInRange } from './domUtils';
 import { AppMessage, AppResponse, ElementAttributes } from '../common/types';
 
-console.log('Content being setup');
 let textElements: TextNode[] = [];
 let pageMetadata: PageMetadata | null = null;
 let mainNode = document.body;
@@ -27,57 +26,80 @@ const onContentLoaded = () => {
 };
 
 const listener = (request: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse) => void) => {
+  console.log('contentUtils received message:', request.action);
 
-  const { action, originals, replacements, method, url } = request;
+  const actionHandlers: Record<string, (message: AppMessage) => Promise<AppResponse>> = {
+    'getWebsiteData': handleGetWebsiteData,
+    'getWebsiteMetadata': handleGetWebsiteMetadata,
+    'getWebsiteText': handleGetWebsiteText,
+    'getSelectedNodes': handleGetSelectedNodes,
+    'updateWebsiteText': handleUpdateWebsiteText,
+    'diacritizationChunkFinished': handleDiacritizationChunkFinished,
+  };
 
-  console.log('contentUtils received message:', action);
-  switch (action) {
+  const handler = actionHandlers[request.action];
 
-    case 'getWebsiteData': {
-      console.log({ 'Main node': mainNode, 'PageMetadata': pageMetadata, 'Text elements': textElements });
-      const language = document.documentElement.lang;
-      const characterCount = mainNode.innerText?.length || 0;
-      sendResponse({ status: 'success', language, characterCount });
-      return true;
-    }
-
-    case 'getWebsiteMetadata':
-      if (pageMetadata && diacritizedStatus) {
-      sendResponse({ status: 'success', pageMetadata, diacritizedStatus });
-      } else {
-        sendResponse({ status: 'error', error: new Error('No metadata available') });
-      }
-      return true;
-
-    case 'getWebsiteText':
-      console.log('Sending website text:', textElements);
-      sendResponse({ status: 'success', selectedNodes: textElements });
-      return true;
-
-    case 'getSelectedNodes': {
-      const selection = window.getSelection();
-      if (selection !== null) {
-        console.log(selection.toString());
-        const range = selection.getRangeAt(0);
-        const textNodes = getTextNodesInRange(range);
-        sendResponse({ status: 'success', selectedNodes: textNodes, diacritizedStatus });
-      }
-      return true;
-    }
-
-    case 'updateWebsiteText' || 'diacritizationChunkFinished':
-      console.log('Updating website text', originals, replacements, method, url);
-      editingContent = true;
-      if (originals && replacements && method && url === window.location.href) {
-        replaceWebpageText(originals, replacements, method);
-        diacritizedStatus = method;
-      }
-      editingContent = false;
-      // TODO: also set whether the whole page is diacritized
-      // sendResponse({ method, result: 'success' });
-      return false;
+  if (handler) {
+    handler(request)
+      .then((response) => sendResponse(response))
+      .catch((error) => {
+        console.error(`Error processing ${request.action}:`, error);
+        sendResponse({ status: 'error', error: error as Error });
+      });
+    return true;
+  } else {
+    console.error(`Invalid action: ${request.action}`);
+    sendResponse({ status: 'error', error: new Error('Invalid action') });
   }
 };
+
+// ----------------- Functions ----------------- //
+
+async function handleGetWebsiteData(): Promise<AppResponse> {
+  console.log({ 'Main node': mainNode, 'PageMetadata': pageMetadata, 'Text elements': textElements });
+  const language = document.documentElement.lang;
+  const characterCount = mainNode.innerText?.length || 0;
+  return { status: 'success', language, characterCount };
+}
+
+async function handleGetWebsiteMetadata(): Promise<AppResponse> {
+  if (pageMetadata && diacritizedStatus) {
+    return { status: 'success', pageMetadata, diacritizedStatus };
+  } else {
+    throw new Error('No metadata available');
+  }
+}
+
+async function handleGetWebsiteText(): Promise<AppResponse> {
+  console.log('Sending website text:', textElements);
+  return { status: 'success', selectedNodes: textElements };
+}
+
+async function handleGetSelectedNodes(): Promise<AppResponse> {
+  const selection = window.getSelection();
+  if (selection !== null) {
+    console.log(selection.toString());
+    const range = selection.getRangeAt(0);
+    const textNodes = getTextNodesInRange(range);
+    return { status: 'success', selectedNodes: textNodes, diacritizedStatus };
+  } else {
+    throw new Error('No selection available');
+  }
+}
+
+async function handleUpdateWebsiteText(message: AppMessage): Promise<AppResponse> {
+  editingContent = true;
+  if (message.originals && message.replacements && message.method && message.url === window.location.href) {
+    replaceWebpageText(message.originals, message.replacements, message.method);
+    diacritizedStatus = message.method;
+  }
+  editingContent = false;
+  return { status: 'success' };
+}
+
+async function handleDiacritizationChunkFinished(message: AppMessage): Promise<AppResponse> {
+  return handleUpdateWebsiteText(message);
+}
 
 // Scrape webpage data for the content script
 const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {
@@ -162,6 +184,7 @@ const observer = new MutationObserver((mutations) => {
 
 // MAIN
 const main = () => {
+  console.log('Content being setup');
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', onContentLoaded);
   } else {
