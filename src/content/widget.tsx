@@ -31,7 +31,7 @@ const ContentWidget: React.FC = () => {
   };
 
   const cancelAction = async () => {
-    const response = await chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'cancelAll' });
+    const response = await chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'cancelTask' });
     console.log('Cancel response:', response);
     if (response.status === 'success') {
       setIsAnimating(false);
@@ -42,7 +42,7 @@ const ContentWidget: React.FC = () => {
 
   useEffect(() => {
     chrome.runtime.sendMessage({ action: 'widgetHandshake' }, (response) => {
-      response.success ? onOpen() : onClose();
+      response.status === 'success' ? onOpen() : onClose();
     });
   });
 
@@ -66,7 +66,7 @@ const ContentWidget: React.FC = () => {
   const beginDiacritization = () => {
     try {
       // setDiacritizeStatus('Processing ...');
-      chrome.runtime.sendMessage({ action: 'sendToDiacritize', method });
+      chrome.runtime.sendMessage({ action: 'processWebpage', method });
       // console.log(`${method} response:`, response);
     } catch (error) {
       // setDiacritizeStatus(`Error processing ${method}:` + error);
