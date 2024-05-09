@@ -97,19 +97,12 @@ export class DiacritizationDataManager {
 function openDatabase(dbName: string, storeName: string, version: number): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(dbName, version);
-
-    request.onerror = () => {
-      reject(request.error);
-    };
-
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
-
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
       db.createObjectStore(storeName, { keyPath: 'id' });
     };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
   });
 }
 
@@ -119,13 +112,8 @@ function saveData(db: IDBDatabase, storeName: string, { item, key }: { item: str
     const store = transaction.objectStore(storeName);
     const request = store.put(item, key);
 
-    request.onerror = () => {
-      reject(request.error);
-    };
-
-    request.onsuccess = () => {
-      resolve();
-    };
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
   });
 }
 
@@ -135,13 +123,8 @@ function clearData(db: IDBDatabase, storeName: string, dataId: string): Promise<
     const store = transaction.objectStore(storeName);
     const request = store.delete(dataId);
 
-    request.onerror = () => {
-      reject(request.error);
-    };
-
-    request.onsuccess = () => {
-      resolve();
-    };
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
   });
 }
 
@@ -151,13 +134,8 @@ function loadData<T>(db: IDBDatabase, storeName: string, id: string): Promise<T>
     const store = transaction.objectStore(storeName);
     const request = store.get(id);
 
-    request.onerror = () => {
-      reject(request.error);
-    };
-
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
   });
 }
 
@@ -165,12 +143,7 @@ function deleteDatabase(database: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.deleteDatabase(database);
 
-    request.onerror = () => {
-      reject(request.error);
-    };
-
-    request.onsuccess = () => {
-      resolve();
-    };
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
   });
 }
