@@ -37,35 +37,29 @@ chrome.runtime.onInstalled.addListener(function (details) {
 });
 
 // Listen for messages from content scripts
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse: (response: AppResponse) => void) => {
 
   console.log('Received message:', message.action);
   try {
 
     switch (message.action) {
       case 'widgetHandshake':
-        console.log('Widget handshake received.');
-        sendResponse({ success: true });
         break;
 
       case 'contentLoaded':
-        console.log('Content loaded.');
         contentScriptReady = true;
         processQueuedMessages();
-        sendResponse({ success: true });
         break;
 
       case 'getAPIKey':
         getAPIKey()
-          .then((key) => sendResponse({ key }))
-          .catch((error) => sendResponse({ error }));
+          .then((key) => sendResponse({ status: 'success', key }))
         return true;
 
       case 'getSystemPromptLength':
         if (message.prompt) {
           countSysPromptTokens(message.prompt)
-            .then((tokens) => sendResponse({ tokens }))
-            .catch((error) => sendResponse({ error }));
+            .then((tokens) => sendResponse({ status: 'success', tokens }))
         }
         return true;
 
@@ -75,49 +69,55 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       case 'getWebsiteData':
         (async () => {
-          if (tab.id === 0) {
-            tab = await getActiveTab();
-          }
+          const tab = sender.tab ? sender.tab : await getActiveTab();
+          if (!tab.id) throw new Error('No active tab found');
           messageContentScript(tab.id, { action: 'getWebsiteData' })
-            .then((websiteData) => sendResponse({ websiteData }))
-            .catch((error) => sendResponse({ error: error.message }));
+            .then((websiteData) => sendResponse(websiteData))
         })();
         return true;
 
       case 'getSavedDiacritizations':
-        getSavedInfo()
+        (async () => {
+          const tab = sender.tab ? sender.tab : await getActiveTab();
+          getSavedInfo(tab)
           .then((savedInfo) => {
-            console.log(savedInfo)
-            sendResponse({ savedInfo })
+              sendResponse({ status: 'success', savedInfo })
           })
-          .catch((error) => {
-            console.log(error);
-            sendResponse({ error: error.message })
           });
         return true;
 
       // Handle the diacritization request
       case 'sendToDiacritize':
         if (sender.tab) {
-          tab.id = sender.tab.id || 0;
-          tab.url = sender.tab.url || "";
+          if (message.method) {
+            processFullWebpage(sender.tab, message.method)
         }
-        if (message.method) {
-          processFullWebpage(message.method)
         }
-        sendResponse({ success: true });
+        sendResponse({ status: 'success' });
         break;
 
       // Clear the current webpage data
       case 'clearWebPageData':
-        clearWebsiteData()
-          .then((result) => sendResponse({ result }))
+        getActiveTab()
+          .then((tab) => {
+            clearWebsiteData(tab)
+              .then(() => sendResponse({ status: 'success' }))
+          })
         return true;
 
       // Clear the database
       case 'clearDatabase':
         dataManager.clearAllData()
-          .then((result) => sendResponse({ result }))
+          .then(() => sendResponse({ status: 'success' }))
+        return true;
+
+      case 'cancelAll':
+        async () => {
+          const tab = sender.tab ? sender.tab : await getActiveTab();
+          if (!tab.id) throw new Error("Unclear which tab process to cancel");
+          cancelTask(tab.id);
+          sendResponse({ status: 'success' });
+        }
         return true;
 
       default:
@@ -125,13 +125,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
   } catch (error) {
     console.error('Error processing message:', error);
-    sendResponse({ error });
+    sendResponse({ status: 'error', error: error as Error });
   }
 });
 
 chrome.contextMenus.onClicked.addListener(async function (info, tab) {
   if (!tab) {
-    console.error("No tab found.");
+    console.error(new Error(`${info.menuItemId}: ${tab} doesn't exist.`));
     return;
   }
   if (info.menuItemId === "processSelectedText") {
