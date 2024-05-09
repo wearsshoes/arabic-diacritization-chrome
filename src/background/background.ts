@@ -171,29 +171,26 @@ chrome.commands.onCommand.addListener((command) => {
 // ----------------- Functions ----------------- //
 
 let contentScriptReady = false;
-export let tab: { id: number, url: string } = { id: 0, url: '' };
+
 const messageQueue: { tabId: number, message: AppMessage, resolve: (value: AppResponse | PromiseLike<AppResponse>) => void }[] = [];
 export const dataManager = DiacritizationDataManager.getInstance();
 
-async function getSavedInfo() {
-  await dataManager.getWebPageData(tab.url)
-    .then((response) => {
+async function getActiveTab(): Promise<chrome.tabs.Tab> {
+  return chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => tabs[0]);
+}
+
+async function getSavedInfo(tab: chrome.tabs.Tab): Promise<string[]> {
+  if (!tab.url) throw new Error('No URL to get saved info for.');
+  const response = await dataManager.getWebPageData(tab.url);
       const savedDiacritizations = (Object.keys(response?.diacritizations || {})).filter((key) => (key !== 'original'));
-      return (savedDiacritizations);
-    })
-    .catch((error) => { throw error });
+  return savedDiacritizations;
 }
 
-async function clearWebsiteData() {
-  await dataManager.clearWebPageData(tab.url as string)
-    .then(() => { return 'Website data cleared.' });
-  chrome.tabs.reload(tab.id)
-}
-
-export async function getActiveTab(): Promise<{ id: number, url: string }> {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab.id === undefined) throw new Error('No active tab found');
-  return { id: tab.id as number, url: tab.url as string };
+async function clearWebsiteData(tab: chrome.tabs.Tab): Promise<boolean> {
+  if (!tab.url) throw new Error('No URL to clear saved info for..');
+  await dataManager.clearWebPageData(tab.url);
+  if (tab.id) chrome.tabs.reload(tab.id);
+  return true;
 }
 
 export function messageContentScript(tabId: number, message: AppMessage): Promise<AppResponse> {
