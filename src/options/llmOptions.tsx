@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import defaultPrompts from '../background/defaultPrompts.json';
 import { Prompt } from '../common/types';
 
-import { Box, Center, Card, HStack, VStack, Input, Textarea, Select, Heading, Button } from '@chakra-ui/react'
+import { HStack, VStack, Input, Textarea, Select, Heading, Button } from '@chakra-ui/react'
 
 const LLMOptions: React.FC = () => {
   const [llmChoice, setLlmChoice] = useState('haiku');
@@ -87,52 +87,45 @@ const LLMOptions: React.FC = () => {
   };
 
   return (
-    <Box padding='5'maxW='container.lg'>
-      <Center>
-        <Heading size='lg' marginBottom='5'>LLM Options</Heading>
-      </Center>
-      <Card id="llmChoice" padding='5'>
+    <VStack>
+      <Heading size='md'>Model</Heading>
+      <Select id="llmChoice" name="llmChoice" value={llmChoice} onChange={handleLlmChoiceChange}>
+        <option value="haiku">Claude Haiku</option>
+      </Select>
+      <Heading size='md'>Custom Prompt</Heading>
+      <Textarea
+        id="customPromptTextArea"
+        name="customPrompt"
+        rows={16}
+        cols={50}
+        value={customPrompt}
+        onChange={handleCustomPromptChange}
+      ></Textarea>
+      <HStack>
         <VStack>
-          <Heading size='md'>Model</Heading>
-          <Select id="llmChoice" name="llmChoice" value={llmChoice} onChange={handleLlmChoiceChange}>
-            <option value="haiku">Claude Haiku</option>
-          </Select>
-          <Heading size='md'>Custom Prompt</Heading>
-          <Textarea
-            id="customPromptTextArea"
-            name="customPrompt"
-            rows={16}
-            cols={50}
-            value={customPrompt}
-            onChange={handleCustomPromptChange}
-          ></Textarea>
+          <Heading size='md'>Saved Prompts</Heading>
           <HStack>
-            <VStack>
-              <Heading size='md'>Saved Prompts</Heading>
-              <HStack>
-                <Select id="loadPrompt" name="loadPrompt" onChange={handleLoadPromptChange}>
-                  {savedPrompts.map((prompt) => (
-                    <option key={prompt.name} value={prompt.name}>
-                      {prompt.name}
-                    </option>
-                  ))}
-                </Select>
-                <Button id="deletePromptBtn" onClick={handleDeletePrompt}>Delete</Button>
-              </HStack>
-            </VStack>
-            <VStack>
-              <Heading size='md'>New Prompt Name</Heading>
-              <form id="savePromptForm" onSubmit={handleSavePrompt}>
-                <HStack>
-                  <Input type="text" id="newPromptName" name="newPromptName" />
-                  <Button type="submit" id="savePromptBtn">Save</Button>
-                </HStack>
-              </form>
-            </VStack>
+            <Select id="loadPrompt" name="loadPrompt" onChange={handleLoadPromptChange}>
+              {savedPrompts.map((prompt) => (
+                <option key={prompt.name} value={prompt.name}>
+                  {prompt.name}
+                </option>
+              ))}
+            </Select>
+            <Button id="deletePromptBtn" onClick={handleDeletePrompt}>Delete</Button>
           </HStack>
         </VStack>
-      </Card>
-    </Box>
+        <VStack>
+          <Heading size='md'>New Prompt Name</Heading>
+          <form id="savePromptForm" onSubmit={handleSavePrompt}>
+            <HStack>
+              <Input type="text" id="newPromptName" name="newPromptName" />
+              <Button type="submit" id="savePromptBtn">Save</Button>
+            </HStack>
+          </form>
+        </VStack>
+      </HStack>
+    </VStack>
   );
 };
 

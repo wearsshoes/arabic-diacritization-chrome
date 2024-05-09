@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, FormControl, Card, Grid, GridItem, Text, Input, Heading, Button, VStack } from '@chakra-ui/react'
+import { Stack, Text, Input, Heading, Button } from '@chakra-ui/react'
 
 const APIKeyForm: React.FC = () => {
 
@@ -37,31 +37,18 @@ const APIKeyForm: React.FC = () => {
   };
 
   return (
-    <Box id="apiKeyForm" maxW='lg'>
-      <VStack spacing='5'>
-        <Heading size='lg'>API Key</Heading>
-        <Card padding='5'>
-        <FormControl id="optionsForm">
-          <Grid templateColumns='repeat(5, 1fr)' gap={4}>
-            <GridItem colSpan={4} w='100%'>
-              <Input type="text" id="apiKey" name="apiKey" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
-            </GridItem>
-            <GridItem colSpan={1} w='100%'>
-              <Button id="saveBtn" onClick={handleApiKeySubmit}>Save</Button>
-            </GridItem>
-          </Grid>
-        </FormControl>
-        </Card>
-
-        <Card width='100%' padding='5'>
-          <Text fontWeight='bold'>Current saved key:</Text>
-          <Text id="savedKey">{savedKeyDisplay}</Text>
-          <Text fontWeight='bold'>Last saved at: </Text>
-          <Text id="savedTime">{savedTimeDisplay}</Text>
-          <Button id="clearBtn" onClick={handleClearApiKey}>Clear</Button>
-        </Card>
-      </VStack>
-    </Box>
+    <Stack direction='column' textAlign={'center'} id="apiKeyForm">
+      <Heading size='sm'>API Key</Heading>
+      <Stack direction='row'>
+        <Input type="text" id="apiKey" name="apiKey" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
+        <Button id="saveBtn" onClick={handleApiKeySubmit}>Save</Button>
+        <Button id="clearBtn" onClick={handleClearApiKey}>Clear</Button>
+      </Stack>
+      <Text fontWeight='bold'>Current saved key:</Text>
+      <Text id="savedKey">{savedKeyDisplay}</Text>
+      <Text fontWeight='bold'>Last saved at: </Text>
+      <Text id="savedTime">{savedTimeDisplay}</Text>
+    </Stack>
   );
 };
 
