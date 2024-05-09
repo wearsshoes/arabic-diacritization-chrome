@@ -3,10 +3,12 @@ import Anthropic from '@anthropic-ai/sdk';
 import BottleneckLight from "bottleneck/light.js";
 import { calculateHash } from '../common/utils';
 import { getAPIKey } from "../common/utils";
+import { Prompt } from '../common/types';
+
 export { claude, defaultModel, anthropicAPICall, countSysPromptTokens };
 
 export class Claude {
-  constructor(
+ constructor(
     public model: Model = defaultModel,
     public apiKey: string = ''
   ) {
@@ -147,4 +149,30 @@ function saveSysPromptTokenCount(promptHash: string, model: string, tokens: numb
     savedResults.push({ hash: promptHash, model, tokens });
     chrome.storage.sync.set({ savedResults });
   });
+}
+
+// Function to construct the message and make the API call
+export function constructAnthropicMessage(
+  text: string,
+  prompt: Prompt,
+  claude: Claude
+
+): Anthropic.Messages.MessageCreateParams {
+  return {
+    model: claude.model.currentVersion,
+    max_tokens: 4000,
+    temperature: 0,
+    system: prompt.text,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: text,
+          }
+        ]
+      }
+    ]
+  };
 }
