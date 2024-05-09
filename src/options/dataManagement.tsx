@@ -1,19 +1,20 @@
 import React from 'react';
 import { Center, Button } from '@chakra-ui/react'
+import { AppMessage, AppResponse } from '../common/types';
 
 const Options: React.FC = () => {
 
   const handleClearDatabase = () => {
     if (confirm('Are you sure you want to clear the database?')) {
-      chrome.runtime.sendMessage({ action: 'clearDatabase' }, (response) => {
-        if (response.message) {
-          document.getElementById('databaseMessage')!.textContent = response.message;
-        } else {
-          document.getElementById('databaseMessage')!.textContent = 'Failed to clear database: no response from background script';
-        }
-      });
+      try {
+        chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'clearDatabase' }, (response) => {
+          document.getElementById('databaseMessage')!.textContent = response.status;
+        });
+      } catch (error) {
+        document.getElementById('databaseMessage')!.textContent = `Error clearing database: ${error}`;
+      }
     }
-  };
+  }
 
   return (
     <Center>

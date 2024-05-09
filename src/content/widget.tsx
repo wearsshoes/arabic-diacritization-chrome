@@ -41,7 +41,8 @@ const ContentWidget: React.FC = () => {
   };
 
   useEffect(() => {
-    chrome.runtime.sendMessage<AppMessage>({ action: 'widgetHandshake' });
+    chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'widgetHandshake' });
+    onOpen();
   }, [onOpen]);
 
   useEffect(() => {
@@ -64,7 +65,7 @@ const ContentWidget: React.FC = () => {
   const beginDiacritization = () => {
     try {
       // setDiacritizeStatus('Processing ...');
-      chrome.runtime.sendMessage({ action: 'processWebpage', method });
+      chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processWebpage', method });
       // console.log(`${method} response:`, response);
     } catch (error) {
       // setDiacritizeStatus(`Error processing ${method}:` + error);
@@ -154,7 +155,7 @@ const ContentWidget: React.FC = () => {
                 size="xs"
                 variant="ghost"
                 icon={<SettingsIcon boxSize={4} />}
-                onClick={() => chrome.runtime.sendMessage({ action: 'openOptionsPage' })}
+                onClick={() => chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'openOptionsPage' })}
               />
               <Button
                 aria-label='Toggle Language'

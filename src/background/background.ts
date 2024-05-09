@@ -112,7 +112,7 @@ chrome.commands.onCommand.addListener((command) => {
       chrome.tabs.query({ active: true, currentWindow: true })
         .then(([tab]) => {
           if (tab.id === undefined) throw new Error('No active tab found');
-          chrome.tabs.sendMessage(tab.id, { action: 'toggleWidget' });
+          chrome.tabs.sendMessage<AppMessage, AppResponse>(tab.id, { action: 'toggleWidget' });
         });
       break;
   }
@@ -223,12 +223,12 @@ async function handleGetSavedDiacritizations(sender: chrome.runtime.MessageSende
 export function messageContentScript(tabId: number, message: AppMessage): Promise<AppResponse> {
   if (contentScriptReady) {
     return new Promise((resolve, reject) => {
-      chrome.tabs.sendMessage(tabId, message, (response) => {
+      chrome.tabs.sendMessage<AppMessage, AppResponse>(tabId, message, (response) => {
         if (chrome.runtime.lastError) {
           console.log('Error sending message:', message);
           reject(chrome.runtime.lastError);
         } else {
-          resolve(response !== undefined ? response : null);
+          resolve(response !== undefined ? response : { status: 'error', error: new Error('No response') });
         }
       });
     });

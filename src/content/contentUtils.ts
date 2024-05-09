@@ -19,7 +19,7 @@ const onContentLoaded = () => {
   console.log('Content loaded');
   mainNode = (document.body.querySelector('main, #main') as HTMLElement || document.body);
   scrapeContent(mainNode).then(() => {
-    chrome.runtime.sendMessage({ action: 'contentLoaded' });
+    chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'contentLoaded' });
     observer.observe(document.body, observerOptions);
   });
   document.removeEventListener('DOMContentLoaded', onContentLoaded);
@@ -180,7 +180,6 @@ const observer = new MutationObserver((mutations) => {
       });
   }
 });
-
 
 // MAIN
 const main = () => {

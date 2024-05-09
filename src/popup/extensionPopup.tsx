@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client'
+import { AppMessage, AppResponse } from '../common/types';
 
 import { Prompt } from '../common/types';
 
@@ -41,7 +42,7 @@ const App: React.FC = () => {
   useEffect(() => {
     //   // Check API key
     //   (async () => {
-    //     const response = await chrome.runtime.sendMessage({ action: 'getAPIKey' });
+    //     const response = await chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'getAPIKey' });
     //     console.log('API key response:', response);
     //     if (response.key) {
     //       setApiKeyFound(true);
@@ -87,23 +88,24 @@ const App: React.FC = () => {
   }, [outputTokenCount, characterCount, promptLength]);
 
   const getWebsiteData = async () => {
-    interface WebsiteData {
-      characterCount: number;
-      language: string;
-    }
-    chrome.runtime.sendMessage({ action: 'getWebsiteData' }, (response) => {
-      const { websiteData }: { websiteData: WebsiteData } = response;
-      if (websiteData.language) {
+    chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'getWebsiteData' }, (response) => {
+      if (response.status === 'error') {
+        console.error('Error getting website data:', response.error);
+        return;
+      }
+      const { characterCount, language } = response;
+      if (language) {
         const languageNamesInEnglish = new Intl.DisplayNames(['en'], { type: 'language' });
         const languageNamesInArabic = new Intl.DisplayNames(['ar'], { type: 'language' });
-        const lang = languageNamesInEnglish.of(websiteData.language) || 'unknown';
-        const lang_ar = languageNamesInArabic.of(websiteData.language) || 'unknown';
+        const lang = languageNamesInEnglish.of(language) || 'unknown';
+        const lang_ar = languageNamesInArabic.of(language) || 'unknown';
         setPageLanguage(lang + ' (' + lang_ar + ')');
       }
-
-      setContentLoaded(true);
-      setCharacterCount(websiteData.characterCount);
-      setOutputTokenCount(websiteData.characterCount * 2.3);
+      if (characterCount) {
+        setContentLoaded(true);
+        setCharacterCount(characterCount);
+        setOutputTokenCount(characterCount * 2.3);
+      }
     });
   };
 
@@ -111,11 +113,14 @@ const App: React.FC = () => {
     chrome.storage.sync.get(['selectedPrompt'], (data: { selectedPrompt?: Prompt }) => {
       if (data.selectedPrompt) {
         setSelectedPrompt(data.selectedPrompt.name);
-        chrome.runtime.sendMessage(
+        chrome.runtime.sendMessage<AppMessage, AppResponse>(
           { action: 'getSystemPromptLength', prompt: data.selectedPrompt.text },
           (response) => {
-            if (response.tokens) {
+            if (response.status === 'success' && response.tokens) {
               setPromptLength(response.tokens);
+            } else {
+              console.error('Error getting prompt length:', response.error || 'tokens unknown');
+              setPromptLength(0);
             }
           });
       }
@@ -124,14 +129,17 @@ const App: React.FC = () => {
 
   const getSavedDiacrititizations = () => {
     try {
-      chrome.runtime.sendMessage({ action: 'getSavedDiacritizations' }, (response) => {
+      chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'getSavedDiacritizations' }, (response) => {
         console.log('Saved info:', response);
-        if (response.savedInfo && response.savedInfo.length > 0) {
-          const savedInfo = response.savedInfo.join(', ');
-          setSavedInfo('Existing diacritizations: ' + savedInfo);
-        } else {
-          setSavedInfo('No saved diacritizations.');
-        }
+        if (response.status === 'error') {
+          throw new Error(`${response.error}`);
+        } else
+          if (response.savedInfo && response.savedInfo.length > 0) {
+            const savedInfo = response.savedInfo.join(', ');
+            setSavedInfo('Existing diacritizations: ' + savedInfo);
+          } else {
+            setSavedInfo('No saved diacritizations.');
+          }
       });
     } catch (error) {
       console.error('Error getting saved info:', error);
@@ -142,7 +150,7 @@ const App: React.FC = () => {
   const beginDiacritization = async () => {
     try {
       setDiacritizeStatus('Diacritizing, see progress bar modal...');
-      const response = await chrome.runtime.sendMessage({ action: 'processWebpage', method });
+      const response = await chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processWebpage', method });
       console.log(`${method} response:`, response);
       setDiacritizeStatus('Diacritization complete, page updated.');
     } catch (error) {
@@ -153,13 +161,12 @@ const App: React.FC = () => {
 
   const clearSaved = () => {
     setSavedInfo('clearing cache info for page');
-    chrome.runtime.sendMessage({ action: 'clearWebpageData' }, (response) => {
-      if (response.message) {
-        console.log('Cleared saved data:', response);
+    chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'clearWebpageData' }, (response) => {
+      if (response.status === 'success') {
         setSavedInfo('Cleared saved data.');
         setLoadState(false);
       } else {
-        console.error('Failed to clear saved data:', response);
+        console.error('Failed to clear saved data:', response.error);
         setSavedInfo('Failed to clear saved data.');
       }
     });
@@ -169,7 +176,7 @@ const App: React.FC = () => {
     <Box padding='2' w='360px'>
       <Stack spacing={2} align="auto">
         <Stack>
-          <Heading fontFamily={'basmala'} padding={2} marginTop={5} marginBottom={0}  textAlign='center' lineHeight={0}>ArabEasy</Heading>
+          <Heading fontFamily={'basmala'} padding={2} marginTop={5} marginBottom={0} textAlign='center' lineHeight={0}>ArabEasy</Heading>
           <Text fontSize={'md'} align={'center'}> This popup is still under construction. Recommend using the onscreen widget (Control-Shift-2 / Command-Shift-2 to restore if closed).</Text>
         </Stack>
         <Button size='xs' onClick={() => chrome.runtime.openOptionsPage()}>Open Options Page</Button>
@@ -178,12 +185,12 @@ const App: React.FC = () => {
         <Accordion alignContent={'center'} allowToggle>
           <AccordionItem width='100%'>
             <Heading size='md'>
-                <AccordionButton>
-              <Box as='span' flex='1' textAlign='left'>
-                Page Information
+              <AccordionButton>
+                <Box as='span' flex='1' textAlign='left'>
+                  Page Information
                 </Box>
-                  <AccordionIcon />
-                </AccordionButton>
+                <AccordionIcon />
+              </AccordionButton>
             </Heading>
             <AccordionPanel textAlign={'center'} padding='2'>
               <Stack direction='column' alignContent='auto'>
@@ -207,11 +214,11 @@ const App: React.FC = () => {
           </AccordionItem>
         </Accordion>
 
-          <Heading size='md' marginBottom={2}>Cache Info</Heading>
-          <Text>{savedInfo}</Text>
-          <Button size='sm' onClick={() => clearSaved()}>Clear Saved Data</Button>
+        <Heading size='md' marginBottom={2}>Cache Info</Heading>
+        <Text>{savedInfo}</Text>
+        <Button size='sm' onClick={() => clearSaved()}>Clear Saved Data</Button>
 
-          <Heading size='md' marginBottom={2}>Task</Heading>
+        <Heading size='md' marginBottom={2}>Task</Heading>
         <Stack>
           <Select
             size='sm'
