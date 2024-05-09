@@ -30,10 +30,10 @@ export class DiacritizationDataManager {
     try {
       const urlHash = await calculateHash(url);
       console.log("Getting data for", urlHash);
-      const serializedData = await loadData<string>(this.db, "diacritizations_msa", urlHash);
+      const serializedData = await loadData<{ id: string, data: string }>(this.db, "diacritizations_msa", urlHash);
       if (serializedData) {
         console.log("Data found", serializedData);
-        return WebpageDiacritizationData.fromJSON(serializedData);
+        return WebpageDiacritizationData.fromJSON(serializedData.data);
       } else {
         return undefined;
       }
