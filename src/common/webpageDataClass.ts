@@ -22,7 +22,7 @@ export interface Diacritizations {
     [method: string]: NodeHashDict
 }
 
-export class WebPageDiacritizationData {
+export class WebpageDiacritizationData {
     diacritizations: Diacritizations = {};
 
     private constructor(
@@ -34,7 +34,7 @@ export class WebPageDiacritizationData {
         metadata: PageMetadata,
     ) {
         const id = await calculateHash(metadata.pageUrl)
-        return new WebPageDiacritizationData(id, metadata)
+        return new WebpageDiacritizationData(id, metadata)
     }
 
     async createOriginal(websiteText: TextNode[]) {
@@ -88,10 +88,10 @@ export class WebPageDiacritizationData {
     }
 
     // Deserialization method
-    static fromJSON(json: string): WebPageDiacritizationData {
+    static fromJSON(json: string): WebpageDiacritizationData {
         const parsedData = JSON.parse(json);
         const { id, metadata, diacritizations } = parsedData;
-        const instance = new WebPageDiacritizationData(id, metadata);
+        const instance = new WebpageDiacritizationData(id, metadata);
         instance.diacritizations = diacritizations;
         return instance;
     }

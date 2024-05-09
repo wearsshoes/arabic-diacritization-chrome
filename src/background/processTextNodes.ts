@@ -1,5 +1,5 @@
 import { AppResponse } from '../common/types';
-import { PageMetadata, TextNode, WebPageDiacritizationData } from "../common/webpageDataClass";
+import { PageMetadata, TextNode, WebpageDiacritizationData as WebpageDiacritizationData } from "../common/webpageDataClass";
 import { arabicToArabizi } from "./arabizi";
 import { fullDiacritization } from "./arabicDiacritization";
 import { messageContentScript, dataManager, controllerMap } from './background';
@@ -19,7 +19,7 @@ export async function processSelectedText(tab: chrome.tabs.Tab, method: string =
   const { selectedNodes = [] } = request;
   if (selectedNodes.length === 0) {
     console.log("No text selected, processing full webpage.");
-    await processFullWebpage(tab, method);
+    await processWebpage(tab, method);
     return;
   }
 
@@ -33,7 +33,7 @@ export async function processSelectedText(tab: chrome.tabs.Tab, method: string =
   await messageContentScript(tab.id, { action: 'updateWebsiteText', url: tab.url, originals: selectedNodes, replacements: replacementText, method });
 }
 
-export async function processFullWebpage(tab: chrome.tabs.Tab, method: string): Promise<AppResponse> {
+export async function processWebpage(tab: chrome.tabs.Tab, method: string): Promise<AppResponse> {
 
   if (!tab.id || !tab.url) return ({ status: 'error', error: new Error('No tab ID or URL found') });
   const { id: tabId, url: tabUrl } = tab;
@@ -49,11 +49,11 @@ export async function processFullWebpage(tab: chrome.tabs.Tab, method: string): 
   if (!pageMetadata) {
     return ({ status: 'error', error: new Error('Did not recieve pageMetadata from content') });
   }
-  const webPageDiacritizationData = await WebPageDiacritizationData.build(pageMetadata);
+  const webpageDiacritizationData = await WebpageDiacritizationData.build(pageMetadata);
   console.log('Website metadata:', pageMetadata);
 
   // Load the saved data for the current webpage
-  const retrievedPageData = await dataManager.getWebPageData(tab.url);
+  const retrievedPageData = await dataManager.getWebpageData(tab.url);
   console.log('Retrieved page data:', retrievedPageData);
 
   let userMessage: string = '';
@@ -77,7 +77,7 @@ export async function processFullWebpage(tab: chrome.tabs.Tab, method: string): 
 
     // If saved data doesn't contain the requested diacritization method, retrieve all other saved diacritizations, continue
     if (!Object.hasOwn(retrievedPageData.diacritizations, method)) {
-      webPageDiacritizationData.diacritizations = retrievedPageData.diacritizations;
+      webpageDiacritizationData.diacritizations = retrievedPageData.diacritizations;
       userMessage = `Webpage is unchanged, generating ${method} from saved data: ${retrievedPageData.diacritizations}`;
       return false;
     }
@@ -96,7 +96,7 @@ export async function processFullWebpage(tab: chrome.tabs.Tab, method: string): 
   }
 
   // Get the website text
-  if (!webPageDiacritizationData.diacritizations['original']) {
+  if (!webpageDiacritizationData.diacritizations['original']) {
     const response = await messageContentScript(tab.id, { action: 'getWebsiteText' });
     if (response.status === 'error') {
       return response;
@@ -106,30 +106,30 @@ export async function processFullWebpage(tab: chrome.tabs.Tab, method: string): 
       return ({ status: 'error', error: new Error('Did not recieve TextNodes array from content script.') });
     }
     console.log('Retrieved original website text:', selectedNodes);
-    await webPageDiacritizationData.createOriginal(selectedNodes);
+    await webpageDiacritizationData.createOriginal(selectedNodes);
   }
 
   // Process the webpage
   switch (method) {
     // If the method is 'fullDiacritics' and saved data exists for the current webpage, return the saved results
     case 'fullDiacritics':
-      await fullDiacritization(tabId, tabUrl, webPageDiacritizationData.getDiacritization('original'), controller.signal)
+      await fullDiacritization(tabId, tabUrl, webpageDiacritizationData.getDiacritization('original'), controller.signal)
         .then((fullDiacritics) => {
-          webPageDiacritizationData.addDiacritization(fullDiacritics, method);
+          webpageDiacritizationData.addDiacritization(fullDiacritics, method);
         });
       break;
 
     case 'arabizi': {
-      if (!webPageDiacritizationData.diacritizations['fullDiacritics']) {
+      if (!webpageDiacritizationData.diacritizations['fullDiacritics']) {
         console.log("Full diacritization doesn't exist, Diacritizing text first");
-        await fullDiacritization(tabId, tabUrl, webPageDiacritizationData.getDiacritization('original'), controller.signal)
+        await fullDiacritization(tabId, tabUrl, webpageDiacritizationData.getDiacritization('original'), controller.signal)
           .then((fullDiacritics) => {
-            webPageDiacritizationData.addDiacritization(fullDiacritics, 'fullDiacritics');
+            webpageDiacritizationData.addDiacritization(fullDiacritics, 'fullDiacritics');
           });
       }
 
-      const arabiziNodes: TextNode[] = arabicToArabizi(webPageDiacritizationData.getDiacritization('fullDiacritics'));
-       webPageDiacritizationData.addDiacritization(arabiziNodes, method);
+      const arabiziNodes: TextNode[] = arabicToArabizi(webpageDiacritizationData.getDiacritization('fullDiacritics'));
+       webpageDiacritizationData.addDiacritization(arabiziNodes, method);
       break;
     }
 
@@ -139,13 +139,13 @@ export async function processFullWebpage(tab: chrome.tabs.Tab, method: string): 
 
   // Update the saved metadata
   console.log('Updating saved web page data');
-  dataManager.updateWebPageData(tab.url, webPageDiacritizationData)
-    .then(() => console.log('Saved webpage data updated:', webPageDiacritizationData))
+  dataManager.updateWebpageData(tab.url, webpageDiacritizationData)
+    .then(() => console.log('Saved webpage data updated:', webpageDiacritizationData))
     .catch((error) => console.error('Failed to update saved webpage data:', error));
 
   // Update the website text
-  const original = webPageDiacritizationData.getDiacritization('original');
-  const diacritization = webPageDiacritizationData.getDiacritization(method);
+  const original = webpageDiacritizationData.getDiacritization('original');
+  const diacritization = webpageDiacritizationData.getDiacritization(method);
   messageContentScript(tab.id, { action: 'updateWebsiteText', originals: original, replacements: diacritization, method })
     .then(() => console.log('Website text updated'));
 

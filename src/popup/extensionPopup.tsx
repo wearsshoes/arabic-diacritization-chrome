@@ -153,7 +153,7 @@ const App: React.FC = () => {
 
   const clearSaved = () => {
     setSavedInfo('clearing cache info for page');
-    chrome.runtime.sendMessage({ action: 'clearWebPageData' }, (response) => {
+    chrome.runtime.sendMessage({ action: 'clearWebpageData' }, (response) => {
       if (response.message) {
         console.log('Cleared saved data:', response);
         setSavedInfo('Cleared saved data.');

@@ -2,7 +2,7 @@ import { countSysPromptTokens } from './anthropicCaller'
 import { DiacritizationDataManager } from './datamanager';
 import { getAPIKey } from "../common/utils";
 import { AppMessage, AppResponse } from '../common/types';
-import { processFullWebpage, processSelectedText } from './processTextNodes';
+import { processWebpage, processSelectedText } from './processTextNodes';
 
 // ----------------- Event Listeners ----------------- //
 

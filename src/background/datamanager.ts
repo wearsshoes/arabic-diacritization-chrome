@@ -1,4 +1,4 @@
-import { WebPageDiacritizationData } from "../common/webpageDataClass";
+import { WebpageDiacritizationData } from "../common/webpageDataClass";
 import { calculateHash } from "../common/utils";
 
 export class DiacritizationDataManager {
@@ -23,7 +23,7 @@ export class DiacritizationDataManager {
     return this.instance;
   }
 
-  async getWebPageData(url: string): Promise<WebPageDiacritizationData | undefined> {
+  async getWebpageData(url: string): Promise<WebpageDiacritizationData | undefined> {
     if (!this.db) {
       throw new Error("Database not initialized");
     }
@@ -33,7 +33,7 @@ export class DiacritizationDataManager {
       const serializedData = await loadData<string>(this.db, "diacritizations_msa", urlHash);
       if (serializedData) {
         console.log("Data found", serializedData);
-        return WebPageDiacritizationData.fromJSON(serializedData);
+        return WebpageDiacritizationData.fromJSON(serializedData);
       } else {
         return undefined;
       }
@@ -43,7 +43,7 @@ export class DiacritizationDataManager {
     }
   }
 
-  async updateWebPageData(url: string, data: WebPageDiacritizationData): Promise<void> {
+  async updateWebpageData(url: string, data: WebpageDiacritizationData): Promise<void> {
     if (!this.db) {
       throw new Error("Database not initialized");
     } else {
@@ -60,7 +60,7 @@ export class DiacritizationDataManager {
 
 
   // Remove all data related to a webpage
-  async clearWebPageData(url: string): Promise<void> {
+  async clearWebpageData(url: string): Promise<void> {
     if (!this.db) {
       throw new Error("Database not initialized");
     } else {
