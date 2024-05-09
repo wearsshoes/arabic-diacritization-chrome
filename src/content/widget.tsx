@@ -41,10 +41,8 @@ const ContentWidget: React.FC = () => {
   };
 
   useEffect(() => {
-    chrome.runtime.sendMessage({ action: 'widgetHandshake' }, (response) => {
-      response.status === 'success' ? onOpen() : onClose();
-    });
-  });
+    chrome.runtime.sendMessage<AppMessage>({ action: 'widgetHandshake' });
+  }, [onOpen]);
 
   useEffect(() => {
     if (finishedBatches >= totalBatches && isAnimating) {
