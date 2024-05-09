@@ -5,7 +5,6 @@ import LLMOptions from './llmOptions';
 import APIKeyForm from './apiKeyForm';
 import DataManagement from './dataManagement';
 
-import './optionsPage.css';
 import { ChakraProvider } from '@chakra-ui/react'
 import { Box, Grid, GridItem, Center, Container, Heading, Card} from '@chakra-ui/react'
 import Fonts from '../assets/fonts'

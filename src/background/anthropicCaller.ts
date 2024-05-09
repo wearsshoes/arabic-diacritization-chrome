@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
-import Bottleneck from 'bottleneck'
+// @ts-expect-error No types for "bottleneck/light"
+import BottleneckLight from "bottleneck/light.js";
 import { calculateHash } from '../common/utils';
 import { getAPIKey } from './datamanager';
 export { claude, defaultModel, anthropicAPICall, countSysPromptTokens };
@@ -30,7 +31,7 @@ interface Model {
   level: number;
 }
 // Rate-limited Anthropic API call function
-const anthropicLimiter = new Bottleneck({
+const anthropicLimiter = new BottleneckLight({
   maxConcurrent: 3,
   minTime: 1500
 });

@@ -224,7 +224,7 @@ async function processQueuedMessages() {
         resolve(response);
       } catch (error) {
         console.error('Error processing queued message:', error);
-        resolve({status: 'error', error: error as Error});
+        resolve({ status: 'error', error: error as Error });
       }
     }
   }
