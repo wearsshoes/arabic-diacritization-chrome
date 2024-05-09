@@ -34,90 +34,38 @@ chrome.runtime.onInstalled.addListener(function (details) {
       console.error(`Error creating context menu: ${chrome.runtime.lastError.message}`);
     }
   });
-
 });
 
-// Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse: (response: AppResponse) => void) => {
-
   console.log('Received message:', message.action);
-  try {
 
-    switch (message.action) {
-      case 'widgetHandshake':
-        break;
+  const actionHandlers: Record<string, (message: AppMessage, sender: chrome.runtime.MessageSender) => Promise<AppResponse>> = {
+    'widgetHandshake': handleWidgetHandshake,
+    'contentLoaded': handleContentLoaded,
+    'cancelTask': handleCancelTask,
+    'getAPIKey': handleGetAPIKey,
+    'getSystemPromptLength': handleGetSystemPromptLength,
+    'openOptionsPage': handleOpenOptionsPage,
+    'getWebsiteData': handleGetWebsiteData,
+    'getSavedDiacritizations': handleGetSavedDiacritizations,
+    'clearWebpageData': handleClearWebpageData,
+    'clearDatabase': handleClearDatabase,
+    'processWebpage': handleProcessWebpage,
+  };
 
-      case 'contentLoaded':
-        contentScriptReady = true;
-        processQueuedMessages();
-        break;
+  const handler = actionHandlers[message.action];
 
-      case 'getAPIKey':
-        getAPIKey()
-          .then((key) => sendResponse({ status: 'success', key }))
-        return true;
-
-      case 'getSystemPromptLength':
-        if (message.prompt) {
-          countSysPromptTokens(message.prompt)
-            .then((tokens) => sendResponse({ status: 'success', tokens }))
-        }
-        return true;
-
-      case 'openOptionsPage':
-        chrome.runtime.openOptionsPage();
-        break;
-
-      case 'getWebsiteData':
-        (async () => {
-          const tab = sender.tab ? sender.tab : await getActiveTab();
-          if (!tab.id) throw new Error('No active tab found');
-          messageContentScript(tab.id, { action: 'getWebsiteData' })
-            .then((websiteData) => sendResponse(websiteData))
-        })();
-        return true;
-
-      case 'getSavedDiacritizations':
-        (async () => {
-          const tab = sender.tab ? sender.tab : await getActiveTab();
-          getSavedInfo(tab)
-            .then((savedInfo) => {
-              sendResponse({ status: 'success', savedInfo })
-            })
-        });
-        return true;
-
-      // Handle the diacritization request
-      case 'sendToDiacritize':
-        if (sender.tab) {
-          if (message.method) {
-            processFullWebpage(sender.tab, message.method)
-          }
-        }
-        sendResponse({ status: 'success' });
-        break;
-
-      // Clear the current webpage data
-      case 'clearWebPageData':
-        getActiveTab()
-          .then((tab) => {
-            clearWebsiteData(tab)
-              .then(() => sendResponse({ status: 'success' }))
-          })
-        return true;
-
-      // Clear the database
-      case 'clearDatabase':
-        dataManager.clearAllData()
-          .then(() => sendResponse({ status: 'success' }))
-        return true;
-
-      default:
-        throw new Error('Invalid action');
-    }
-  } catch (error) {
-    console.error(`Error processing ${message.action}: ${error}`);
-    sendResponse({ status: 'error', error: error as Error });
+  if (handler) {
+    handler(message, sender)
+      .then((response) => sendResponse(response))
+      .catch((error) => {
+        console.error(`Error processing ${message.action}: ${error}`);
+        sendResponse({ status: 'error', error: error as Error });
+      });
+    return true;
+  } else {
+    console.error(`Invalid action: ${message.action}`);
+    sendResponse({ status: 'error', error: new Error('Invalid action') });
   }
 });
 
@@ -183,16 +131,93 @@ async function getActiveTab(): Promise<chrome.tabs.Tab> {
 
 async function getSavedInfo(tab: chrome.tabs.Tab): Promise<string[]> {
   if (!tab.url) throw new Error('No URL to get saved info for.');
-  const response = await dataManager.getWebPageData(tab.url);
+  const response = await dataManager.getWebpageData(tab.url);
   const savedDiacritizations = (Object.keys(response?.diacritizations || {})).filter((key) => (key !== 'original'));
   return savedDiacritizations;
 }
 
-async function clearWebsiteData(tab: chrome.tabs.Tab): Promise<boolean> {
+async function handleProcessWebpage(message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
+  if (sender.tab) {
+    if (message.method) {
+      processWebpage(sender.tab, message.method)
+    }
+  } else { throw new Error('No tab to diacritize') }
+  return ({ status: 'success' });
+}
+
+async function handleWidgetHandshake(): Promise<AppResponse> {
+  return { status: 'success' }
+}
+
+async function handleContentLoaded(): Promise<AppResponse> {
+  contentScriptReady = true;
+  processQueuedMessages();
+  return { status: 'success' }
+}
+
+async function handleCancelTask(sender: chrome.runtime.MessageSender): Promise<AppResponse> {
+  if (sender.tab && sender.tab.id) {
+    cancelTask(sender.tab.id);
+    return { status: 'success' }
+  } else {
+    return { status: 'error', error: new Error('No tab ID to cancel task') }
+  }
+}
+
+async function handleGetAPIKey(): Promise<AppResponse> {
+  const key = await getAPIKey();
+  return { status: 'success', key }
+}
+
+async function handleGetSystemPromptLength(message: AppMessage): Promise<AppResponse> {
+  if (message.prompt) {
+    const tokens = await countSysPromptTokens(message.prompt);
+    return { status: 'success', tokens }
+  } else {
+    return { status: 'error', error: new Error('No prompt to count') }
+  }
+}
+
+async function handleOpenOptionsPage(): Promise<AppResponse> {
+  chrome.runtime.openOptionsPage();
+  return { status: 'success' }
+}
+
+async function handleClearWebpageData(): Promise<AppResponse> {
+  const tab = await getActiveTab()
   if (!tab.url) throw new Error('No URL to clear saved info for..');
-  await dataManager.clearWebPageData(tab.url);
+  await dataManager.clearWebpageData(tab.url);
   if (tab.id) chrome.tabs.reload(tab.id);
-  return true;
+  return { status: 'success' }
+}
+
+async function handleClearDatabase(): Promise<AppResponse> {
+  await dataManager.clearAllData();
+  return { status: 'success' }
+}
+
+async function handleGetWebsiteData(sender: chrome.runtime.MessageSender): Promise<AppResponse> {
+  let tab: chrome.tabs.Tab;
+  if (sender.tab && sender.tab.id) tab = sender.tab;
+  else tab = await getActiveTab();
+  if (tab.id) {
+    const websiteData = await messageContentScript(tab.id, { action: 'getWebsiteData' });
+    return websiteData;
+  } else {
+    return { status: 'error', error: new Error('No tab ID to get website data') }
+  }
+}
+
+async function handleGetSavedDiacritizations(sender: chrome.runtime.MessageSender): Promise<AppResponse> {
+  let tab: chrome.tabs.Tab;
+  if (sender.tab && sender.tab.id) tab = sender.tab;
+  else tab = await getActiveTab();
+  if (tab.id) {
+    const savedInfo = await getSavedInfo(tab);
+    return { status: 'success', savedInfo };
+  } else {
+    return { status: 'error', error: new Error('No tab ID to get saved diacritizations') }
+  }
 }
 
 export function messageContentScript(tabId: number, message: AppMessage): Promise<AppResponse> {
