@@ -16,3 +16,13 @@ export async function calculateHash(input: string | string[]): Promise< string |
 }
 
 export const sentenceRegex = /[.!?؟]+\s*\n*/g;
+
+export async function getAPIKey(): Promise<string> {
+  try {
+    const { apiKey } = await chrome.storage.sync.get('apiKey');
+    return apiKey;
+  }
+  catch (error) {
+    throw new Error(`Error getting API Key: ${error}`);
+  }
+}

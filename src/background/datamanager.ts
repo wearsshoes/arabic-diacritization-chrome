@@ -1,15 +1,6 @@
 import { WebPageDiacritizationData } from "../common/webpageDataClass";
 import { calculateHash } from "../common/utils";
-
-export async function getAPIKey(): Promise<string> {
-  try {
-    const { apiKey } = await chrome.storage.sync.get('apiKey');
-    return apiKey;
-  }
-  catch (error) {
-    throw new Error(`Error getting API Key: ${error}`);
-  }
-}
+import { AppResponse } from "../common/types";
 
 export class DiacritizationDataManager {
   private static instance: DiacritizationDataManager;

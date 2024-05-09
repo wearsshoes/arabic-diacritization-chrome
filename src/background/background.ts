@@ -1,6 +1,6 @@
 import { countSysPromptTokens } from './anthropicCaller'
 import { getAPIKey, DiacritizationDataManager } from './datamanager';
-import { processFullWebpage, processSelectedText } from './diacritization';
+import { getAPIKey } from "../common/utils";
 import { AppMessage, AppResponse } from '../common/types';
 
 // ----------------- Event Listeners ----------------- //
