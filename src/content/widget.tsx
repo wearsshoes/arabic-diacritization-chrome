@@ -30,6 +30,16 @@ const ContentWidget: React.FC = () => {
     setLanguage(prevLang => prevLang === 'en' ? 'ar' : 'en');
   };
 
+  const cancelAction = async () => {
+    const response = await chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'cancelAll' });
+    console.log('Cancel response:', response);
+    if (response.status === 'success') {
+      setIsAnimating(false);
+    } else {
+      console.error('Error canceling:', response.error);
+    }
+  };
+
   useEffect(() => {
     chrome.runtime.sendMessage({ action: 'widgetHandshake' }, (response) => {
       response.success ? onOpen() : onClose();
@@ -67,37 +77,37 @@ const ContentWidget: React.FC = () => {
 
   useEffect(() => {
     const listener =
-    // TODO: merge these listeners back into contentUtils listeners
-    (message: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse) => void) => {
-      const { action, batches } = message;
-      switch (action) {
-        case "diacritizationBatchesStarted": {
-          if (batches) {
-          setTotalBatches(batches);
-          setFinishedBatches(0);
-          setIsAnimating(true);
-          onOpen();
-          onExpanded();
-          sendResponse({ status: 'success' });
-          } else {
-            sendResponse({ status: 'error', error: new Error('No batches provided') });
+      // TODO: merge these listeners back into contentUtils listeners
+      (message: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse) => void) => {
+        const { action, batches } = message;
+        switch (action) {
+          case "diacritizationBatchesStarted": {
+            if (batches) {
+              setTotalBatches(batches);
+              setFinishedBatches(0);
+              setIsAnimating(true);
+              onOpen();
+              onExpanded();
+              sendResponse({ status: 'success' });
+            } else {
+              sendResponse({ status: 'error', error: new Error('No batches provided') });
+            }
+            break;
           }
-          break;
+          case "diacritizationChunkFinished":
+            setFinishedBatches((prevFinished) => prevFinished + 1);
+            sendResponse({ status: 'success' });
+            break;
+          case "updateWebsiteText":
+            setFinishedBatches(totalBatches);
+            sendResponse({ status: 'success' });
+            break;
+          case "toggleWidget":
+            onToggle();
+            sendResponse({ status: 'success' });
+            break;
         }
-        case "diacritizationChunkFinished":
-          setFinishedBatches((prevFinished) => prevFinished + 1);
-          sendResponse({ status: 'success' });
-          break;
-        case "updateWebsiteText":
-          setFinishedBatches(totalBatches);
-          sendResponse({ status: 'success' });
-          break;
-        case "toggleWidget":
-          onToggle();
-          sendResponse({ status: 'success' });
-          break;
       }
-    }
 
     chrome.runtime.onMessage.addListener(listener);
     return () => {
@@ -239,6 +249,14 @@ const ContentWidget: React.FC = () => {
                 isAnimated={isAnimating}
                 size="xs"
                 flex={1}
+              />
+              <IconButton
+                aria-label="Close"
+                size="xs"
+                variant="ghost"
+                icon={<CloseIcon />}
+                onClick={cancelAction}
+                visibility={isAnimating ? "visible" : "collapse"}
               />
             </Stack>
           </Stack>
