@@ -159,8 +159,10 @@ chrome.commands.onCommand.addListener((command) => {
   console.log(`Command entered: ${command}`);
   switch (command) {
     case 'toggle-widget':
-      getActiveTab().then((tab) => {
-        messageContentScript(tab.id, { action: 'toggleWidget' });
+      chrome.tabs.query({ active: true, currentWindow: true })
+        .then(([tab]) => {
+          if (tab.id === undefined) throw new Error('No active tab found');
+          chrome.tabs.sendMessage(tab.id, { action: 'toggleWidget' });
       });
       break;
   }
