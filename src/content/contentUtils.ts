@@ -10,7 +10,6 @@ let mainNode = document.body;
 let diacritizedStatus = 'original';
 let editingContent = false;
 
-
 const observerOptions = {
   childList: true,
   characterData: true,
@@ -29,7 +28,7 @@ const onContentLoaded = () => {
 
 const listener = (request: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse) => void) => {
 
-  const { action, originals, replacements, method } = request;
+  const { action, originals, replacements, method, url } = request;
 
   console.log('contentUtils received message:', action);
   switch (action) {
@@ -67,9 +66,9 @@ const listener = (request: AppMessage, _sender: chrome.runtime.MessageSender, se
     }
 
     case 'updateWebsiteText' || 'diacritizationChunkFinished':
-      console.log('Updating website text', originals, replacements, method);
+      console.log('Updating website text', originals, replacements, method, url);
       editingContent = true;
-      if (originals && replacements && method) {
+      if (originals && replacements && method && url === window.location.href) {
         replaceWebpageText(originals, replacements, method);
         diacritizedStatus = method;
       }

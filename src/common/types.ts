@@ -8,6 +8,7 @@ export interface Prompt {
 }
 export interface AppMessage {
   action: string;
+  url?: string;
   prompt?: string;
   method?: string;
   originals?: TextNode[];
