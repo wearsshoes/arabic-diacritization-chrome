@@ -19,7 +19,7 @@ async function getPrompt(): Promise<Prompt> {
 }
 
 // Full diacritization
-export async function fullDiacritization(tabId: number, selectedNodes: TextNode[]): Promise<TextNode[]> {
+export async function fullDiacritization(tabId: number, tabUrl: string, selectedNodes: TextNode[], abortSignal: AbortSignal): Promise<TextNode[]> {
   const diacritizationBatches = createDiacritizationElementBatches(selectedNodes, 750);
   const prompt = await getPrompt();
   const claude = new Claude()
@@ -27,7 +27,7 @@ export async function fullDiacritization(tabId: number, selectedNodes: TextNode[
   const maxTries = 1;
   const delimiter = '|';
 
-  messageContentScript(tabId, { action: 'diacritizationBatchesStarted', batches: diacritizationBatches.length });
+  messageContentScript(tabId, { action: 'diacritizationBatchesStarted', url: tabUrl, batches: diacritizationBatches.length });
 
   // diacritize the texts in parallel with retries
   const diacritizedNodes = await Promise.all(
@@ -39,18 +39,21 @@ export async function fullDiacritization(tabId: number, selectedNodes: TextNode[
       for (let tries = 0; tries < maxTries; tries++) {
         claude.escalateModel();
         try {
-          const response: Anthropic.Message = await anthropicAPICall(msg, claude.apiKey);
+          const response: Anthropic.Message = await anthropicAPICall(msg, claude.apiKey, abortSignal);
           const diacritizedText: string = response.content[0].text;
           console.log('originals: ', originalText, 'diacritized: ', diacritizedText);
           const validResponse = validateResponse(response, originalText, diacritizedText);
 
           if (validResponse) {
             const replacements: TextNode[] = diacritizedText.split(delimiter).map((text, index) => ({ ...originals[index], text }));
-            messageContentScript(tabId, { action: 'diacritizationChunkFinished', originals, replacements, method: 'fullDiacritics' });
+            messageContentScript(tabId, { action: 'diacritizationChunkFinished', url: tabUrl, originals, replacements, method: 'fullDiacritics' });
             return replacements;
           }
         } catch (error) {
-          console.error('Error diacritizing chunk:', error);
+          if (error instanceof Error && error.name === 'AbortError') {
+            throw error;
+          }
+          throw new Error(`Failed to diacritize chunk: ${error}`);
         }
         if (tries < maxTries - 1) {
           console.log('Failed validation. trying again: try', tries + 1, 'of', maxTries);

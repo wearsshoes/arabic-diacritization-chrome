@@ -65,7 +65,7 @@ const claude: Models = {
 
 const defaultModel: Model = claude.haiku;
 
-async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: string): Promise<Anthropic.Message> {
+async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: string, signal?: AbortSignal): Promise<Anthropic.Message> {
 
   // generate a hash to identify the job
   const hash = await calculateHash(JSON.stringify(params));
@@ -82,14 +82,18 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
   return anthropicLimiter.schedule(async () => {
     try {
       console.log('Sent job', hash);
-      const result = await anthropic.messages.create(params);
+      const result = await anthropic.messages.create(params, {signal});
       console.log('Received result for:', hash);
       return result as Anthropic.Message;
     } catch (error) {
-      if (error instanceof Error) {
-        console.error('Error message:', error.message);
-      }
-      throw error;
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            console.log('Request aborted for:', hash);
+          } else {
+            console.error('Error message:', error.message);
+          }
+        }
+        throw error;
     }
   });
 }

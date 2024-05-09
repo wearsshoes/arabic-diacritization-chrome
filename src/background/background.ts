@@ -112,15 +112,6 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
           .then(() => sendResponse({ status: 'success' }))
         return true;
 
-      case 'cancelAll':
-        async () => {
-          const tab = sender.tab ? sender.tab : await getActiveTab();
-          if (!tab.id) throw new Error("Unclear which tab process to cancel");
-          cancelTask(tab.id);
-          sendResponse({ status: 'success' });
-        }
-        return true;
-
       default:
         throw new Error('Invalid action');
     }
@@ -154,6 +145,16 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
         console.error(`Could not transliterate selected text: ${error}`);
       });
   }
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.url) cancelTask(tabId);
+  // if (changeInfo.discarded) queueUpdates(tabId, tab.url);
+  // if (changeInfo.status === 'complete') completeUpdates(tabId, tab.url || '')
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  cancelTask(tabId);
 });
 
 chrome.commands.onCommand.addListener((command) => {
@@ -230,12 +231,45 @@ async function processQueuedMessages() {
   }
 }
 
-export const controllers = new Map();
+export const controllerMap = new Map<number, AbortController>();
 
 function cancelTask(tabId: number) {
-  if (controllers.has(tabId)) {
-    const controller = controllers.get(tabId);
-    controller.abort();
-    controllers.delete(tabId);
+  if (controllerMap.has(tabId)) {
+    const controller = controllerMap.get(tabId);
+    controller?.abort();
+    controllerMap.delete(tabId);
   }
 }
+
+// const updateQueue = new Map<number, { url: string, updates: AppMessage[] }>();
+
+// function cancelTask(tabId: number) {
+//   if (controllerMap.has(tabId)) {
+//     const controller = controllerMap.get(tabId);
+//     controller?.abort();
+//     controllerMap.delete(tabId);
+//   }
+//   if (updateQueue.has(tabId)) {
+//     updateQueue.delete(tabId);
+//   }
+// }
+
+// function queueUpdates(tabId: number, url: string, message: AppMessage) {
+//   if (updateQueue.has(tabId)) {
+//     updateQueue.get(tabId)?.updates.push(message);
+//   } else {
+//     updateQueue.set(tabId, { url, updates: [message] });
+//   }
+// }
+
+// function completeUpdates(tabId: number, url: string) {
+//   if (updateQueue.has(tabId)) {
+//     const queuedUpdates = updateQueue.get(tabId);
+//     if (queuedUpdates?.url === url) {
+//       queuedUpdates.updates.forEach((message) => {
+//         messageContentScript(tabId, message);
+//       });
+//       updateQueue.delete(tabId);
+//     }
+//   }
+// }
