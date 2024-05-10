@@ -8,7 +8,7 @@ import { Prompt } from '../common/types';
 export { claude, defaultModel, anthropicAPICall, countSysPromptTokens };
 
 export class Claude {
- constructor(
+  constructor(
     public model: Model = defaultModel,
     public apiKey: string = ''
   ) {
@@ -38,8 +38,8 @@ interface Model {
 }
 // Rate-limited Anthropic API call function
 const anthropicLimiter = new BottleneckLight({
-  maxConcurrent: 3,
-  minTime: 1500
+  maxConcurrent: 10,
+  minTime: 2000
 });
 
 interface SysPromptTokenCache {
@@ -82,18 +82,39 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
   return anthropicLimiter.schedule(async () => {
     try {
       console.log('Sent job', hash);
-      const result = await anthropic.messages.create(params, {signal});
+      const result = await anthropic.messages.create(params, { signal });
       console.log('Received result for:', hash);
       return result as Anthropic.Message;
     } catch (error) {
-        if (error instanceof Error) {
-          if (error.name === 'AbortError') {
-            console.log('Request aborted for:', hash);
-          } else {
-            console.error('Error message:', error.message);
-          }
+      if (error instanceof Anthropic.APIError) {
+        console.error('Anthropic API Error:', error.message);
+
+        // Parse rate limit headers
+        const rateLimitHeaders = error.headers;
+        if (rateLimitHeaders) {
+          const requestsLimit = rateLimitHeaders['anthropic-ratelimit-requests-limit'];
+          const requestsRemaining = rateLimitHeaders['anthropic-ratelimit-requests-remaining'];
+          const requestsReset = rateLimitHeaders['anthropic-ratelimit-requests-reset'];
+          const tokensLimit = rateLimitHeaders['anthropic-ratelimit-tokens-limit'];
+          const tokensRemaining = rateLimitHeaders['anthropic-ratelimit-tokens-remaining'];
+          const tokensReset = rateLimitHeaders['anthropic-ratelimit-tokens-reset'];
+
+          console.error('Rate Limit Details:');
+          console.error('Requests Limit:', requestsLimit);
+          console.error('Requests Remaining:', requestsRemaining);
+          console.error('Requests Reset:', requestsReset);
+          console.error('Tokens Limit:', tokensLimit);
+          console.error('Tokens Remaining:', tokensRemaining);
+          console.error('Tokens Reset:', tokensReset);
         }
-        throw error;
+      } else if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          console.log('Request aborted for:', hash);
+        } else {
+          console.error('Error message:', error.message);
+        }
+      }
+      throw error;
     }
   });
 }
