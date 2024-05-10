@@ -38,8 +38,8 @@ interface Model {
 }
 // Rate-limited Anthropic API call function
 const anthropicLimiter = new BottleneckLight({
-  maxConcurrent: 10,
-  minTime: 2000
+  maxConcurrent: 3,
+  minTime: 1500
 });
 
 interface SysPromptTokenCache {
