@@ -37,7 +37,7 @@ chrome.runtime.onInstalled.addListener(function (details) {
 });
 
 chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse: (response: AppResponse) => void) => {
-  console.log('Received message:', message.action);
+  console.log(`Received message: ${message.action} from ${sender.tab?.id || sender.origin}`);
 
   const actionHandlers: Record<string, (message: AppMessage, sender: chrome.runtime.MessageSender) => Promise<AppResponse>> = {
     'widgetHandshake': handleWidgetHandshake,
@@ -56,6 +56,7 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
   const handler = actionHandlers[message.action];
 
   if (handler) {
+    console.log(message, sender)
     handler(message, sender)
       .then((response) => sendResponse(response))
       .catch((error) => {
@@ -137,11 +138,15 @@ async function getSavedInfo(tab: chrome.tabs.Tab): Promise<string[]> {
 }
 
 async function handleProcessWebpage(message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
-  if (sender.tab) {
+  let tab: chrome.tabs.Tab;
+  if (sender.tab) tab = sender.tab;
+  else tab = await getActiveTab();
     if (message.method) {
-      processWebpage(sender.tab, message.method)
-    }
-  } else { throw new Error('No tab to diacritize') }
+      processWebpage(tab, message.method)
+  } else {
+    console.log('No method specified. Defaulting to full diacritics.');
+    processWebpage(tab, 'fullDiacritics')
+  }
   return ({ status: 'success' });
 }
 
@@ -155,11 +160,12 @@ async function handleContentLoaded(): Promise<AppResponse> {
   return { status: 'success' }
 }
 
-async function handleCancelTask(sender: chrome.runtime.MessageSender): Promise<AppResponse> {
+async function handleCancelTask(_message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
   if (sender.tab && sender.tab.id) {
     cancelTask(sender.tab.id);
     return { status: 'success' }
   } else {
+    console.error('No tab ID to cancel task');
     return { status: 'error', error: new Error('No tab ID to cancel task') }
   }
 }
@@ -196,7 +202,7 @@ async function handleClearDatabase(): Promise<AppResponse> {
   return { status: 'success' }
 }
 
-async function handleGetWebsiteData(sender: chrome.runtime.MessageSender): Promise<AppResponse> {
+async function handleGetWebsiteData(_message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
   let tab: chrome.tabs.Tab;
   if (sender.tab && sender.tab.id) tab = sender.tab;
   else tab = await getActiveTab();
@@ -208,7 +214,7 @@ async function handleGetWebsiteData(sender: chrome.runtime.MessageSender): Promi
   }
 }
 
-async function handleGetSavedDiacritizations(sender: chrome.runtime.MessageSender): Promise<AppResponse> {
+async function handleGetSavedDiacritizations(_message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
   let tab: chrome.tabs.Tab;
   if (sender.tab && sender.tab.id) tab = sender.tab;
   else tab = await getActiveTab();

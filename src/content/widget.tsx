@@ -32,7 +32,6 @@ const ContentWidget: React.FC = () => {
 
   const cancelAction = async () => {
     const response = await chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'cancelTask' });
-    console.log('Cancel response:', response);
     if (response.status === 'success') {
       setIsAnimating(false);
     } else {
