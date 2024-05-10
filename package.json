@@ -38,6 +38,7 @@
     "xxhash-wasm": "^1.0.2"
   },
   "devDependencies": {
+    "@anthropic-ai/vertex-sdk": "^0.3.6",
     "@crxjs/vite-plugin": "^2.0.0-beta.23",
     "@types/chrome": "^0.0.266",
     "@types/react": "^18.2.66",
