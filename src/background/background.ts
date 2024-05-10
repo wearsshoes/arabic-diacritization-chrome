@@ -37,7 +37,7 @@ chrome.runtime.onInstalled.addListener(function (details) {
 });
 
 chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse: (response: AppResponse) => void) => {
-  console.log(`Received message: ${message.action} from ${sender.tab?.id || sender.origin}`);
+  console.log(`Received message: ${message.action} from ${typeof sender.tab?.index === 'number' ? 'extension script in tab #' + (sender.tab.index + 1) : 'popup'}`);
 
   const actionHandlers: Record<string, (message: AppMessage, sender: chrome.runtime.MessageSender) => Promise<AppResponse>> = {
     'widgetHandshake': handleWidgetHandshake,
@@ -56,7 +56,6 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
   const handler = actionHandlers[message.action];
 
   if (handler) {
-    console.log(message, sender)
     handler(message, sender)
       .then((response) => sendResponse(response))
       .catch((error) => {

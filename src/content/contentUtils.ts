@@ -183,7 +183,6 @@ const observer = new MutationObserver((mutations) => {
 
 // MAIN
 const main = () => {
-  console.log('Content being setup');
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', onContentLoaded);
   } else {
