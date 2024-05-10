@@ -47,7 +47,6 @@ const ContentWidget: React.FC = () => {
   useEffect(() => {
     if (finishedBatches >= totalBatches && isAnimating) {
       setIsAnimating(false);
-      setPageRenders([method, ...pageRenders]);
       setPageState(method);
       // setDiacritizeStatus('Page updated.');
     }
@@ -55,7 +54,7 @@ const ContentWidget: React.FC = () => {
 
   const taskChoiceHandler = (task: string) => {
     setMethod(task);
-    console.log('existing pageRenders:', pageRenders)
+    console.log('selected task: ', task, 'current method: ', method, 'existing pageRenders:', pageRenders)
     if (pageRenders.includes(task)) {
       setPageState(task);
     }
@@ -98,6 +97,7 @@ const ContentWidget: React.FC = () => {
             break;
           case "updateWebsiteText":
             setFinishedBatches(totalBatches);
+            setPageRenders([method, ...pageRenders]);
             sendResponse({ status: 'success' });
             break;
           case "toggleWidget":
@@ -233,10 +233,11 @@ const ContentWidget: React.FC = () => {
                       (isAnimating ? <SpinnerIcon /> : <ArrowForwardIcon />)
                   }
                   colorScheme={method === pageState ? "teal" : "orange"}
-                  disabled={method === pageState || isAnimating}
+                  isDisabled={method === pageState || isAnimating}
                   onClick={() => beginDiacritization()}
                 />
               </ButtonGroup>
+                  <Text>pgst: {pageState.slice(0,5)} md: {method.slice(0,5)} anim:{isAnimating.toString()}</Text>
               {/* <Text fontSize={"12px"}>{diacritizeStatus}</Text> */}
             </Stack>
             <Stack direction={"row"} spacing={"0px"} width={"100%"}>
