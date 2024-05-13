@@ -1,0 +1,29 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "chrome",
+            "request": "attach",
+            "name": "Attach to Chrome",
+            "port": 9222,
+            "urlFilter": "http://localhost:9222/*",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Vite Chrome extension debugger",
+            "port": 3002,
+            "runtimeArgs": ["--load-extension=${workspaceFolder}/dist"],
+            // "sourceMapPathOverrides": {
+            //     "webpack:///./src/*": "${webRoot}/src/*",
+            // },
+            "webRoot": "${workspaceFolder}"
+
+        }
+    ]
+
+}

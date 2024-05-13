@@ -10,6 +10,9 @@ export default defineConfig({
     crx({ manifest }),
   ],
   server: {
+    hmr: {
+      port: 24601,
+    },
     watch: {
       usePolling: true,
     },
