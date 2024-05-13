@@ -133,6 +133,10 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
       break;
     }
 
+    case 'original': {
+      break;
+    }
+
     default:
       throw new Error(method + ' is not implemented yet');
   }

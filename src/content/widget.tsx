@@ -237,6 +237,7 @@ const ContentWidget: React.FC = () => {
                   onClick={() => beginDiacritization()}
                 />
               </ButtonGroup>
+                  <Text> DEBUG IS WORKING ALHAMDUILLAH. </Text>
                   <Text>pgst: {pageState.slice(0,5)} md: {method.slice(0,5)} anim:{isAnimating.toString()}</Text>
               {/* <Text fontSize={"12px"}>{diacritizeStatus}</Text> */}
             </Stack>

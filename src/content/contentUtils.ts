@@ -16,8 +16,8 @@ const observerOptions = {
 };
 
 const onContentLoaded = () => {
-  console.log('Content loaded');
-  mainNode = (document.body.querySelector('main, #main') as HTMLElement || document.body);
+  mainNode = (document.body.querySelector('main, #main, #root, #content, .content') as HTMLElement || document.body);
+  console.log('Content loaded, main node:', mainNode, 'scraping/labeling content');
   scrapeContent(mainNode).then(() => {
     chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'contentLoaded' });
     observer.observe(document.body, observerOptions);
@@ -131,14 +131,14 @@ const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {
 async function calculateContentSignature(): Promise<string> {
   // for any *remotely* dynamic content, this will be different every time
   // might be able to do it as part of newRecurseDOM
-  const content = document.body.querySelector('main')?.querySelectorAll('*') || document.body.querySelectorAll('*')
+  const content = mainNode.querySelectorAll('*');
   const textContent = Array.from(content).map((element) => element.textContent).join("");
   const signature = await calculateHash(textContent);
   return signature;
 }
 
 async function summarizeMetadata(): Promise<{ [key: string]: ElementAttributes }> {
-  const content = document.body.querySelector('main')?.querySelectorAll('*') || document.body.querySelectorAll('*');
+  const content = mainNode.querySelectorAll('*');
   const elementAttributes: { [summary: string]: ElementAttributes } = {};
   const contentSummaries: string[] = [];
 
