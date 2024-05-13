@@ -25,13 +25,12 @@ function getTextNodesInRange(range: Range): TextNode[] {
   let currentNode = walker.nextNode();
   while (currentNode) {
     textNodes.push({
-      elementId: currentNode.parentElement?.getAttribute('data-element-id') ?? '',
+      elementId: currentNode.parentElement?.getAttribute('crxid') ?? '',
       index: getTextNodeIndex(currentNode as Text),
       text: currentNode.textContent ?? ''
     });
     currentNode = walker.nextNode();
   }
-
   return textNodes;
 }
 
@@ -58,11 +57,17 @@ function getTextElementsAndIndexDOM(node: Node = document.body, index: number = 
       let innerIndex = 0;
 
       if (Array.from(element.childNodes).some(childNode => childNode.nodeType === Node.TEXT_NODE)) {
-        elementId = 'element-' + iterator + '-' + element.tagName;
-        element.setAttribute('data-element-id', elementId);
+        // element.setAttribute('data-element-id', elementId);
       }
 
       for (const childNode of Array.from(element.childNodes)) {
+        if (childNode.nodeType === Node.ELEMENT_NODE) {
+          const childElement = childNode as Element;
+          const dataId = childElement.attributes.getNamedItem('crxid')?.value;
+          if (dataId) {
+            continue;
+          }
+        }
         const innerText = getTextElementsAndIndexDOM(childNode, innerIndex++, elementId, iterator++);
         textElements.push(...innerText.textElements);
         innerIndex += innerText.textElements.length;
@@ -75,6 +80,7 @@ function getTextElementsAndIndexDOM(node: Node = document.body, index: number = 
     const sentences = splitTextIntoSentences(node.textContent);
     const fragment = document.createDocumentFragment();
     sentences.forEach((sentence, sentenceIndex) => {
+      const elementId = 'element-' + iterator;
 
       const textElement: TextNode = {
         elementId: elementId,
@@ -83,8 +89,11 @@ function getTextElementsAndIndexDOM(node: Node = document.body, index: number = 
       };
 
       textElements.push(textElement);
-      const textNode = document.createTextNode(sentence);
-      fragment.appendChild(textNode);
+
+      const spanElement = document.createElement('span');
+      spanElement.textContent = sentence;
+      spanElement.setAttribute('crxid', elementId);
+      fragment.appendChild(spanElement);
 
       iterator++;
     });
@@ -110,29 +119,25 @@ function replaceWebpageText(originals: TextNode[], replacements: TextNode[], met
   console.log(`Replacing text with ${method}`, originals, replacements);
 
   if (originals.length !== replacements.length) {
-      throw new Error('originals and replacements should have the same length.');
+    throw new Error('originals and replacements should have the same length.');
   }
 
   originals.forEach((textNode, index) => {
-      const { elementId, index: nodeIndex } = textNode;
-      const replacementEntry = replacements[index];
-      const replacementText = typeof replacementEntry === 'string' ? replacementEntry : replacementEntry.text;
+    const { elementId } = textNode;
+    const replacementEntry = replacements[index];
+    const replacementText = typeof replacementEntry === 'string' ? replacementEntry : replacementEntry.text;
 
-      const element = document.querySelector(`[data-element-id="${elementId}"]`);
+    const element = document.querySelector(`[crxid="${elementId}"]`);
 
-      if (element) {
-          if (element.childNodes[nodeIndex]) {
-              element.childNodes[nodeIndex].textContent = replacementText;
-          } else {
-              console.warn(`Warning: childNode at index ${nodeIndex} does not exist in element with id ${elementId}.`);
-          }
-      } else {
-          console.warn(`Warning: elementId ${elementId} did not map to any element.`);
-      }
+    if (element) {
+      element.textContent = replacementText;
+    } else {
+      console.warn(`Warning: elementId ${elementId} did not map to any element.`);
+    }
   });
 
   if (method === 'arabizi') {
-      directionLTR();
+    directionLTR();
   }
 }
 
