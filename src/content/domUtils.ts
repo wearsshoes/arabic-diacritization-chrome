@@ -25,36 +25,21 @@ function getTextNodesInRange(range: Range): TextNode[] {
   let currentNode = walker.nextNode();
   while (currentNode) {
     textNodes.push({
-      elementId: currentNode.parentElement?.getAttribute('crxid') ?? '',
-      index: getTextNodeIndex(currentNode as Text),
-      text: currentNode.textContent ?? ''
+      [currentNode.parentElement?.getAttribute('crxid') ?? '']: currentNode.textContent ?? ''
     });
     currentNode = walker.nextNode();
   }
   return textNodes;
 }
 
-function getTextNodeIndex(textNode: Text): number {
-  let index = 0;
-  let currentNode = textNode.previousSibling;
-
-  while (currentNode) {
-    index++;
-    currentNode = currentNode.previousSibling;
-  }
-
-  return index;
-}
-
 // Builds element list according to interface. Recurses through DOM and put the in the right order.
-function getTextElementsAndIndexDOM(node: Node = document.body, index: number = 0, elementId: string = '', iterator: number = 0): { textElements: TextNode[], iterator: number } {
+function getTextElementsAndIndexDOM(node: Node = document.body, elementId: string = '', iterator: number = 0): { textElements: TextNode[], iterator: number } {
 
   const textElements: TextNode[] = [];
   if (node.nodeType === Node.ELEMENT_NODE) {
 
     const element = node as Element;
     if (element.hasChildNodes() && isVisible(element)) {
-      let innerIndex = 0;
 
       if (Array.from(element.childNodes).some(childNode => childNode.nodeType === Node.TEXT_NODE)) {
         // element.setAttribute('data-element-id', elementId);
@@ -68,24 +53,22 @@ function getTextElementsAndIndexDOM(node: Node = document.body, index: number = 
             continue;
           }
         }
-        const innerText = getTextElementsAndIndexDOM(childNode, innerIndex++, elementId, iterator++);
+        const innerText = getTextElementsAndIndexDOM(childNode, elementId, iterator++);
         textElements.push(...innerText.textElements);
-        innerIndex += innerText.textElements.length;
         iterator = innerText.iterator;
       }
-      index += innerIndex;
+    } else {
+      iterator++;
     }
 
   } else if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
     const sentences = splitTextIntoSentences(node.textContent);
     const fragment = document.createDocumentFragment();
-    sentences.forEach((sentence, sentenceIndex) => {
+    sentences.forEach((sentence) => {
       const elementId = 'element-' + iterator;
 
       const textElement: TextNode = {
-        elementId: elementId,
-        index: index + sentenceIndex,
-        text: sentence,
+        [elementId]: sentence
       };
 
       textElements.push(textElement);

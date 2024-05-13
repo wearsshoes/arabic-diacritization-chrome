@@ -9,21 +9,13 @@ export interface PageMetadata {
 }
 
 export interface TextNode {
-    elementId: string;
-    index: number
-    text: string;
-}
-
-export interface NodeHashDict {
-    [nodeHash: string]: TextNode
-}
-
-export interface Diacritizations {
-    [method: string]: NodeHashDict
+    [elementId: string]: string;
 }
 
 export class WebpageDiacritizationData {
-    diacritizations: Diacritizations = {};
+    diacritizations: {
+        [method: string]: TextNode[]
+    } = {};
 
     private constructor(
         public id: string,
@@ -38,48 +30,18 @@ export class WebpageDiacritizationData {
     }
 
     async createOriginal(websiteText: TextNode[]) {
-        const textlist = websiteText.map((textNode) => (textNode.elementId + textNode.text))
-        const nodeHashes = await calculateHash(textlist)
-
-        const original = nodeHashes.reduce((dict, nodeHash, index) => {
-            dict[nodeHash] = websiteText[index];
-            return dict;
-        }, {} as NodeHashDict);
-        this.diacritizations = { ['original']: original };
+        this.diacritizations = { ['original']: websiteText };
     }
 
     async addDiacritization(diacritizedText: TextNode[], method: string) {
-        if (this.diacritizations['original'] === undefined) {
-            throw new Error('Original text not created yet.');
-        } else {
-            const original = this.diacritizations['original'];
-            const diacritization: NodeHashDict = {};
-            Object.keys(original).forEach((key, index) => {
-                diacritization[key] = diacritizedText[index];
-            });
-            console.log('Adding diacritization:', diacritization);
-            if (this.diacritizations === undefined) {
-                this.diacritizations = { [method]: diacritization };
-            } else {
-                this.diacritizations[method] = diacritization;
-            }
-        }
+        this.diacritizations[method] = diacritizedText;
     }
 
     getDiacritization(method: string): TextNode[] {
         if (this.diacritizations === undefined) {
             throw new Error('Diacritizations not created yet.');
         } else {
-            const diacritization = this.diacritizations[method];
-            if (diacritization === undefined) {
-                throw new Error('Diacritization method not found.');
-            } else {
-                const acc: TextNode[] = [];
-                Object.keys(diacritization).forEach((key, index) => {
-                    acc[index] = diacritization[key];
-                });
-                return acc;
-            }
+            return this.diacritizations[method];
         }
     }
 
