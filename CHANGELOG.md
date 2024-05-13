@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 (2024-05-12)
+- There's now a cancel button on the widget.
+- Fixed problems with DOM element matching where the program could not always find correct element to replace.
+- Fixed problem where if you navigate away from the page, the diacritization didn't stop.
+- When replacing with original, no longer re-indexes DOM.
+
 ## 0.4 (2024-05-05)
 - New corner widget! Command+Option+2 to show/hide.
 - Option to toggle between original, diacritized, and arabizi.

@@ -3,15 +3,12 @@
 ## MVP
 
 ## Features
-- 0.4.1 only claude haiku is enabled.
+- 0.4.2 only claude haiku is enabled.
 - 0.4.3 only default prompt is enabled.
 - 1.0 when there's saved results, partially update based on hashes
 
 ### Bugs
-- 0.4.1 Some problems with DOM element matching; cannot always find correct element to replace.
-- 0.4.1 If you navigate away from the page, the diacritization doesn't stop, and there's some chance of messing up the new page.
-- 0.4.1 When replacing with original, re-indexes DOM.
-- 0.4.1 The widget doesn't know when re-indexing has happened.
+- 0.4.2 The widget doesn't know when re-indexing has happened.
 - 0.4.2 Webpage saves don't work properly, and don't show up properly.
 - 0.4.2 The partial diacritization doesn't work sometimes.
 - 0.4.2 Repeated requests lead to really weird results.
@@ -20,11 +17,10 @@
 
 #### Arabizi
 
-- 0.4.1: incremental arabizi updates, just like with fullDiacritization
+- 0.4.2: incremental arabizi updates, just like with fullDiacritization
 
 ### UI
 
-- 0.4.1 Add cancel button to widget.
 - 0.4.3 Redesign options page to be simpler and cleaner.
 - 0.4.3 Add FAQs/tooltips to options page.
 - 0.4.3 Redesign extension popup to be simpler and cleaner.
