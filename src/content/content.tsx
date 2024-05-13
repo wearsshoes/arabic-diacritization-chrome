@@ -7,6 +7,8 @@ import ContentWidget from "./widget";
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 
+const language = document.documentElement.lang;
+
 // Create the main container
 const appContainer = document.createElement("div");
 appContainer.id = "crx-app-container";
@@ -33,7 +35,7 @@ const reactRoot = ReactDOM.createRoot(root);
 reactRoot.render(
   <React.StrictMode>
     <CacheProvider value={emotionCache}>
-      <ContentWidget />
+      <ContentWidget siteLanguage={language} />
     </CacheProvider>
   </React.StrictMode>
 );

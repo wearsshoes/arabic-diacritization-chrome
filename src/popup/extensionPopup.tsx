@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client'
-import { AppMessage, AppResponse } from '../common/types';
-
-import { Prompt } from '../common/types';
+import { AppMessage, AppResponse, Prompt } from '../common/types';
 
 // import theme from '../assets/theme';
 import Fonts from '../assets/fonts';
@@ -177,7 +175,7 @@ const App: React.FC = () => {
       <Stack spacing={2} align="auto">
         <Stack>
           <Heading fontFamily={'basmala'} padding={2} marginTop={5} marginBottom={0} textAlign='center' lineHeight={0}>ArabEasy</Heading>
-          <Text fontSize={'md'} align={'center'}> This popup is still under construction. Recommend using the onscreen widget (Control-Shift-2 / Command-Shift-2 to restore if closed).</Text>
+          <Text fontSize={'md'} align={'center'}> This popup is still under construction. Recommend using the onscreen widget (Control-Shift-U / Command-Shift-U to restore if closed).</Text>
         </Stack>
         <Button size='xs' onClick={() => chrome.runtime.openOptionsPage()}>Open Options Page</Button>
 

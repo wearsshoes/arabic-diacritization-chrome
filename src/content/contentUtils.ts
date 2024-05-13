@@ -8,6 +8,7 @@ let pageMetadata: PageMetadata | null = null;
 let mainNode = document.body;
 let diacritizedStatus = 'original';
 let editingContent = false;
+const language = document.documentElement.lang;
 
 const observerOptions = {
   childList: true,
@@ -16,6 +17,10 @@ const observerOptions = {
 };
 
 const onContentLoaded = () => {
+  if (language !== 'ar') {
+    console.log('Language is not Arabic, exiting');
+    return;
+  }
   mainNode = (document.body.querySelector('main, #main, #root, #content, .content') as HTMLElement || document.body);
   console.log('Content loaded, main node:', mainNode, 'scraping/labeling content');
   scrapeContent(mainNode).then(() => {
@@ -57,7 +62,6 @@ const listener = (request: AppMessage, _sender: chrome.runtime.MessageSender, se
 
 async function handleGetWebsiteData(): Promise<AppResponse> {
   console.log({ 'Main node': mainNode, 'PageMetadata': pageMetadata, 'Text elements': textElements });
-  const language = document.documentElement.lang;
   const characterCount = mainNode.innerText?.length || 0;
   return { status: 'success', language, characterCount };
 }

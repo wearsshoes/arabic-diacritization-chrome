@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ChakraProvider, useDisclosure } from '@chakra-ui/react';
 import { Stack, Container, Button, ButtonGroup, Text, IconButton, Progress } from '@chakra-ui/react'
 import { SettingsIcon, ChevronUpIcon, CheckIcon, MinusIcon, CloseIcon, ArrowForwardIcon, SpinnerIcon } from '@chakra-ui/icons'
 import { Languages, translations } from "./widget_i18n";
 import { AppMessage, AppResponse } from "../common/types";
 
-const ContentWidget: React.FC = () => {
+const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
 
   const { onOpen: onExpanded, isOpen: isExpanded, getDisclosureProps, getButtonProps } = useDisclosure({ defaultIsOpen: true })
   const { onOpen, onClose, onToggle, getDisclosureProps: getCloseItem } = useDisclosure({ defaultIsOpen: false })
@@ -14,6 +14,9 @@ const ContentWidget: React.FC = () => {
   const closeProps = getCloseItem()
 
   const [language, setLanguage] = useState<Languages>('en');
+
+  const shouldDisplay = ['ar', 'arz'].includes(siteLanguage)
+  const languageNamesInEnglish = new Intl.DisplayNames(['en'], { type: 'language' });
 
   const [method, setMethod] = useState('fullDiacritics');
   const [pageRenders, setPageRenders] = useState(['original']);
@@ -43,6 +46,10 @@ const ContentWidget: React.FC = () => {
     chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'widgetHandshake' });
     onOpen();
   }, [onOpen]);
+
+  useEffect(() => {
+    if (!shouldDisplay) onClose();
+  }, [shouldDisplay, onClose]);
 
   useEffect(() => {
     if (finishedBatches >= totalBatches && isAnimating) {
@@ -237,8 +244,7 @@ const ContentWidget: React.FC = () => {
                   onClick={() => beginDiacritization()}
                 />
               </ButtonGroup>
-                  <Text> DEBUG IS WORKING ALHAMDUILLAH. </Text>
-                  <Text>pgst: {pageState.slice(0,5)} md: {method.slice(0,5)} anim:{isAnimating.toString()}</Text>
+              <Text> {siteLanguage === 'arz' ? 'FYI: Egyptian Arabic has limited support.' : `Lang: ${languageNamesInEnglish.of(siteLanguage)}`} </Text>
               {/* <Text fontSize={"12px"}>{diacritizeStatus}</Text> */}
             </Stack>
             <Stack direction={"row"} spacing={"0px"} width={"100%"}>

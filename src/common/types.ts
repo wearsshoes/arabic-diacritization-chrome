@@ -12,6 +12,7 @@ export interface AppMessage {
   prompt?: string;
   method?: string;
   originals?: TextNode[];
+  langScript?: string;
   replacements?: TextNode[];
   batches?: number;
 }
