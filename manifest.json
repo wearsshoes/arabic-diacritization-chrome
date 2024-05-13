@@ -34,8 +34,8 @@
   "commands": {
     "toggle-widget": {
       "suggested_key": {
-        "default": "Ctrl+Shift+2",
-        "mac": "Command+Shift+2"
+        "default": "Ctrl+Shift+U",
+        "mac": "Command+Shift+U"
       },
       "description": "Toggle the widget."
     }
