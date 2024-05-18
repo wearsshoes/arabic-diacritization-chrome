@@ -1,10 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { TextNode } from '../common/webpageDataClass';
-import { Claude, countSysPromptTokens, anthropicAPICall, constructAnthropicMessage} from "./anthropicCaller";
+import { Claude, countSysPromptTokens, anthropicAPICall, constructAnthropicMessage } from "./anthropicCaller";
 import { messageContentScript } from './background';
 import { sentenceRegex } from '../common/utils';
 import { Prompt } from '../common/types'
 import prompts from './defaultPrompts.json';
+import { EventEmitter } from 'events';
 
 const defaultPrompt = prompts[1];
 
@@ -20,33 +21,67 @@ async function getPrompt(): Promise<Prompt> {
 
 // Full diacritization
 export async function fullDiacritization(tabId: number, tabUrl: string, selectedNodes: TextNode[], abortSignal: AbortSignal): Promise<TextNode[]> {
+
   const diacritizationBatches = createDiacritizationElementBatches(selectedNodes, 750);
   const prompt = await getPrompt();
   const claude = new Claude()
   const sysPromptLength = await countSysPromptTokens(prompt.text) || 0;
   const maxTries = 1;
   const delimiter = '|';
+  let validationFailures = 0;
 
-  messageContentScript(tabId, { action: 'diacritizationBatchesStarted', url: tabUrl, batches: diacritizationBatches.length });
+  messageContentScript(tabId, { action: 'diacritizationBatchesStarted', tabUrl: tabUrl, batches: diacritizationBatches.length });
 
   // diacritize the texts in parallel with retries
   const diacritizedNodes = await Promise.all(
+
     diacritizationBatches.map(async (originals) => {
       const originalText = originals.flatMap((textNode) => textNode.text.replace(delimiter, '')).join(delimiter);
 
+      const eventEmitter = new EventEmitter();
       const msg = constructAnthropicMessage(originalText, prompt, claude);
 
       for (let tries = 0; tries < maxTries; tries++) {
         claude.escalateModel();
+        let diacritizedAccumulated = '';
+
+        eventEmitter.on('text', (textDelta) => {
+          diacritizedAccumulated += textDelta;
+
+          let delimiterIndex;
+          while ((delimiterIndex = diacritizedAccumulated.indexOf(delimiter)) !== -1) {
+            const sentencesToCheck = originals
+            const extractedText = diacritizedAccumulated.slice(0, delimiterIndex);
+            const strippedText = stripDiacritics(extractedText);
+            const textNode = sentencesToCheck.shift();
+            const oldText = stripDiacritics(textNode?.text || '');
+
+            console.log('Extracted text:', extractedText)
+            console.log('Stripped text:', strippedText)
+            console.log('Original text:', oldText);
+            if (strippedText === oldText && textNode) {
+              console.log('Sentence validation passed for extracted text:', extractedText);
+              const replacements: TextNode[] = [{ ...textNode, text: extractedText }]
+              messageContentScript(tabId, {action: 'updateWebsiteText', replacements, method: 'fullDiacritics', tabUrl: tabUrl})
+            } else {
+              console.error('Sentence validation failed for extracted text:', extractedText);
+              // Handle the validation failure based on your error handling strategy
+              validationFailures++;
+            }
+
+            diacritizedAccumulated = diacritizedAccumulated.slice(delimiterIndex + 1);
+          }
+        });
+
         try {
-          const response: Anthropic.Message = await anthropicAPICall(msg, claude.apiKey, abortSignal);
+          const response = await anthropicAPICall(msg, claude.apiKey, abortSignal, eventEmitter);
           const diacritizedText: string = response.content[0].text;
           console.log('originals: ', originalText, 'diacritized: ', diacritizedText);
-          const validResponse = validateResponse(response, originalText, diacritizedText);
 
+          const validResponse = validateResponse(response, originalText, diacritizedText);
           if (validResponse) {
             const replacements: TextNode[] = diacritizedText.split(delimiter).map((text, index) => ({ ...originals[index], text }));
-            messageContentScript(tabId, { action: 'diacritizationChunkFinished', url: tabUrl, originals, replacements, method: 'fullDiacritics' });
+            messageContentScript(tabId, { action: 'diacritizationChunkFinished', tabUrl: tabUrl, originals, replacements, method: 'fullDiacritics' });
             return replacements;
           }
         } catch (error) {
@@ -62,10 +97,14 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
       console.error('Failed to diacritize chunk, returning original text');
       return originals;
     })
-  ).then((result) => {return result.flat()});
+  ).then((result) => { return result.flat() });
 
-  console.log('Diacritized text:', diacritizedNodes);
+  console.log('Diacritized text:', diacritizedNodes, 'Validation failures:', validationFailures);
   return diacritizedNodes;
+
+  function stripDiacritics(text: string): string {
+    return text.trim().normalize('NFC').replace(/([\u064B-\u0652])/g, '')
+  }
 
   function validateResponse(response: Anthropic.Messages.Message, originalText: string, diacritizedText: string): boolean {
     const { input_tokens, output_tokens } = response.usage;
