@@ -194,7 +194,7 @@ export function constructAnthropicMessage(
         content: [
           {
             type: "text",
-            text: text,
+            text: `Input: ${text} \nOutput:`,
           }
         ]
       }
