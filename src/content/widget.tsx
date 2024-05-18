@@ -102,7 +102,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
             setFinishedBatches((prevFinished) => prevFinished + 1);
             sendResponse({ status: 'success' });
             break;
-          case "updateWebsiteText":
+          case "allDone":
             setFinishedBatches(totalBatches);
             setPageRenders([method, ...pageRenders]);
             sendResponse({ status: 'success' });

@@ -128,7 +128,7 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
       }
 
       const arabiziNodes: TextNode[] = arabicToArabizi(webpageDiacritizationData.getDiacritization('fullDiacritics'));
-       webpageDiacritizationData.addDiacritization(arabiziNodes, method);
+      webpageDiacritizationData.addDiacritization(arabiziNodes, method);
       break;
     }
 
@@ -148,8 +148,9 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
 
   // Update the website text
   const diacritization = webpageDiacritizationData.getDiacritization(method);
-  messageContentScript(tab.id, { action: 'updateWebsiteText', tabUrl:tab.url, replacements: diacritization, method })
-    .then(() => console.log('Website text updated'));
-
-  return ({ status: 'success' });
+  const result = await messageContentScript(tab.id, { action: 'updateWebsiteText', tabUrl: tab.url, replacements: diacritization, method })
+  if (result.status === 'success') {
+    chrome.tabs.sendMessage(tab.id, { action: 'allDone', tabId: tab.id, method })
+  }
+  return result;
 }
