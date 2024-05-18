@@ -14,9 +14,6 @@ export async function calculateHash(input: string | string[]): Promise< string |
     else { return hasher.h64ToString(inputText) }
   }));
 }
-
-export const sentenceRegex = /[.!?؟]+\s*\n*/g;
-
 export async function getAPIKey(): Promise<string> {
   try {
     const { apiKey } = await chrome.storage.sync.get('apiKey');
