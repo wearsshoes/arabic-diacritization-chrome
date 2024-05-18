@@ -10,9 +10,8 @@
             "name": "Attach to Chrome",
             "port": 9222,
             "webRoot": "${workspaceFolder}/src",
-            "sourceMaps": true,
-            "perScriptSourcemaps": "yes",
-            "trace": true,
+            // "perScriptSourcemaps": "yes",
+            // "trace": true,
             "url": "chrome-extension://enonckdmbapbfinempgnbhhfkcjlblkg"
         },
         {
@@ -30,7 +29,6 @@
                 // "--user-data-dir=/Users/rachelshu/Library/Application Support/Google/Chrome/Profile 4",
             ],
             "webRoot": "${workspaceFolder}/src",
-            "sourceMaps": true,
         }
     ]
 }
