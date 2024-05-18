@@ -15,6 +15,7 @@ export interface AppMessage {
   langScript?: string;
   replacements?: TextNode[];
   batches?: number;
+  ruby?: boolean;
 }
 
 export interface ElementAttributes {

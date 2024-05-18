@@ -22,12 +22,14 @@ const onContentLoaded = () => {
     return;
   }
   mainNode = (document.body.querySelector('main, #main, #root, #content, .content') as HTMLElement || document.body);
+
+  document.removeEventListener('DOMContentLoaded', onContentLoaded);
+
   console.log('Content loaded, main node:', mainNode, 'scraping/labeling content');
   scrapeContent(mainNode).then(() => {
     chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'contentLoaded' });
     observer.observe(document.body, observerOptions);
   });
-  document.removeEventListener('DOMContentLoaded', onContentLoaded);
 };
 
 const listener = (request: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse) => void) => {
@@ -39,7 +41,8 @@ const listener = (request: AppMessage, _sender: chrome.runtime.MessageSender, se
     'getWebsiteText': handleGetWebsiteText,
     'getSelectedNodes': handleGetSelectedNodes,
     'updateWebsiteText': handleUpdateWebsiteText,
-    'diacritizationChunkFinished': handleDiacritizationChunkFinished,
+    'diacritizationBatchesStarted': async () => ({ status: 'success' }),
+    'diacritizationChunkFinished': async () => ({ status: 'success' }),
   };
 
   const handler = actionHandlers[request.action];
@@ -94,17 +97,14 @@ async function handleGetSelectedNodes(): Promise<AppResponse> {
 async function handleUpdateWebsiteText(message: AppMessage): Promise<AppResponse> {
   editingContent = true;
   if (message.replacements && message.method && message.tabUrl === window.location.href) {
-    replaceWebpageText(message.replacements);
+    console.log('listener says ruby is' , message.ruby)
+    replaceWebpageText(message.replacements, message.ruby);
     diacritizedStatus = message.method;
   } else {
     throw new Error('Could not update website text.');
   }
   editingContent = false;
   return { status: 'success' };
-}
-
-async function handleDiacritizationChunkFinished(message: AppMessage): Promise<AppResponse> {
-  return handleUpdateWebsiteText(message);
 }
 
 // Scrape webpage data for the content script

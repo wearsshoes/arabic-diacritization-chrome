@@ -5,7 +5,7 @@ import { fullDiacritization } from "./arabicDiacritization";
 import { messageContentScript, dataManager, controllerMap } from './background';
 
 export async function processSelectedText(tab: chrome.tabs.Tab, method: string = 'fullDiacritics'): Promise<void> {
-  if(!tab.id || !tab.url) return;
+  if (!tab.id || !tab.url) return;
 
   const controller = new AbortController();
   controllerMap.set(tab.id, controller);
@@ -24,13 +24,8 @@ export async function processSelectedText(tab: chrome.tabs.Tab, method: string =
   }
 
   console.log("Doing ", method, "for selected nodes:", selectedNodes);
-  let replacementText = await fullDiacritization(tab.id, tab.url, selectedNodes, controller.signal);
-  console.log('Diacritization result:', replacementText);
-
-  if (method === 'arabizi') {
-    replacementText = arabicToArabizi(replacementText);
-  }
-  await messageContentScript(tab.id, { action: 'updateWebsiteText', tabUrl: tab.url, replacements: replacementText, method });
+  const replacementText = await fullDiacritization(tab.id, tab.url, selectedNodes, controller.signal, method === 'arabizi');
+  await messageContentScript(tab.id, { action: 'updateWebsiteText', tabUrl: tab.url, replacements: replacementText, method, ruby: (method === 'arabizi') });
 }
 
 export async function processWebpage(tab: chrome.tabs.Tab, method: string): Promise<AppResponse> {
@@ -109,6 +104,7 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
   }
 
   // Process the webpage
+  console.log('Processing webpage:', tabUrl, 'with method:', method)
   switch (method) {
     // If the method is 'fullDiacritics' and saved data exists for the current webpage, return the saved results
     case 'fullDiacritics':
@@ -121,7 +117,7 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
     case 'arabizi': {
       if (!webpageDiacritizationData.diacritizations['fullDiacritics']) {
         console.log("Full diacritization doesn't exist, Diacritizing text first");
-        await fullDiacritization(tabId, tabUrl, webpageDiacritizationData.getDiacritization('original'), controller.signal)
+        await fullDiacritization(tabId, tabUrl, webpageDiacritizationData.getDiacritization('original'), controller.signal, true)
           .then((fullDiacritics) => {
             webpageDiacritizationData.addDiacritization(fullDiacritics, 'fullDiacritics');
           });
