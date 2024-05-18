@@ -9,21 +9,28 @@
             "request": "attach",
             "name": "Attach to Chrome",
             "port": 9222,
-            "urlFilter": "http://localhost:9222/*",
-            "webRoot": "${workspaceFolder}"
+            "webRoot": "${workspaceFolder}/src",
+            "sourceMaps": true,
+            "perScriptSourcemaps": "yes",
+            "trace": true,
+            "url": "chrome-extension://enonckdmbapbfinempgnbhhfkcjlblkg"
         },
         {
             "type": "chrome",
             "request": "launch",
             "name": "Launch Vite Chrome extension debugger",
             "port": 3002,
-            "runtimeArgs": ["--load-extension=${workspaceFolder}/dist"],
-            // "sourceMapPathOverrides": {
-            //     "webpack:///./src/*": "${webRoot}/src/*",
-            // },
-            "webRoot": "${workspaceFolder}"
-
+            "url": "chrome-extension://enonckdmbapbfinempgnbhhfkcjlblkg",
+            "skipFiles": ["node_modules/**"],
+            "runtimeExecutable": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            "runtimeArgs": [
+                // "--disable-extensions-except=${workspaceFolder}",
+                "--load-extension=${workspaceFolder}/dist",
+                "--remote-debugging-port=9222",
+                // "--user-data-dir=/Users/rachelshu/Library/Application Support/Google/Chrome/Profile 4",
+            ],
+            "webRoot": "${workspaceFolder}/src",
+            "sourceMaps": true,
         }
     ]
-
 }

@@ -17,4 +17,8 @@ export default defineConfig({
       usePolling: true,
     },
   },
+  build: {
+    sourcemap: true, // Ensure source maps are generated
+    outDir: 'dist',
+  },
 });

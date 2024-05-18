@@ -9,7 +9,8 @@
     "contextMenus",
     "storage",
     "scripting",
-    "commands"
+    "commands",
+    "debugger"
   ],
   "background": {
     "service_worker": "src/background/background.ts"
