@@ -1,8 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { TextNode } from '../common/webpageDataClass';
-import { Claude, countSysPromptTokens, anthropicAPICall, constructAnthropicMessage } from "./anthropicCaller";
+import { Claude, anthropicAPICall, constructAnthropicMessage } from "./anthropicCaller";
 import { messageContentScript } from './background';
-import { sentenceRegex } from '../common/utils';
 import { Prompt } from '../common/types'
 import prompts from './defaultPrompts.json';
 import { EventEmitter } from 'events';
@@ -14,58 +12,69 @@ async function getPrompt(): Promise<Prompt> {
     const { selectedPrompt } = await chrome.storage.sync.get('selectedPrompt');
     return selectedPrompt;
   } catch (error) {
-    console.error(`Error retrieving prompt: ${error}, using default prompt.`);
+    console.warn(`Error retrieving prompt: ${error}, using default prompt.`);
     return defaultPrompt;
   }
 }
 
 // Full diacritization
-export async function fullDiacritization(tabId: number, tabUrl: string, selectedNodes: TextNode[], abortSignal: AbortSignal): Promise<TextNode[]> {
+export async function fullDiacritization(tabId: number, tabUrl: string, selectedNodes: TextNode[], abortSignal: AbortSignal, ruby: boolean = false): Promise<TextNode[]> {
 
   const diacritizationBatches = createDiacritizationElementBatches(selectedNodes, 750);
   const prompt = await getPrompt();
   const claude = new Claude()
-  const sysPromptLength = await countSysPromptTokens(prompt.text) || 0;
-  const maxTries = 1;
+  const maxTries = 3;
   const delimiter = '|';
   let validationFailures = 0;
 
   messageContentScript(tabId, { action: 'diacritizationBatchesStarted', tabUrl: tabUrl, batches: diacritizationBatches.length });
+  console.log('Full diacritization, ruby: ', ruby)
 
   // diacritize the texts in parallel with retries
   const diacritizedNodes = await Promise.all(
 
     diacritizationBatches.map(async (originals) => {
       const originalText = originals.flatMap((textNode) => textNode.text.replace(delimiter, '')).join(delimiter);
+      if (originalText.replace(/[^\u0621-\u064A]/g, '') === '') {
+        console.warn('Skipping diacritization of totally non-Arabic text');
+        return originals;
+      }
+
+      const replacements: TextNode[] = [];
 
       const eventEmitter = new EventEmitter();
       const msg = constructAnthropicMessage(originalText, prompt, claude);
 
-      for (let tries = 0; tries < maxTries; tries++) {
-        claude.escalateModel();
+      for (let tries = 1; tries < maxTries; tries++) {
         let diacritizedAccumulated = '';
+        let outOfLines = false;
 
         eventEmitter.on('text', (textDelta) => {
           diacritizedAccumulated += textDelta;
 
           let delimiterIndex;
-          while ((delimiterIndex = diacritizedAccumulated.indexOf(delimiter)) !== -1) {
-            const sentencesToCheck = originals
+          while ((delimiterIndex = diacritizedAccumulated.indexOf(delimiter)) !== -1 && !outOfLines) {
             const extractedText = diacritizedAccumulated.slice(0, delimiterIndex);
             const strippedText = stripDiacritics(extractedText);
+            const sentencesToCheck = originals
             const textNode = sentencesToCheck.shift();
-            const oldText = stripDiacritics(textNode?.text || '');
+            if (!textNode) {
+              console.warn('Out of text to validate against:', extractedText);
+              outOfLines = true;
+              return;
+            }
 
-            console.log('Extracted text:', extractedText)
-            console.log('Stripped text:', strippedText)
-            console.log('Original text:', oldText);
-            if (strippedText === oldText && textNode) {
-              console.log('Sentence validation passed for extracted text:', extractedText);
-              const replacements: TextNode[] = [{ ...textNode, text: extractedText }]
-              messageContentScript(tabId, {action: 'updateWebsiteText', replacements, method: 'fullDiacritics', tabUrl: tabUrl})
+            const refText = stripDiacritics(textNode.text || '');
+            const fudgefactor = Math.ceil(refText.length / 50)
+            const fudge = Math.abs(refText.length - strippedText.length);
+            if (strippedText === refText || fudge <= fudgefactor) {
+              // console.log('Validation passed:', extractedText);
+              const validNode: TextNode[] = [{ ...textNode, text: extractedText }]
+              replacements.push(validNode[0]);
+              messageContentScript(tabId, { action: 'updateWebsiteText', replacements: validNode, method: 'fullDiacritics', tabUrl: tabUrl, ruby: ruby })
             } else {
-              console.error('Sentence validation failed for extracted text:', extractedText);
-              // Handle the validation failure based on your error handling strategy
+              console.warn(`Validation failed:\n${extractedText}\n${strippedText}\n${refText}`);
+              replacements.push(textNode);
               validationFailures++;
             }
 
@@ -76,12 +85,12 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
         try {
           const response = await anthropicAPICall(msg, claude.apiKey, abortSignal, eventEmitter);
           const diacritizedText: string = response.content[0].text;
-          console.log('originals: ', originalText, 'diacritized: ', diacritizedText);
+          console.log('originals:\n', originalText, 'diacritized:\n', diacritizedText);
 
-          const validResponse = validateResponse(response, originalText, diacritizedText);
+          const validResponse = validateResponse(originalText, diacritizedText);
           if (validResponse) {
-            const replacements: TextNode[] = diacritizedText.split(delimiter).map((text, index) => ({ ...originals[index], text }));
-            messageContentScript(tabId, { action: 'diacritizationChunkFinished', tabUrl: tabUrl, originals, replacements, method: 'fullDiacritics' });
+            messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl: tabUrl, replacements: replacements, ruby: ruby });
+            messageContentScript(tabId, { action: 'diacritizationChunkFinished', tabUrl: tabUrl, method: 'fullDiacritics' });
             return replacements;
           }
         } catch (error) {
@@ -90,11 +99,14 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
           }
           throw new Error(`Failed to diacritize chunk: ${error}`);
         }
-        if (tries < maxTries - 1) {
+        if (tries < maxTries) {
           console.log('Failed validation. trying again: try', tries + 1, 'of', maxTries);
+          claude.escalateModel(tries);
+        } else {
+          console.warn('Failed to diacritize chunk after', maxTries, 'tries,');
         }
       }
-      console.error('Failed to diacritize chunk, returning original text');
+      console.warn('Failed to diacritize chunk, returning original text');
       return originals;
     })
   ).then((result) => { return result.flat() });
@@ -103,20 +115,14 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
   return diacritizedNodes;
 
   function stripDiacritics(text: string): string {
-    return text.trim().normalize('NFC').replace(/([\u064B-\u0652])/g, '')
+    return text.trim().normalize('NFC').replace(/([\u064B-\u0652\u0621-\u0626\u0640])/g, '')
   }
 
-  function validateResponse(response: Anthropic.Messages.Message, originalText: string, diacritizedText: string): boolean {
-    const { input_tokens, output_tokens } = response.usage;
-    console.log('Input tokens:', input_tokens - sysPromptLength, 'Output tokens:', output_tokens);
-    const enoughTokens = output_tokens > (input_tokens - sysPromptLength);
-
+  function validateResponse(originalText: string, diacritizedText: string): boolean {
     // check if the diacritized text is longer than the original text
-    const separatorsInOriginal = originalText.split(delimiter).length - 1;
-    const separatorsInDiacritized = diacritizedText.split(delimiter).length - 1;
-    console.log('Separators in original:', separatorsInOriginal, 'Separators in diacritized:', separatorsInDiacritized);
-    const rightDelimiters = (separatorsInDiacritized - separatorsInOriginal === 0);
-    return (enoughTokens && rightDelimiters);
+    const rightDelimiters = originalText.split(delimiter).length - diacritizedText.split(delimiter).length;
+    console.log('Difference in delimiters:', Math.abs(rightDelimiters));
+    return (rightDelimiters === 0);
   }
 }
 
@@ -153,6 +159,7 @@ function createDiacritizationElementBatches(textElements: TextNode[], maxChars: 
         currentBatchLength += textLength;
 
         // handle sentence breaks as new batch
+        const sentenceRegex = /[.!?؟]+\s*\n*/g;
         if ((text.match(sentenceRegex) && (currentBatchLength > (maxChars * 2 / 3))) || index === (textElements.length - 1)) {
           batchStats.push([currentBatchLength, 'end of sentence', currentBatch]);
           textElementBatches.push(currentBatch);
