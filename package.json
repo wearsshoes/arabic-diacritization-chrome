@@ -33,6 +33,7 @@
     "@fontsource-variable/cairo-play": "^5.0.13",
     "bottleneck": "^2.19.5",
     "cldr": "^7.5.0",
+    "events": "^3.3.0",
     "framer-motion": "^11.1.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
