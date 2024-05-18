@@ -25,7 +25,8 @@ function getTextNodesInRange(range: Range): TextNode[] {
   let currentNode = walker.nextNode();
   while (currentNode) {
     textNodes.push({
-      [currentNode.parentElement?.getAttribute('crxid') ?? '']: currentNode.textContent ?? ''
+      elementId: currentNode.parentElement?.getAttribute('crxid') ?? '',
+      text: currentNode.textContent ?? ''
     });
     currentNode = walker.nextNode();
   }
@@ -50,6 +51,12 @@ function getTextElementsAndIndexDOM(node: Node = document.body, elementId: strin
           const childElement = childNode as Element;
           const dataId = childElement.attributes.getNamedItem('crxid')?.value;
           if (dataId) {
+            const textElement: TextNode = {
+              elementId: dataId,
+              text: childElement.textContent ?? ''
+            };
+            textElements.push(textElement);
+            iterator=parseInt(dataId.split('-')[1]);
             continue;
           }
         }

@@ -123,6 +123,7 @@ const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {
     if (diacritizedStatus === 'original') {
       editingContent = true;
       ({ textElements } = getTextElementsAndIndexDOM(mainNode as Node));
+      console.log('Scraped text elements:', textElements);
       editingContent = false;
     }
   } catch (error) {

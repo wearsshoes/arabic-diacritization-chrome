@@ -9,7 +9,8 @@ export interface PageMetadata {
 }
 
 export interface TextNode {
-    [elementId: string]: string;
+    elementId: string;
+    text: string;
 }
 
 export class WebpageDiacritizationData {
