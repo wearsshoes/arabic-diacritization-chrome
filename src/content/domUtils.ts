@@ -75,7 +75,8 @@ function getTextElementsAndIndexDOM(node: Node = document.body, elementId: strin
       const elementId = 'element-' + iterator;
 
       const textElement: TextNode = {
-        [elementId]: sentence
+        elementId,
+        text: sentence
       };
 
       textElements.push(textElement);
@@ -90,7 +91,6 @@ function getTextElementsAndIndexDOM(node: Node = document.body, elementId: strin
 
     node.parentNode?.replaceChild(fragment, node);
   }
-
   return { textElements, iterator };
 }
 
@@ -120,24 +120,24 @@ function replaceWebpageText(originals: TextNode[], replacements: TextNode[], met
     const element = document.querySelector(`[crxid="${elementId}"]`);
 
     if (element) {
-      element.textContent = replacementText;
+      element.innerHTML = replacementText;
     } else {
       console.warn(`Warning: elementId ${elementId} did not map to any element.`);
     }
   });
 
-  if (method === 'arabizi') {
-    directionLTR();
-  }
+  // if (method === 'arabizi') {
+  //   directionLTR();
+  // }
 }
 
 // Forces LTR. Only gets called for Arabizi
-function directionLTR() {
-  // document.documentElement.setAttribute("lang", "en");
-  document.documentElement.setAttribute("dir", "ltr");
-  const style = document.createElement('style')
-  style.textContent = `body * {direction: ltr;}`;
-  document.head.appendChild(style);
-}
+// function directionLTR() {
+//   // document.documentElement.setAttribute("lang", "en");
+//   document.documentElement.setAttribute("dir", "ltr");
+//   const style = document.createElement('style')
+//   style.textContent = `body * {direction: ltr;}`;
+//   document.head.appendChild(style);
+// }
 
 export { getTextNodesInRange, getTextElementsAndIndexDOM, replaceWebpageText };

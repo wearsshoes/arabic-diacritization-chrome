@@ -32,7 +32,24 @@ export function arabicToArabizi(textNodes: TextNode[], dialect: string = "msa"):
       .join('')
   }
 
-  return textNodes.map(arabicText => ({ ...arabicText, text: transliterate(arabicText.text) }));
+  function araRuby(arabicText: string, arabiziText: string): string {
+    const arabicWords = arabicText.split(' ');
+    const arabiziWords = arabiziText.split(' ');
+    const style = `style="display: inline-flex; flex-direction: column; text-align: center; line-height: 1.2em;"`
+
+    let result = '';
+    for (let i = 0; i < arabicWords.length; i++) {
+      if (!arabicWords[i].match(/[\u0621-\u064A]/)) result += arabicWords[i] + ' ';
+      else result += `<span style="line-height: 1.6em;"><ruby ${style}>${arabicWords[i]}<rp>(</rp><rt>${arabiziWords[i]}</rt><rp>)</rp></ruby></span> `;
+    }
+
+    return result.trim();
+  }
+
+  return textNodes.map(arabicText => {
+    const arabiziText = transliterate(arabicText.text);
+    return { ...arabicText, text: araRuby(arabicText.text, arabiziText) };
+  });
 }
 
 // TODO: joined vowels -- fii instead of fiy, etc
