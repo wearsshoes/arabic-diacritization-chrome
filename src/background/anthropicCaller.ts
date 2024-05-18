@@ -4,6 +4,7 @@ import BottleneckLight from "bottleneck/light.js";
 import { calculateHash } from '../common/utils';
 import { getAPIKey } from "../common/utils";
 import { Prompt } from '../common/types';
+import { EventEmitter } from 'events';
 
 export { claude, defaultModel, anthropicAPICall, countSysPromptTokens };
 
@@ -65,7 +66,7 @@ const claude: Models = {
 
 const defaultModel: Model = claude.haiku;
 
-async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: string, signal?: AbortSignal): Promise<Anthropic.Message> {
+async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: string, signal?: AbortSignal, eventEmitter?: EventEmitter): Promise<Anthropic.Message> {
 
   // generate a hash to identify the job
   const hash = await calculateHash(JSON.stringify(params));
@@ -77,14 +78,50 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
     throw new Error('API key not set');
   }
 
-  const anthropic = new Anthropic({ apiKey: apiKey });
+  const client = new Anthropic({ apiKey: apiKey });
   console.log('Queued job', hash);
   return anthropicLimiter.schedule(async () => {
     try {
       console.log('Sent job', hash);
-      const result = await anthropic.messages.create(params, { signal });
-      console.log('Received result for:', hash);
-      return result as Anthropic.Message;
+
+      const finalResult: Anthropic.Message = await new Promise((resolve, reject) => {
+        client.messages.stream(params, { signal })
+          .on('connect', () => {
+            console.log('Connected to stream');
+          })
+          // .on('streamEvent', (event, snapshot) => {
+          //   console.log('Received streamEvent:', event, snapshot);
+          // })
+          .on('text', (textDelta) => {
+            eventEmitter?.emit('text', textDelta);
+          })
+          // .on('message', (message) => {
+          //   console.log('Received message:', message);
+          // })
+          // .on('contentBlock', (content) => {
+          //   console.log('Received contentBlock:', content);
+          // })
+          .on('finalMessage', (message) => {
+            console.log('Received finalMessage:', message);
+            resolve(message);
+          })
+          .on('error', (error) => {
+            console.error('Received error:', error);
+            reject(error);
+          })
+          .on('abort', (error) => {
+            console.error('Stream aborted:', error);
+            reject(error);
+          })
+          .on('end', () => {
+            console.log('Stream ended');
+          });
+      });
+
+      console.log('Received final result for:', hash);
+      return finalResult;
+
+
     } catch (error) {
       if (error instanceof Anthropic.APIError) {
         console.error('Anthropic API Error:', error.message);
@@ -188,6 +225,7 @@ export function constructAnthropicMessage(
     max_tokens: 4000,
     temperature: 0,
     system: prompt.text,
+    stream: true,
     messages: [
       {
         role: "user",
