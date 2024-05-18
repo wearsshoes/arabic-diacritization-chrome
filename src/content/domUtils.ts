@@ -1,5 +1,5 @@
+import { arabicToArabizi } from "../background/arabizi";
 import { TextNode } from "../common/webpageDataClass";
-import { sentenceRegex } from "../common/utils";
 
 // -------------- Functions -------------- //
 
@@ -42,21 +42,19 @@ function getTextElementsAndIndexDOM(node: Node = document.body, elementId: strin
     const element = node as Element;
     if (element.hasChildNodes() && isVisible(element)) {
 
-      if (Array.from(element.childNodes).some(childNode => childNode.nodeType === Node.TEXT_NODE)) {
-        // element.setAttribute('data-element-id', elementId);
-      }
-
       for (const childNode of Array.from(element.childNodes)) {
         if (childNode.nodeType === Node.ELEMENT_NODE) {
           const childElement = childNode as Element;
           const dataId = childElement.attributes.getNamedItem('crxid')?.value;
           if (dataId) {
+            elementId = 'element-' + iterator;
+            childElement.setAttribute('crxid', elementId);
             const textElement: TextNode = {
-              elementId: dataId,
+              elementId: elementId,
               text: childElement.textContent ?? ''
             };
             textElements.push(textElement);
-            iterator = parseInt(dataId.split('-')[1]);
+            iterator++;
             continue;
           }
         }
@@ -68,7 +66,7 @@ function getTextElementsAndIndexDOM(node: Node = document.body, elementId: strin
       iterator++;
     }
 
-  } else if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+  } else if (node.nodeType === Node.TEXT_NODE && node.textContent && node.textContent?.trim() !== '') {
     const sentences = splitTextIntoSentences(node.textContent);
     const fragment = document.createDocumentFragment();
     sentences.forEach((sentence) => {
@@ -95,7 +93,9 @@ function getTextElementsAndIndexDOM(node: Node = document.body, elementId: strin
 }
 
 function splitTextIntoSentences(text: string): string[] {
-  return text.replace(sentenceRegex, '$&|').split('|').filter(sentence => sentence.trim() !== '');
+  const clauseRegex = /[.!?؟,،\])}»;:\-–—/]+\s*\n*/g;
+  // const clauseRegex = /[.!?؟،,)}\];:-–—»/]+\s*\n*/g;
+  return text.replace(clauseRegex, '$&|').split('|').filter(sentence => sentence.trim() !== '');
 }
 
 // Checks if node is visible
@@ -104,18 +104,37 @@ function isVisible(element: Element): boolean {
   return checkElement.display !== 'none' && checkElement.visibility !== 'hidden'
 }
 
-function replaceWebpageText(replacements: TextNode[]) {
+function replaceWebpageText(replacements: TextNode[], ruby: boolean = false) {
+  if (ruby) {
+    replacements = arabicToArabizi(replacements);
+  }
   replacements.forEach((textNode) => {
+
     const { elementId, text } = textNode;
-    const element = document.querySelector(`[crxid="${elementId}"]`);
+    const element = document.querySelector(`[crxid="${elementId}"]`) as HTMLElement;
     if (element) {
-      console.log(`Replacing ${element.innerHTML} with ${text} at ${elementId}`);
+      console.log(`Replacing ${element.innerHTML} with ${ruby || text.includes("<span")? 'ruby' : text} at ${elementId}`);
       element.innerHTML = text;
+      element.animate(
+        [
+          {
+            // from
+            background: 'rgba(76, 175, 80, 0.8)',
+          },
+          {
+            // to
+            background: 'rgba(76, 175, 80, 0.0)'
+          },
+        ],
+        500,
+      );
     } else {
       console.warn(`Warning: ${elementId} doesn't exist.`);
     }
   });
 }
+
+
 
 // Forces LTR. Only gets called for Arabizi
 // function directionLTR() {
