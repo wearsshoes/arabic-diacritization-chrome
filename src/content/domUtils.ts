@@ -56,7 +56,7 @@ function getTextElementsAndIndexDOM(node: Node = document.body, elementId: strin
               text: childElement.textContent ?? ''
             };
             textElements.push(textElement);
-            iterator=parseInt(dataId.split('-')[1]);
+            iterator = parseInt(dataId.split('-')[1]);
             continue;
           }
         }
@@ -104,31 +104,17 @@ function isVisible(element: Element): boolean {
   return checkElement.display !== 'none' && checkElement.visibility !== 'hidden'
 }
 
-// DOM Manipulation
-function replaceWebpageText(originals: TextNode[], replacements: TextNode[], method: string) {
-  console.log(`Replacing text with ${method}`, originals, replacements);
-
-  if (originals.length !== replacements.length) {
-    throw new Error('originals and replacements should have the same length.');
-  }
-
-  originals.forEach((textNode, index) => {
-    const { elementId } = textNode;
-    const replacementEntry = replacements[index];
-    const replacementText = typeof replacementEntry === 'string' ? replacementEntry : replacementEntry.text;
-
+function replaceWebpageText(replacements: TextNode[]) {
+  replacements.forEach((textNode) => {
+    const { elementId, text } = textNode;
     const element = document.querySelector(`[crxid="${elementId}"]`);
-
     if (element) {
-      element.innerHTML = replacementText;
+      console.log(`Replacing ${element.innerHTML} with ${text} at ${elementId}`);
+      element.innerHTML = text;
     } else {
-      console.warn(`Warning: elementId ${elementId} did not map to any element.`);
+      console.warn(`Warning: ${elementId} doesn't exist.`);
     }
   });
-
-  // if (method === 'arabizi') {
-  //   directionLTR();
-  // }
 }
 
 // Forces LTR. Only gets called for Arabizi

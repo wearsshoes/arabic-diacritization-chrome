@@ -30,7 +30,7 @@ export async function processSelectedText(tab: chrome.tabs.Tab, method: string =
   if (method === 'arabizi') {
     replacementText = arabicToArabizi(replacementText);
   }
-  await messageContentScript(tab.id, { action: 'updateWebsiteText', url: tab.url, originals: selectedNodes, replacements: replacementText, method });
+  await messageContentScript(tab.id, { action: 'updateWebsiteText', tabUrl: tab.url, replacements: replacementText, method });
 }
 
 export async function processWebpage(tab: chrome.tabs.Tab, method: string): Promise<AppResponse> {
@@ -83,9 +83,8 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
     }
 
     // If saved data contains the requested method, update the website text with the saved data, stop
-    const original = retrievedPageData.getDiacritization('original');
     const diacritization = retrievedPageData.getDiacritization(method);
-    messageContentScript(tabId, { action: 'updateWebsiteText', url: tab.url, originals: original, replacements: diacritization, method });
+    messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl: tab.url, replacements: diacritization, method });
     userMessage = `Webpage is unchanged, using saved ${method} data`;
     return true;
   };
@@ -148,9 +147,8 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
     .catch((error) => console.error('Failed to update saved webpage data:', error));
 
   // Update the website text
-  const original = webpageDiacritizationData.getDiacritization('original');
   const diacritization = webpageDiacritizationData.getDiacritization(method);
-  messageContentScript(tab.id, { action: 'updateWebsiteText', originals: original, replacements: diacritization, method })
+  messageContentScript(tab.id, { action: 'updateWebsiteText', tabUrl:tab.url, replacements: diacritization, method })
     .then(() => console.log('Website text updated'));
 
   return ({ status: 'success' });

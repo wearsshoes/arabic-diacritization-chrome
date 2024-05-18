@@ -93,9 +93,11 @@ async function handleGetSelectedNodes(): Promise<AppResponse> {
 
 async function handleUpdateWebsiteText(message: AppMessage): Promise<AppResponse> {
   editingContent = true;
-  if (message.originals && message.replacements && message.method && message.url === window.location.href) {
-    replaceWebpageText(message.originals, message.replacements, message.method);
+  if (message.replacements && message.method && message.tabUrl === window.location.href) {
+    replaceWebpageText(message.replacements);
     diacritizedStatus = message.method;
+  } else {
+    throw new Error('Could not update website text.');
   }
   editingContent = false;
   return { status: 'success' };
