@@ -22,10 +22,9 @@ export class Claude {
 
   escalateModel(n: number = 1) {
     const models = Object.values(claude);
-    const baseModel = models.find(model => model.currentVersion = this.model.currentVersion);
-    if (!baseModel) { throw new Error('Model not found'); }
-    const newModel = models.find(model => model.level === baseModel.level + n);
-    newModel ? this.model = newModel : this.model = baseModel;
+    const newModel = models.find(model => model.level === n);
+    if (newModel) this.model = newModel;
+    console.log('Escalated model to:', this.model);
   }
 }
 
@@ -80,15 +79,17 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
 
   const client = new Anthropic({ apiKey: apiKey });
   console.log('Queued job', hash);
+
+  // TODO: write abortSignal handling for bottleneck
   return anthropicLimiter.schedule(async () => {
     try {
-      console.log('Sent job', hash);
+      console.log('Sent job', hash, 'to', params.model);
 
       const finalResult: Anthropic.Message = await new Promise((resolve, reject) => {
         client.messages.stream(params, { signal })
-          .on('connect', () => {
-            console.log('Connected to stream');
-          })
+          // .on('connect', () => {
+          //   console.log('Connected to stream');
+          // })
           // .on('streamEvent', (event, snapshot) => {
           //   console.log('Received streamEvent:', event, snapshot);
           // })
@@ -102,7 +103,6 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
           //   console.log('Received contentBlock:', content);
           // })
           .on('finalMessage', (message) => {
-            console.log('Received finalMessage:', message);
             resolve(message);
           })
           .on('error', (error) => {
@@ -113,12 +113,12 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
             console.error('Stream aborted:', error);
             reject(error);
           })
-          .on('end', () => {
-            console.log('Stream ended');
-          });
+          // .on('end', () => {
+          //   console.log('Stream ended');
+          // });
       });
 
-      console.log('Received final result for:', hash);
+      console.log('Received final result for:', hash, finalResult);
       return finalResult;
 
 
@@ -136,13 +136,13 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
           const tokensRemaining = rateLimitHeaders['anthropic-ratelimit-tokens-remaining'];
           const tokensReset = rateLimitHeaders['anthropic-ratelimit-tokens-reset'];
 
-          console.error('Rate Limit Details:');
-          console.error('Requests Limit:', requestsLimit);
-          console.error('Requests Remaining:', requestsRemaining);
-          console.error('Requests Reset:', requestsReset);
-          console.error('Tokens Limit:', tokensLimit);
-          console.error('Tokens Remaining:', tokensRemaining);
-          console.error('Tokens Reset:', tokensReset);
+          console.log('Rate Limit Details:');
+          console.log('Requests Limit:', requestsLimit);
+          console.log('Requests Remaining:', requestsRemaining);
+          console.log('Requests Reset:', requestsReset);
+          console.log('Tokens Limit:', tokensLimit);
+          console.log('Tokens Remaining:', tokensRemaining);
+          console.log('Tokens Reset:', tokensReset);
         }
       } else if (error instanceof Error) {
         if (error.name === 'AbortError') {
