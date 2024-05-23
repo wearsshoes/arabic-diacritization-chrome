@@ -17,14 +17,9 @@ const observerOptions = {
 };
 
 const onContentLoaded = () => {
-  if (language !== 'ar') {
-    console.log('Language is not Arabic, exiting');
-    return;
-  }
-  mainNode = (document.body.querySelector('main, #main, #root, #content, .content') as HTMLElement || document.body);
-
   document.removeEventListener('DOMContentLoaded', onContentLoaded);
 
+  mainNode = (document.body.querySelector('main, #main, #root') as HTMLElement || document.body);
   console.log('Content loaded, main node:', mainNode, 'scraping/labeling content');
   scrapeContent(mainNode).then(() => {
     chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'contentLoaded' });
@@ -41,6 +36,7 @@ const listener = (request: AppMessage, _sender: chrome.runtime.MessageSender, se
     'getWebsiteText': handleGetWebsiteText,
     'getSelectedNodes': handleGetSelectedNodes,
     'updateWebsiteText': handleUpdateWebsiteText,
+    'toggleWidget': async () => ({ status: 'success' }), // Dummy handler to prevent 'Invalid action
     'diacritizationBatchesStarted': async () => ({ status: 'success' }),
     'diacritizationChunkFinished': async () => ({ status: 'success' }),
   };
@@ -97,7 +93,7 @@ async function handleGetSelectedNodes(): Promise<AppResponse> {
 async function handleUpdateWebsiteText(message: AppMessage): Promise<AppResponse> {
   editingContent = true;
   if (message.replacements && message.method && message.tabUrl === window.location.href) {
-    console.log('listener says ruby is' , message.ruby)
+    // console.log('listener says ruby is', message.ruby)
     replaceWebpageText(message.replacements, message.ruby);
     diacritizedStatus = message.method;
   } else {
