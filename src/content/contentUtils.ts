@@ -166,11 +166,18 @@ async function summarizeMetadata(): Promise<{ [key: string]: ElementAttributes }
 
 const observer = new MutationObserver((mutations) => {
   // Check if the mutations indicate a significant content change
+  const isInShadowDOM = (node: Node) => {
+    // console.log('Checking if in shadow DOM:', node.getRootNode());
+    return node.getRootNode() instanceof ShadowRoot;
+  }
+
   const significantChange = mutations.some((mutation) => {
     return (
+      !isInShadowDOM(mutation.target) && (
       mutation.type === 'childList' ||
       (mutation.type === 'characterData' && mutation.target.parentElement?.tagName !== 'SCRIPT')
-    );
+      )
+    )
   });
 
   if (significantChange && !editingContent && diacritizedStatus === 'original') {
