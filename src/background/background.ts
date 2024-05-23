@@ -122,7 +122,6 @@ chrome.commands.onCommand.addListener((command) => {
 
 let contentScriptReady = false;
 
-const messageQueue: { tabId: number, message: AppMessage, resolve: (value: AppResponse | Promise<AppResponse>) => void }[] = [];
 export const dataManager = DiacritizationDataManager.getInstance();
 
 async function getActiveTab(): Promise<chrome.tabs.Tab> {
@@ -155,7 +154,6 @@ async function handleWidgetHandshake(): Promise<AppResponse> {
 
 async function handleContentLoaded(): Promise<AppResponse> {
   contentScriptReady = true;
-  processQueuedMessages();
   return { status: 'success' }
 }
 
@@ -238,26 +236,7 @@ export function messageContentScript(tabId: number, message: AppMessage): Promis
       });
     });
   } else {
-    console.log('Content script not ready. Queueing message:', message);
-    return new Promise((resolve) => {
-      messageQueue.push({ tabId, message, resolve });
-    });
-  }
-}
-
-async function processQueuedMessages() {
-  while (messageQueue.length > 0) {
-    const queuedMessage = messageQueue.shift();
-    if (queuedMessage) {
-      const { tabId, message, resolve } = queuedMessage;
-      try {
-        const response = await messageContentScript(tabId, message);
-        resolve(response);
-      } catch (error) {
-        console.error('Error processing queued message:', error);
-        resolve({ status: 'error', error: error as Error });
-      }
-    }
+    return Promise.resolve({ status: 'error', error: new Error('Content script not ready') });
   }
 }
 
@@ -270,36 +249,3 @@ function cancelTask(tabId: number) {
     controllerMap.delete(tabId);
   }
 }
-
-// const updateQueue = new Map<number, { url: string, updates: AppMessage[] }>();
-
-// function cancelTask(tabId: number) {
-//   if (controllerMap.has(tabId)) {
-//     const controller = controllerMap.get(tabId);
-//     controller?.abort();
-//     controllerMap.delete(tabId);
-//   }
-//   if (updateQueue.has(tabId)) {
-//     updateQueue.delete(tabId);
-//   }
-// }
-
-// function queueUpdates(tabId: number, url: string, message: AppMessage) {
-//   if (updateQueue.has(tabId)) {
-//     updateQueue.get(tabId)?.updates.push(message);
-//   } else {
-//     updateQueue.set(tabId, { url, updates: [message] });
-//   }
-// }
-
-// function completeUpdates(tabId: number, url: string) {
-//   if (updateQueue.has(tabId)) {
-//     const queuedUpdates = updateQueue.get(tabId);
-//     if (queuedUpdates?.url === url) {
-//       queuedUpdates.updates.forEach((message) => {
-//         messageContentScript(tabId, message);
-//       });
-//       updateQueue.delete(tabId);
-//     }
-//   }
-// }
