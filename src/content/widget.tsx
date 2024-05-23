@@ -7,7 +7,7 @@ import { AppMessage, AppResponse } from "../common/types";
 
 const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
 
-  const { onOpen: onExpanded, isOpen: isExpanded, getDisclosureProps, getButtonProps } = useDisclosure({ defaultIsOpen: true })
+  const { onOpen: onExpand, onClose:onMinimize, isOpen: isExpanded, getDisclosureProps, getButtonProps } = useDisclosure({ defaultIsOpen: true })
   const { onOpen, onClose, onToggle, getDisclosureProps: getCloseItem } = useDisclosure({ defaultIsOpen: false })
   const buttonProps = getButtonProps()
   const disclosureProps = getDisclosureProps()
@@ -42,14 +42,14 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
     }
   };
 
-  useEffect(() => {
-    chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'widgetHandshake' });
-    onOpen();
-  }, [onOpen]);
+  // useEffect(() => {
+  //   chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'reactivate' });
+  //   onExpand();
+  // }, [onExpand]);
 
   useEffect(() => {
-    if (!shouldDisplay) onClose();
-  }, [shouldDisplay, onClose]);
+    if (!shouldDisplay) onMinimize();
+  }, [shouldDisplay, onMinimize]);
 
   useEffect(() => {
     if (finishedBatches >= totalBatches && isAnimating) {
@@ -78,7 +78,6 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
     }
   };
 
-
   useEffect(() => {
     const listener =
       // TODO: merge these listeners back into contentUtils listeners
@@ -91,7 +90,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
               setFinishedBatches(0);
               setIsAnimating(true);
               onOpen();
-              onExpanded();
+              onExpand();
               sendResponse({ status: 'success' });
             } else {
               sendResponse({ status: 'error', error: new Error('No batches provided') });
