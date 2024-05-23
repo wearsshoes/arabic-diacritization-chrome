@@ -3,6 +3,8 @@ import { TextNode } from "../common/webpageDataClass";
 
 // -------------- Functions -------------- //
 
+const delimiter = '|';
+
 function getTextNodesInRange(range: Range): TextNode[] {
   const textNodes: TextNode[] = [];
 
@@ -99,7 +101,7 @@ function getTextElementsAndIndexDOM(node: Node = document.body, elementId: strin
 function splitTextIntoSentences(text: string): string[] {
   const clauseRegex = /[.!?؟,،\])}»;:\-–—/]+\s*\n*/g;
   // const clauseRegex = /[.!?؟،,)}\];:-–—»/]+\s*\n*/g;
-  return text.replace(clauseRegex, '$&|').split('|').filter(sentence => sentence.trim() !== '');
+  return text.replace(clauseRegex, '$&|').split(delimiter).filter(sentence => sentence.trim() !== '');
 }
 
 // Checks if node is visible
