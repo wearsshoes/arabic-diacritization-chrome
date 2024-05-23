@@ -24,10 +24,14 @@ function getTextNodesInRange(range: Range): TextNode[] {
   // Traverse the DOM tree and collect text nodes
   let currentNode = walker.nextNode();
   while (currentNode) {
-    textNodes.push({
-      elementId: currentNode.parentElement?.getAttribute('crxid') ?? '',
-      text: currentNode.textContent ?? ''
-    });
+    const text = currentNode.textContent ?? '';
+    const elementId = currentNode.parentElement?.getAttribute('crxid') ?? '';
+    if (text.trim() !== '' && elementId !== '') {
+      textNodes.push({
+        elementId,
+        text
+      });
+    }
     currentNode = walker.nextNode();
   }
   return textNodes;
@@ -111,6 +115,7 @@ function replaceWebpageText(replacements: TextNode[], ruby: boolean = false) {
   replacements.forEach((textNode) => {
 
     const { elementId, text } = textNode;
+    if (elementId === '' || text === '') {return;}
     const element = document.querySelector(`[crxid="${elementId}"]`) as HTMLElement;
     if (element) {
       console.log(`Replacing ${element.innerHTML} with ${ruby || text.includes("<span")? 'ruby' : text} at ${elementId}`);
@@ -129,7 +134,7 @@ function replaceWebpageText(replacements: TextNode[], ruby: boolean = false) {
         500,
       );
     } else {
-      console.warn(`Warning: ${elementId} doesn't exist.`);
+      console.warn(`Warning: ${elementId} doesn't exist, ${text}.`);
     }
   });
 }
