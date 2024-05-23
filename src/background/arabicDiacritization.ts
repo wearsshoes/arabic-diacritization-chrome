@@ -115,7 +115,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
   return diacritizedNodes;
 
   function stripDiacritics(text: string): string {
-    return text.trim().normalize('NFC').replace(/([\u064B-\u0652\u0621-\u0626\u0640])/g, '')
+    return text.trim().normalize('NFC').replace(/\s+/g, ' ').replace(/([\u064B-\u0652\u0621-\u0626\u0640])/g, '')
   }
 
   function validateResponse(originalText: string, diacritizedText: string): boolean {
@@ -128,7 +128,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
 
 // Create batches of elements according to sentence boundaries and API character limit.
 function createDiacritizationElementBatches(textElements: TextNode[], maxChars: number): TextNode[][] {
-  console.log('starting batching on', textElements.length, 'elements');
+  // console.log('starting batching on', textElements.length, 'elements');
   const textElementBatches: TextNode[][] = [];
   let currentBatch: TextNode[] = [];
   let currentBatchLength = 0;
