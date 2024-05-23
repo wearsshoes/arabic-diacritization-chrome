@@ -166,32 +166,29 @@ async function summarizeMetadata(): Promise<{ [key: string]: ElementAttributes }
 
 const observer = new MutationObserver((mutations) => {
   // Check if the mutations indicate a significant content change
-  const isInShadowDOM = (node: Node) => {
-    // console.log('Checking if in shadow DOM:', node.getRootNode());
-    return node.getRootNode() instanceof ShadowRoot;
-  }
 
   const significantChange = mutations.some((mutation) => {
-    return (
-      !isInShadowDOM(mutation.target) && (
-      mutation.type === 'childList' ||
-      (mutation.type === 'characterData' && mutation.target.parentElement?.tagName !== 'SCRIPT')
-      )
-    )
+    const targetElement = mutation.target instanceof Element ? mutation.target : null;
+    const isMainContentChange = targetElement?.closest(mainNode.tagName);
+    const isNotWidget = !targetElement?.closest('crx-app-container');
+    const isChildListChange = mutation.type === 'childList';
+    const isCharacterDataChange = mutation.type === 'characterData' && targetElement?.parentElement?.tagName !== 'SCRIPT';
+
+    return isNotWidget && isMainContentChange && (isChildListChange || isCharacterDataChange );
   });
 
   if (significantChange && !editingContent && diacritizedStatus === 'original') {
     console.log('Significant change, reindexing DOM', editingContent, diacritizedStatus, mutations);
-    // Disconnect the observer before making DOM changes
-    observer.disconnect();
-    scrapeContent(mainNode)
-      .finally(() => {
-        observer.observe(document.body, observerOptions);
-      })
-      .catch((error) => {
-        console.error('Error during scrapeContent:', error);
-        observer.observe(document.body, observerOptions);
-      });
+    // // Disconnect the observer before making DOM changes
+    // observer.disconnect();
+    // scrapeContent(mainNode)
+    //   .finally(() => {
+    //     observer.observe(document.body, observerOptions);
+    //   })
+    //   .catch((error) => {
+    //     console.error('Error during scrapeContent:', error);
+    //     observer.observe(document.body, observerOptions);
+    //   });
   }
 });
 
