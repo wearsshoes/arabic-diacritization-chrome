@@ -1,28 +1,25 @@
 import { useEffect, useState } from "react";
-import { ChakraProvider, useDisclosure } from '@chakra-ui/react';
+import { useDisclosure } from '@chakra-ui/react';
 import { Stack, Container, Button, ButtonGroup, Text, IconButton, Progress } from '@chakra-ui/react'
 import { SettingsIcon, ChevronUpIcon, CheckIcon, MinusIcon, CloseIcon, ArrowForwardIcon, SpinnerIcon } from '@chakra-ui/icons'
 import { Languages, translations } from "./widget_i18n";
 import { AppMessage, AppResponse } from "../common/types";
 
+
 const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
 
-  const { onOpen: onExpand, onClose:onMinimize, isOpen: isExpanded, getDisclosureProps, getButtonProps } = useDisclosure({ defaultIsOpen: true })
-  const { onOpen, onClose, onToggle, getDisclosureProps: getCloseItem } = useDisclosure({ defaultIsOpen: false })
+  const { onOpen, onClose, onToggle, getDisclosureProps: getCloseItem } = useDisclosure({ defaultIsOpen: true })
+  const { onOpen: onExpand, onClose: onMinimize, isOpen: isExpanded, getDisclosureProps, getButtonProps } = useDisclosure({ defaultIsOpen: false })
   const buttonProps = getButtonProps()
   const disclosureProps = getDisclosureProps()
   const closeProps = getCloseItem()
 
   const [language, setLanguage] = useState<Languages>('en');
-
   const shouldDisplay = ['ar', 'arz'].includes(siteLanguage)
-  const languageNamesInEnglish = new Intl.DisplayNames(['en'], { type: 'language' });
 
   const [method, setMethod] = useState('fullDiacritics');
   const [pageRenders, setPageRenders] = useState(['original']);
   const [pageState, setPageState] = useState('original');
-
-  // const [diacritizeStatus, setDiacritizeStatus] = useState('');
 
   const [totalBatches, setTotalBatches] = useState(0);
   const [finishedBatches, setFinishedBatches] = useState(0);
@@ -42,20 +39,15 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
     }
   };
 
-  // useEffect(() => {
-  //   chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'reactivate' });
-  //   onExpand();
-  // }, [onExpand]);
-
   useEffect(() => {
-    if (!shouldDisplay) onMinimize();
-  }, [shouldDisplay, onMinimize]);
+    if (!shouldDisplay) onMinimize()
+    else onExpand()
+  }, [shouldDisplay, onMinimize, onExpand]);
 
   useEffect(() => {
     if (finishedBatches >= totalBatches && isAnimating) {
       setIsAnimating(false);
       setPageState(method);
-      // setDiacritizeStatus('Page updated.');
     }
   }, [method, pageRenders, isAnimating, totalBatches, finishedBatches]);
 
@@ -97,7 +89,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
             }
             break;
           }
-          case "diacritizationChunkFinished":
+          case "updateProgressBar":
             setFinishedBatches((prevFinished) => prevFinished + 1);
             sendResponse({ status: 'success' });
             break;
@@ -120,7 +112,6 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
   });
 
   return (
-    <ChakraProvider>
       <Container
         position="fixed"
         bottom="0"
@@ -210,6 +201,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
                 isAttached
                 size="xs"
                 colorScheme="blue"
+                display={isAnimating ? "none" : "flex"}
               >
                 <Button
                   variant={method === 'original' ? 'solid' : 'outline'}
@@ -243,31 +235,44 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
                   onClick={() => beginDiacritization()}
                 />
               </ButtonGroup>
-              <Text> {siteLanguage === 'arz' ? 'FYI: Egyptian Arabic has limited support.' : `Lang: ${languageNamesInEnglish.of(siteLanguage)}`} </Text>
-              {/* <Text fontSize={"12px"}>{diacritizeStatus}</Text> */}
-            </Stack>
-            <Stack direction={"row"} spacing={"0px"} width={"100%"}>
-              <Progress
-                value={progressPercent}
-                colorScheme={isAnimating ? "blue" : "green"}
-                hasStripe={isAnimating}
-                isAnimated={isAnimating}
+              <ButtonGroup id="taskButtons"
+                width={"100%"}
+                isAttached
                 size="xs"
-                flex={1}
-              />
-              <IconButton
-                aria-label="Close"
-                size="xs"
-                variant="ghost"
-                icon={<CloseIcon />}
-                onClick={cancelAction}
-                visibility={isAnimating ? "visible" : "collapse"}
-              />
+                colorScheme="blue"
+                // display={isAnimating ? "flex" : "none"}
+              >
+                <Button
+                  variant={"solid"}
+                  flex={1}
+                  size="xs"
+                  onClick={cancelAction}
+                  colorScheme="blue"
+                >
+                  <Progress
+                    value={progressPercent}
+                    colorScheme="blue"
+                    hasStripe={isAnimating}
+                    isAnimated={isAnimating}
+                    flex={1}
+                  />
+                  <Text
+                    pos={"absolute"}
+                  >Converting...</Text>
+
+                </Button>
+                <IconButton
+                  aria-label="Cancel"
+                  icon={<CloseIcon />}
+                  colorScheme="red"
+                  onClick={cancelAction}
+                />
+              </ButtonGroup>
+
             </Stack>
           </Stack>
         </Stack>
       </Container>
-    </ChakraProvider>
   );
 };
 
