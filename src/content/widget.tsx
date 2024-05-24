@@ -21,8 +21,8 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
   const [pageRenders, setPageRenders] = useState(['original']);
   const [pageState, setPageState] = useState('original');
 
-  const [totalBatches, setTotalBatches] = useState(0);
-  const [finishedBatches, setFinishedBatches] = useState(0);
+  const [totalBatches, setTotal] = useState(0);
+  const [finishedBatches, setProgress] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const progressPercent = totalBatches > 0 ? (finishedBatches / totalBatches) * 100 : 0;
 
@@ -71,39 +71,34 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
   };
 
   useEffect(() => {
-    const listener =
-      // TODO: merge these listeners back into contentUtils listeners
-      (message: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse) => void) => {
-        const { action, strLength } = message;
-        switch (action) {
-          case "diacritizationBatchesStarted": {
-            if (strLength) {
-              setTotalBatches(strLength);
-              setFinishedBatches(0);
-              setIsAnimating(true);
-              onOpen();
-              onExpand();
-              sendResponse({ status: 'success' });
-            } else {
-              sendResponse({ status: 'error', error: new Error('No batches provided') });
-            }
-            break;
-          }
-          case "updateProgressBar":
-            setFinishedBatches((prevFinished) => prevFinished + (strLength || 0));
-            sendResponse({ status: 'success' });
-            break;
-          case "allDone":
-            setFinishedBatches(totalBatches);
-            setPageRenders([method, ...pageRenders]);
-            sendResponse({ status: 'success' });
-            break;
-          case "toggleWidget":
-            onToggle();
-            sendResponse({ status: 'success' });
-            break;
+    if (isAnimating) {
+      onOpen();
+      onExpand();
+    }
+  }, [isAnimating, onOpen, onExpand]);
+
+  useEffect(() => {
+    const listener = (message: AppMessage) => {
+      const { action, strLength } = message;
+      switch (action) {
+        case "beginProcessing": {
+          setTotal(strLength || 0);
+          setProgress(0);
+          setIsAnimating(true);
+          break;
         }
+        case "updateProgressBar":
+          setProgress((prevFinished) => prevFinished + (strLength || 0));
+          break;
+        case "allDone":
+          setProgress(totalBatches);
+          setPageRenders([method, ...pageRenders]);
+          break;
+        case "toggleWidget":
+          onToggle();
+          break;
       }
+    }
 
     chrome.runtime.onMessage.addListener(listener);
     return () => {
@@ -112,167 +107,167 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
   });
 
   return (
-      <Container
-        position="fixed"
-        bottom="0"
-        right="0"
-        zIndex="9999"
-        width="auto"
-        style={{ direction: "ltr" }}
-        {...closeProps}
+    <Container
+      position="fixed"
+      bottom="0"
+      right="0"
+      zIndex="9999"
+      width="auto"
+      style={{ direction: "ltr" }}
+      {...closeProps}
+    >
+      <Stack
+        id="widget"
+        padding="4px"
+        borderTopRadius="8px"
+        justify="flex-start"
+        align="center"
+        spacing="4px"
+        borderColor="#000000"
+        borderStartWidth="1px"
+        borderEndWidth="1px"
+        borderTopWidth="1px"
+        background="#FFFFFF"
       >
         <Stack
-          id="widget"
-          padding="4px"
-          borderTopRadius="8px"
+          id="header"
+          direction="row"
           justify="flex-start"
           align="center"
-          spacing="4px"
-          borderColor="#000000"
-          borderStartWidth="1px"
-          borderEndWidth="1px"
-          borderTopWidth="1px"
-          background="#FFFFFF"
+          spacing="10px"
         >
           <Stack
-            id="header"
             direction="row"
-            justify="flex-start"
-            align="center"
-            spacing="10px"
+            spacing="4px"
+            {...disclosureProps}
           >
-            <Stack
-              direction="row"
-              spacing="4px"
-              {...disclosureProps}
+            <IconButton
+              aria-label="Open settings"
+              size="xs"
+              variant="ghost"
+              icon={<SettingsIcon boxSize={4} />}
+              onClick={() => chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'openOptionsPage' })}
+            />
+            <Button
+              aria-label='Toggle Language'
+              size="xs"
+              width="24px"
+              variant="solid"
+              colorScheme="blackAlpha"
+              onClick={toggleLanguage}
             >
-              <IconButton
-                aria-label="Open settings"
-                size="xs"
-                variant="ghost"
-                icon={<SettingsIcon boxSize={4} />}
-                onClick={() => chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'openOptionsPage' })}
-              />
-              <Button
-                aria-label='Toggle Language'
-                size="xs"
-                width="24px"
-                variant="solid"
-                colorScheme="blackAlpha"
-                onClick={toggleLanguage}
-              >
-                {language}
-              </Button>
-            </Stack>
-            <Text
-              paddingLeft={isExpanded ? "0px" : "8px"}
-              fontFamily="sans-serif"
-              lineHeight="1.33"
-              fontWeight="black"
-              fontSize="12px"
-              textTransform="uppercase"
-              color="#000000"
-              flex="1"
-              textAlign="center"
-            >
-              {isExpanded ? translations.easyPeasyArabizi[language] : translations.arabizi[language]}
-            </Text>
-            <Stack direction="row" spacing="4px">
-              <IconButton
-                aria-label='Minimize'
-                size="xs"
-                variant="ghost"
-                icon={isExpanded ? <MinusIcon /> : <ChevronUpIcon boxSize={6} />}
-                {...buttonProps}
-              />
-              <IconButton
-                aria-label='Close'
-                onClick={onClose}
-                size="xs"
-                variant="ghost"
-                icon={<CloseIcon />}
-              />
-            </Stack>
+              {language}
+            </Button>
           </Stack>
-          <Stack id="content" width="100%" paddingBottom={"4px"}>
-            <Stack width="100%" spacing="0px" {...disclosureProps}>
-              <ButtonGroup id="taskButtons"
-                width={"100%"}
-                isAttached
-                size="xs"
-                colorScheme="blue"
-                display={isAnimating ? "none" : "flex"}
-              >
-                <Button
-                  variant={method === 'original' ? 'solid' : 'outline'}
-                  flex={1}
-                  onClick={() => taskChoiceHandler('original')}
-                >
-                  {translations.original[language]}
-                </Button>
-                <Button
-                  variant={method === 'fullDiacritics' ? 'solid' : 'outline'}
-                  flex={1}
-                  onClick={() => taskChoiceHandler('fullDiacritics')}
-                >
-                  {translations.tashkil[language]}
-                </Button>
-                <Button
-                  variant={method === 'arabizi' ? 'solid' : 'outline'}
-                  flex={1}
-                  onClick={() => taskChoiceHandler('arabizi')}
-                >
-                  {translations.arabizi[language]}
-                </Button>
-                <IconButton
-                  aria-label="Update website text"
-                  icon={
-                    (method === pageState) ? <CheckIcon /> :
-                      (isAnimating ? <SpinnerIcon /> : <ArrowForwardIcon />)
-                  }
-                  colorScheme={method === pageState ? "teal" : "orange"}
-                  isDisabled={method === pageState || isAnimating}
-                  onClick={() => beginDiacritization()}
-                />
-              </ButtonGroup>
-              <ButtonGroup id="taskButtons"
-                width={"100%"}
-                isAttached
-                size="xs"
-                colorScheme="blue"
-                // display={isAnimating ? "flex" : "none"}
-              >
-                <Button
-                  variant={"solid"}
-                  flex={1}
-                  size="xs"
-                  onClick={cancelAction}
-                  colorScheme="blue"
-                >
-                  <Progress
-                    value={progressPercent}
-                    colorScheme="blue"
-                    hasStripe={isAnimating}
-                    isAnimated={isAnimating}
-                    flex={1}
-                  />
-                  <Text
-                    pos={"absolute"}
-                  >{finishedBatches}/{totalBatches}</Text>
-
-                </Button>
-                <IconButton
-                  aria-label="Cancel"
-                  icon={<CloseIcon />}
-                  colorScheme="red"
-                  onClick={cancelAction}
-                />
-              </ButtonGroup>
-
-            </Stack>
+          <Text
+            paddingLeft={isExpanded ? "0px" : "8px"}
+            fontFamily="sans-serif"
+            lineHeight="1.33"
+            fontWeight="black"
+            fontSize="12px"
+            textTransform="uppercase"
+            color="#000000"
+            flex="1"
+            textAlign="center"
+          >
+            {isExpanded ? translations.easyPeasyArabizi[language] : translations.arabizi[language]}
+          </Text>
+          <Stack direction="row" spacing="4px">
+            <IconButton
+              aria-label='Minimize'
+              size="xs"
+              variant="ghost"
+              icon={isExpanded ? <MinusIcon /> : <ChevronUpIcon boxSize={6} />}
+              {...buttonProps}
+            />
+            <IconButton
+              aria-label='Close'
+              onClick={onClose}
+              size="xs"
+              variant="ghost"
+              icon={<CloseIcon />}
+            />
           </Stack>
         </Stack>
-      </Container>
+        <Stack id="content" width="100%" paddingBottom={"4px"}>
+          <Stack width="100%" spacing="0px" {...disclosureProps}>
+            <ButtonGroup id="taskButtons"
+              width={"100%"}
+              isAttached
+              size="xs"
+              colorScheme="blue"
+              display={isAnimating ? "none" : "flex"}
+            >
+              <Button
+                variant={method === 'original' ? 'solid' : 'outline'}
+                flex={1}
+                onClick={() => taskChoiceHandler('original')}
+              >
+                {translations.original[language]}
+              </Button>
+              <Button
+                variant={method === 'fullDiacritics' ? 'solid' : 'outline'}
+                flex={1}
+                onClick={() => taskChoiceHandler('fullDiacritics')}
+              >
+                {translations.tashkil[language]}
+              </Button>
+              <Button
+                variant={method === 'arabizi' ? 'solid' : 'outline'}
+                flex={1}
+                onClick={() => taskChoiceHandler('arabizi')}
+              >
+                {translations.arabizi[language]}
+              </Button>
+              <IconButton
+                aria-label="Update website text"
+                icon={
+                  (method === pageState) ? <CheckIcon /> :
+                    (isAnimating ? <SpinnerIcon /> : <ArrowForwardIcon />)
+                }
+                colorScheme={method === pageState ? "teal" : "orange"}
+                isDisabled={method === pageState || isAnimating}
+                onClick={() => beginDiacritization()}
+              />
+            </ButtonGroup>
+            <ButtonGroup id="taskButtons"
+              width={"100%"}
+              isAttached
+              size="xs"
+              colorScheme="blue"
+            // display={isAnimating ? "flex" : "none"}
+            >
+              <Button
+                variant={"solid"}
+                flex={1}
+                size="xs"
+                onClick={cancelAction}
+                colorScheme="blue"
+              >
+                <Progress
+                  value={progressPercent}
+                  colorScheme="blue"
+                  hasStripe={isAnimating}
+                  isAnimated={isAnimating}
+                  flex={1}
+                />
+                <Text
+                  pos={"absolute"}
+                >{finishedBatches}/{totalBatches}</Text>
+
+              </Button>
+              <IconButton
+                aria-label="Cancel"
+                icon={<CloseIcon />}
+                colorScheme="red"
+                onClick={cancelAction}
+              />
+            </ButtonGroup>
+
+          </Stack>
+        </Stack>
+      </Stack>
+    </Container>
   );
 };
 
