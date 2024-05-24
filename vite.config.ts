@@ -18,7 +18,7 @@ const manifest = defineManifest({
     "debugger"
   ],
   background: {
-    service_worker: "src/background/background.ts"
+    service_worker: "src/background/background-entry.ts"
   },
   options_ui: {
     page: "src/options/optionsPage.html",
