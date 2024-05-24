@@ -1,6 +1,6 @@
 import { PageMetadata, TextNode } from '../common/webpageDataClass';
 import { calculateHash } from '../common/utils';
-import { getTextElementsAndIndexDOM, replaceWebpageText, getTextNodesInRange } from './domUtils';
+import { labelDOM, collectElements, replaceWebpageText, getTextNodesInRange } from './domUtils';
 import { AppMessage, AppResponse, ElementAttributes } from '../common/types';
 import { mainNode, language } from './content';
 import { arabicToArabizi } from "../background/arabizi";
@@ -37,6 +37,7 @@ const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, se
     'getSelectedNodes': handleGetSelectedNodes,
     'updateWebsiteText': handleUpdateWebsiteText,
     // Dummy handlers to prevent 'Invalid action'
+    'allDone': async () => ({ status: 'success' }),
     'updateProgressBar': async () => ({ status: 'success' }),
     'toggleWidget': async () => ({ status: 'success' }),
     'beginProcessing': async () => ({ status: 'success' }),
@@ -100,7 +101,7 @@ export async function handleUpdateWebsiteText(message: AppMessage): Promise<AppR
 
   try {
     editingContent = true;
-    replaceWebpageText(replacements, ruby);
+    replaceWebpageText(replacements);
     return { status: 'success' };
   } finally {
     editingContent = false;
@@ -124,7 +125,8 @@ const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {
 
     if (diacritizedStatus === 'original') {
       editingContent = true;
-      ({ textElements } = getTextElementsAndIndexDOM(mainNode as Node));
+      labelDOM(mainNode);
+      (textElements = collectElements(mainNode));
       console.log('Scraped text elements:', textElements);
       editingContent = false;
     }
