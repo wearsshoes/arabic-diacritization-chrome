@@ -132,56 +132,46 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
     console.log('Difference in delimiters:', Math.abs(rightDelimiters));
     return (rightDelimiters === 0);
   }
-
 }
 
 // Create batches of elements according to sentence boundaries and API character limit.
-function createDiacritizationElementBatches(textElements: TextNode[], maxChars: number): TextNode[][] {
-  const textElementBatches: TextNode[][] = [];
+function createDiacritizationElementBatches(textNodes: TextNode[], maxChars: number): TextNode[][] {
+  const endOfSentence = /[.!?؟]+\s*\n*/g;
+  const textBatches: TextNode[][] = [];
+  const stats: {length: number, reason: string, batch: TextNode[]}[] = [];
   let currentBatch: TextNode[] = [];
-  let currentBatchLength = 0;
-  const batchStats: [number, string, TextNode[]][] = [];
+  let acc = 0;
 
-  textElements.forEach((textElement) => {
-    const text = textElement.text;
-    if (text != '') {
-      // Check whether there are any Arabic characters. Not used
-      // function containsArabicCharacters(text: string): boolean {
-      //   const arabicRegex = /[\u0600-\u06FF]/;
-      //   return arabicRegex.test(text);
-      // }
-      // if (containsArabicCharacters(text)) {
-      // we want to take these out, but doing so might cause us to lose context within sentences.
-      // once we have better batch management with sentences paragraphs etc, we can then address this.
-      const textLength = text.length;
+  textNodes.forEach((textNode) => {
+    const {text} = textNode;
+    if (!text) return;
 
-      if ((currentBatchLength + textLength) > maxChars) {
-        if (currentBatch.length > 0) {
-          batchStats.push([currentBatchLength, 'maxChars', currentBatch]);
-          textElementBatches.push(currentBatch);
-        }
-        currentBatch = [textElement];
-        currentBatchLength = textLength;
-      } else {
-        currentBatch.push(textElement);
-        currentBatchLength += textLength;
-      }
-
-      // handle sentence breaks as new batch
-      const sentenceRegex = /[.!?؟]+\s*\n*/g;
-      if (text.match(sentenceRegex) && (currentBatchLength > maxChars * 2 / 3)) {
-        batchStats.push([currentBatchLength, 'end of sentence', currentBatch]);
-        textElementBatches.push(currentBatch);
-        currentBatch = [];
-        currentBatchLength = 0;
-      }
+    if (acc > 0 && (acc + text.length) > maxChars) {
+      stats.push({length: acc, reason: 'maxChars', batch: currentBatch});
+      textBatches.push(currentBatch);
+      currentBatch = [];
+      acc = 0;
     }
+
+    currentBatch.push(textNode);
+    acc += text.length;
+
+    if (text.match(endOfSentence) && acc > maxChars * 2 / 3) {
+      stats.push({length: acc, reason: 'endOfSentence', batch: currentBatch});
+      stats
+      textBatches.push(currentBatch);
+        currentBatch = [];
+      acc = 0;
+    }
+
   });
 
-  batchStats.push([currentBatchLength, 'end of text', currentBatch]);
-  textElementBatches.push(currentBatch);
-  console.log(`batches created: ${textElementBatches.length}`, batchStats);
+  if (currentBatch.length > 0) {
+    stats.push({length: acc, reason: 'endOfText', batch: currentBatch});
+    textBatches.push(currentBatch);
+  }
 
-  return textElementBatches;
+  console.log('Created', textBatches.length, 'batches', stats);
+  return textBatches;
 }
 
