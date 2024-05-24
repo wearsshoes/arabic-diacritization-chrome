@@ -87,21 +87,9 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
 
       const finalResult: Anthropic.Message = await new Promise((resolve, reject) => {
         client.messages.stream(params, { signal })
-          // .on('connect', () => {
-          //   console.log('Connected to stream');
-          // })
-          // .on('streamEvent', (event, snapshot) => {
-          //   console.log('Received streamEvent:', event, snapshot);
-          // })
           .on('text', (textDelta) => {
             eventEmitter?.emit('text', textDelta);
           })
-          // .on('message', (message) => {
-          //   console.log('Received message:', message);
-          // })
-          // .on('contentBlock', (content) => {
-          //   console.log('Received contentBlock:', content);
-          // })
           .on('finalMessage', (message) => {
             resolve(message);
           })
@@ -113,9 +101,6 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
             console.error('Stream aborted:', error);
             reject(error);
           })
-          // .on('end', () => {
-          //   console.log('Stream ended');
-          // });
       });
 
       console.log('Received final result for:', hash, finalResult);

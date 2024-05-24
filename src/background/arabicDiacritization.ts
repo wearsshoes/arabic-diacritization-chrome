@@ -21,7 +21,7 @@ async function getPrompt(): Promise<Prompt> {
 // Full diacritization
 export async function fullDiacritization(tabId: number, tabUrl: string, selectedNodes: TextNode[], abortSignal: AbortSignal, ruby: boolean = false): Promise<TextNode[]> {
 
-  const diacritizationBatches = createDiacritizationElementBatches(selectedNodes, 750);
+  const diacritizationBatches = createBatches(selectedNodes, 750);
   const prompt = await getPrompt();
   const claude = new Claude()
   const maxTries = 3;
@@ -48,56 +48,64 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
       const msg = constructAnthropicMessage(originalText, prompt, claude);
 
       for (let tries = 1; tries < maxTries; tries++) {
-        let diacritizedAccumulated = '';
+        const sentencesToCheck = [...originals];
+        let queue = '';
+        let acc = 0;
         let allNodesProcessed = false;
 
         eventEmitter.on('text', (textDelta) => {
-          diacritizedAccumulated += textDelta;
+          queue += textDelta;
 
-          let delimiterIndex;
-          while ((delimiterIndex = diacritizedAccumulated.indexOf(delimiter)) !== -1 && !allNodesProcessed) {
-            const extractedText = diacritizedAccumulated.slice(0, delimiterIndex);
-            const strippedText = stripDiacritics(extractedText);
-            const sentencesToCheck = originals
-            const textNode = sentencesToCheck.shift();
-            if (!textNode) {
-              console.warn('All text nodes have been processed:', extractedText);
+          while (queue.includes(delimiter) && !allNodesProcessed) {
+            if (!sentencesToCheck.length) {
+              console.warn('All nodes processed, but not all text received.');
               allNodesProcessed = true;
-                  return;
+              return;
             }
 
+            const index = queue.indexOf(delimiter);
+            const newText = queue.slice(0, index);
+            const textNode = sentencesToCheck.shift()!;
+            const validNode: TextNode = { ...textNode, text: newText }
+
+            const checkText = stripDiacritics(newText);
             const refText = stripDiacritics(textNode.text || '');
-            const fudgefactor = Math.ceil(refText.length / 50)
-            const fudge = Math.abs(refText.length - strippedText.length);
-            if (strippedText === refText || fudge <= fudgefactor) {
-              // console.log('Validation passed:', extractedText);
-              const validNode: TextNode = { ...textNode, text: extractedText }
+            const diff = Math.abs(refText.length - checkText.length);
+            const fudgeFactor = Math.ceil(refText.length / 50)
+
+            const words = newText.split(' ').length;
+            acc += words;
+
+            if (checkText === refText || diff <= fudgeFactor) {
               replacements.push(validNode);
-              messageContentScript(tabId, { action: 'updateWebsiteText', replacements: [validNode], method: 'fullDiacritics', tabUrl: tabUrl, ruby: ruby })
-              const words = extractedText.split(' ').length;
-              messageContentScript(tabId, { action: 'updateProgressBar', strLength: words })
+              messageContentScript(tabId, {
+                action: 'updateWebsiteText',
+                replacements: [validNode],
+                method: 'fullDiacritics',
+                tabUrl,
+                ruby
+              });
+
+              messageContentScript(tabId, { action: 'updateProgressBar', strLength: words });
             } else {
-              console.warn(`Validation failed:\n${extractedText}\n${strippedText}\n${refText}`);
+              console.warn(`Validation failed:\n${newText}\n${checkText}\n${refText}`);
               replacements.push(textNode);
               validationFailures++;
             }
 
-            diacritizedAccumulated = diacritizedAccumulated.slice(delimiterIndex + 1);
+            queue = queue.slice(index + 1);
           }
         });
 
         try {
           const response = await anthropicAPICall(msg, claude.apiKey, abortSignal, eventEmitter);
+          eventEmitter?.emit('text', delimiter);
           const diacritizedText: string = response.content[0].text;
           console.log('originals:\n', originalText, 'diacritized:\n', diacritizedText);
 
           const validResponse = validateResponse(originalText, diacritizedText);
           if (validResponse) {
-            const lastNode = selectedNodes[selectedNodes.length - 1];
-            const lastDiacritizedText = diacritizedText.split(delimiter).pop() || '';
-            replacements.push({ ...lastNode, text: lastDiacritizedText })
             messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl: tabUrl, method: 'fullDiacritics', replacements, ruby: ruby });
-            messageContentScript(tabId, { action: 'updateProgressBar', strLength: lastDiacritizedText.split(' ').length });
             return replacements;
           }
         } catch (error) {
@@ -106,6 +114,8 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
           }
           throw new Error(`Failed to diacritize chunk: ${error}`);
         }
+        messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl: tabUrl, method: 'fullDiacritics', originals, ruby: ruby });
+        messageContentScript(tabId, { action: 'updateProgressBar', strLength: -acc });
         if (tries < maxTries) {
           console.log('Failed validation. trying again: try', tries + 1, 'of', maxTries);
           claude.escalateModel(tries);
@@ -135,7 +145,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
 }
 
 // Create batches of elements according to sentence boundaries and API character limit.
-function createDiacritizationElementBatches(textNodes: TextNode[], maxChars: number): TextNode[][] {
+function createBatches(textNodes: TextNode[], maxChars: number): TextNode[][] {
   const endOfSentence = /[.!?؟]+\s*\n*/g;
   const textBatches: TextNode[][] = [];
   const stats: {length: number, reason: string, batch: TextNode[]}[] = [];
@@ -160,7 +170,7 @@ function createDiacritizationElementBatches(textNodes: TextNode[], maxChars: num
       stats.push({length: acc, reason: 'endOfSentence', batch: currentBatch});
       stats
       textBatches.push(currentBatch);
-        currentBatch = [];
+      currentBatch = [];
       acc = 0;
     }
 
