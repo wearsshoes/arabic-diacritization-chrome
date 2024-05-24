@@ -4,6 +4,7 @@ import { messageContentScript } from './background';
 import { Prompt } from '../common/types'
 import prompts from './defaultPrompts.json';
 import { EventEmitter } from 'events';
+// import { mainNode } from '../content/content';
 
 const defaultPrompt = prompts[1];
 
@@ -27,7 +28,8 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
   const delimiter = '|';
   let validationFailures = 0;
 
-  messageContentScript(tabId, { action: 'diacritizationBatchesStarted', tabUrl: tabUrl, batches: selectedNodes.length });
+  const strLength = selectedNodes.flatMap((textNode) => textNode.text.split(' ')).length;
+  messageContentScript(tabId, { action: 'diacritizationBatchesStarted', tabUrl: tabUrl, strLength});
   console.log('Full diacritization, ruby: ', ruby)
 
   // diacritize the texts in parallel with retries
@@ -69,10 +71,11 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
             const fudge = Math.abs(refText.length - strippedText.length);
             if (strippedText === refText || fudge <= fudgefactor) {
               // console.log('Validation passed:', extractedText);
-              const validNode: TextNode[] = [{ ...textNode, text: extractedText }]
-              replacements.push(validNode[0]);
-              messageContentScript(tabId, { action: 'updateWebsiteText', replacements: validNode, method: 'fullDiacritics', tabUrl: tabUrl, ruby: ruby })
-              messageContentScript(tabId, { action: 'updateProgressBar' })
+              const validNode: TextNode = { ...textNode, text: extractedText }
+              replacements.push(validNode);
+              messageContentScript(tabId, { action: 'updateWebsiteText', replacements: [validNode], method: 'fullDiacritics', tabUrl: tabUrl, ruby: ruby })
+              const words = extractedText.split(' ').length;
+              messageContentScript(tabId, { action: 'updateProgressBar', strLength: words})
             } else {
               console.warn(`Validation failed:\n${extractedText}\n${strippedText}\n${refText}`);
               replacements.push(textNode);

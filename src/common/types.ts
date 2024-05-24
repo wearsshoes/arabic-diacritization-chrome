@@ -14,7 +14,7 @@ export interface AppMessage {
   originals?: TextNode[];
   langScript?: string;
   replacements?: TextNode[];
-  batches?: number;
+  strLength?: number;
   ruby?: boolean;
 }
 

@@ -74,11 +74,11 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
     const listener =
       // TODO: merge these listeners back into contentUtils listeners
       (message: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse) => void) => {
-        const { action, batches } = message;
+        const { action, strLength } = message;
         switch (action) {
           case "diacritizationBatchesStarted": {
-            if (batches) {
-              setTotalBatches(batches);
+            if (strLength) {
+              setTotalBatches(strLength);
               setFinishedBatches(0);
               setIsAnimating(true);
               onOpen();
@@ -90,7 +90,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
             break;
           }
           case "updateProgressBar":
-            setFinishedBatches((prevFinished) => prevFinished + 1);
+            setFinishedBatches((prevFinished) => prevFinished + (strLength || 0));
             sendResponse({ status: 'success' });
             break;
           case "allDone":
@@ -258,7 +258,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
                   />
                   <Text
                     pos={"absolute"}
-                  >Converting...</Text>
+                  >{finishedBatches}/{totalBatches}</Text>
 
                 </Button>
                 <IconButton
