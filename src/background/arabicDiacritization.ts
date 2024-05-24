@@ -29,7 +29,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
   let validationFailures = 0;
 
   const strLength = selectedNodes.flatMap((textNode) => textNode.text.split(' ')).length;
-  messageContentScript(tabId, { action: 'diacritizationBatchesStarted', tabUrl: tabUrl, strLength});
+  messageContentScript(tabId, { action: 'diacritizationBatchesStarted', tabUrl: tabUrl, strLength });
   console.log('Full diacritization, ruby: ', ruby)
 
   // diacritize the texts in parallel with retries
@@ -49,21 +49,21 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
 
       for (let tries = 1; tries < maxTries; tries++) {
         let diacritizedAccumulated = '';
-        let outOfLines = false;
+        let allNodesProcessed = false;
 
         eventEmitter.on('text', (textDelta) => {
           diacritizedAccumulated += textDelta;
 
           let delimiterIndex;
-          while ((delimiterIndex = diacritizedAccumulated.indexOf(delimiter)) !== -1 && !outOfLines) {
+          while ((delimiterIndex = diacritizedAccumulated.indexOf(delimiter)) !== -1 && !allNodesProcessed) {
             const extractedText = diacritizedAccumulated.slice(0, delimiterIndex);
             const strippedText = stripDiacritics(extractedText);
             const sentencesToCheck = originals
             const textNode = sentencesToCheck.shift();
             if (!textNode) {
-              console.warn('Out of text to validate against:', extractedText);
-              outOfLines = true;
-              return;
+              console.warn('All text nodes have been processed:', extractedText);
+              allNodesProcessed = true;
+                  return;
             }
 
             const refText = stripDiacritics(textNode.text || '');
@@ -75,7 +75,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
               replacements.push(validNode);
               messageContentScript(tabId, { action: 'updateWebsiteText', replacements: [validNode], method: 'fullDiacritics', tabUrl: tabUrl, ruby: ruby })
               const words = extractedText.split(' ').length;
-              messageContentScript(tabId, { action: 'updateProgressBar', strLength: words})
+              messageContentScript(tabId, { action: 'updateProgressBar', strLength: words })
             } else {
               console.warn(`Validation failed:\n${extractedText}\n${strippedText}\n${refText}`);
               replacements.push(textNode);
@@ -93,7 +93,11 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
 
           const validResponse = validateResponse(originalText, diacritizedText);
           if (validResponse) {
-            messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl: tabUrl, method: 'fullDiacritics', replacements: replacements, ruby: ruby });
+            const lastNode = selectedNodes[selectedNodes.length - 1];
+            const lastDiacritizedText = diacritizedText.split(delimiter).pop() || '';
+            replacements.push({ ...lastNode, text: lastDiacritizedText })
+            messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl: tabUrl, method: 'fullDiacritics', replacements, ruby: ruby });
+            messageContentScript(tabId, { action: 'updateProgressBar', strLength: lastDiacritizedText.split(' ').length });
             return replacements;
           }
         } catch (error) {
@@ -115,6 +119,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
   ).then((result) => { return result.flat() });
 
   console.log('Diacritized text:', diacritizedNodes, 'Validation failures:', validationFailures);
+  messageContentScript(tabId, { action: 'allDone' });
   return diacritizedNodes;
 
   function stripDiacritics(text: string): string {
@@ -127,17 +132,17 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
     console.log('Difference in delimiters:', Math.abs(rightDelimiters));
     return (rightDelimiters === 0);
   }
+
 }
 
 // Create batches of elements according to sentence boundaries and API character limit.
 function createDiacritizationElementBatches(textElements: TextNode[], maxChars: number): TextNode[][] {
-  // console.log('starting batching on', textElements.length, 'elements');
   const textElementBatches: TextNode[][] = [];
   let currentBatch: TextNode[] = [];
   let currentBatchLength = 0;
   const batchStats: [number, string, TextNode[]][] = [];
 
-  textElements.forEach((textElement, index) => {
+  textElements.forEach((textElement) => {
     const text = textElement.text;
     if (text != '') {
       // Check whether there are any Arabic characters. Not used
@@ -160,18 +165,21 @@ function createDiacritizationElementBatches(textElements: TextNode[], maxChars: 
       } else {
         currentBatch.push(textElement);
         currentBatchLength += textLength;
+      }
 
-        // handle sentence breaks as new batch
-        const sentenceRegex = /[.!?؟]+\s*\n*/g;
-        if ((text.match(sentenceRegex) && (currentBatchLength > (maxChars * 2 / 3))) || index === (textElements.length - 1)) {
-          batchStats.push([currentBatchLength, 'end of sentence', currentBatch]);
-          textElementBatches.push(currentBatch);
-          currentBatch = [];
-          currentBatchLength = 0;
-        }
+      // handle sentence breaks as new batch
+      const sentenceRegex = /[.!?؟]+\s*\n*/g;
+      if (text.match(sentenceRegex) && (currentBatchLength > maxChars * 2 / 3)) {
+        batchStats.push([currentBatchLength, 'end of sentence', currentBatch]);
+        textElementBatches.push(currentBatch);
+        currentBatch = [];
+        currentBatchLength = 0;
       }
     }
   });
+
+  batchStats.push([currentBatchLength, 'end of text', currentBatch]);
+  textElementBatches.push(currentBatch);
   console.log(`batches created: ${textElementBatches.length}`, batchStats);
 
   return textElementBatches;
