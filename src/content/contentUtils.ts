@@ -3,10 +3,12 @@ import { calculateHash } from '../common/utils';
 import { getTextElementsAndIndexDOM, replaceWebpageText, getTextNodesInRange } from './domUtils';
 import { AppMessage, AppResponse, ElementAttributes } from '../common/types';
 import { mainNode, language } from './content';
+import { arabicToArabizi } from "../background/arabizi";
 
 let textElements: TextNode[] = [];
 let pageMetadata: PageMetadata | null = null;
-let diacritizedStatus = 'original';
+// TODO: re-implement diacritizedStatus tracking; currently static
+const diacritizedStatus = 'original';
 let editingContent = false;
 
 const observerOptions = {
@@ -27,10 +29,7 @@ const onContentLoaded = () => {
 };
 
 const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse) => void) => {
-  console.log('contentUtils received message:', message.action);
-  if (message.tabUrl && message.tabUrl !== window.location.href) {
-    throw new Error('Tab URL does not match the current window location.');
-  }
+
   const actionHandlers: Record<string, (message: AppMessage) => Promise<AppResponse>> = {
     'getWebsiteData': handleGetWebsiteData,
     'getWebsiteMetadata': handleGetWebsiteMetadata,
@@ -40,7 +39,7 @@ const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, se
     // Dummy handlers to prevent 'Invalid action'
     'updateProgressBar': async () => ({ status: 'success' }),
     'toggleWidget': async () => ({ status: 'success' }),
-    'diacritizationBatchesStarted': async () => ({ status: 'success' }),
+    'beginProcessing': async () => ({ status: 'success' }),
   };
 
   const handler = actionHandlers[message.action];
@@ -61,13 +60,13 @@ const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, se
 
 // ----------------- Functions ----------------- //
 
-async function handleGetWebsiteData(): Promise<AppResponse> {
+export async function handleGetWebsiteData(): Promise<AppResponse> {
   console.log({ 'Main node': mainNode, 'PageMetadata': pageMetadata, 'Text elements': textElements });
   const characterCount = mainNode.innerText?.length || 0;
   return { status: 'success', language, characterCount };
 }
 
-async function handleGetWebsiteMetadata(): Promise<AppResponse> {
+export async function handleGetWebsiteMetadata(): Promise<AppResponse> {
   if (pageMetadata && diacritizedStatus) {
     return { status: 'success', pageMetadata, diacritizedStatus };
   } else {
@@ -75,12 +74,12 @@ async function handleGetWebsiteMetadata(): Promise<AppResponse> {
   }
 }
 
-async function handleGetWebsiteText(): Promise<AppResponse> {
+export async function handleGetWebsiteText(): Promise<AppResponse> {
   console.log('Sending website text:', textElements);
   return { status: 'success', selectedNodes: textElements };
 }
 
-async function handleGetSelectedNodes(): Promise<AppResponse> {
+export async function handleGetSelectedNodes(): Promise<AppResponse> {
   const selection = window.getSelection();
   if (selection !== null) {
     console.log(selection.toString());
@@ -92,31 +91,19 @@ async function handleGetSelectedNodes(): Promise<AppResponse> {
   }
 }
 
-async function handleUpdateWebsiteText(message: AppMessage): Promise<AppResponse> {
-  const { replacements, method, ruby } = message;
-  editingContent = true;
+export async function handleUpdateWebsiteText(message: AppMessage): Promise<AppResponse> {
+  const { ruby } = message;
+  let { replacements } = message;
+
+  if (!replacements) throw new Error('Text not provided.');
+  if (ruby) replacements = arabicToArabizi(replacements);
 
   try {
-    if (!replacements) {
-      throw new Error('Missing replacements data in the message.');
-    }
-    if (!method) {
-      throw new Error('Missing method information in the message.');
-    }
+    editingContent = true;
     replaceWebpageText(replacements, ruby);
-    diacritizedStatus = method;
-    editingContent = false;
     return { status: 'success' };
-  } catch (error) {
+  } finally {
     editingContent = false;
-
-    if (error instanceof Error) {
-      console.error('Error updating website text:', error.message, replacements);
-      return { status: 'error', error: error };
-    } else {
-      console.error('Unknown error updating website text:', error);
-      return { status: 'error', error: new Error('An unknown error occurred.')};
-    }
   }
 }
 
@@ -192,16 +179,16 @@ const observer = new MutationObserver((mutations) => {
 
   if (significantChange && !editingContent && diacritizedStatus === 'original') {
     console.log('Significant change, reindexing DOM', editingContent, diacritizedStatus, mutations);
-    // // Disconnect the observer before making DOM changes
-    // observer.disconnect();
-    // scrapeContent(mainNode)
-    //   .finally(() => {
-    //     observer.observe(document.body, observerOptions);
-    //   })
-    //   .catch((error) => {
-    //     console.error('Error during scrapeContent:', error);
-    //     observer.observe(document.body, observerOptions);
-    //   });
+    // Disconnect the observer before making DOM changes
+    observer.disconnect();
+    scrapeContent(mainNode)
+      .finally(() => {
+        observer.observe(document.body, observerOptions);
+      })
+      .catch((error) => {
+        console.error('Error during scrapeContent:', error);
+        observer.observe(document.body, observerOptions);
+      });
   }
 });
 

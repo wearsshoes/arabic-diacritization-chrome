@@ -1,4 +1,3 @@
-import { arabicToArabizi } from "../background/arabizi";
 import { TextNode } from "../common/webpageDataClass";
 
 // -------------- Functions -------------- //
@@ -111,9 +110,6 @@ function isVisible(element: Element): boolean {
 }
 
 function replaceWebpageText(replacements: TextNode[], ruby: boolean = false) {
-  if (ruby) {
-    replacements = arabicToArabizi(replacements);
-  }
   replacements.forEach((textNode) => {
 
     const { elementId, text } = textNode;
@@ -140,16 +136,5 @@ function replaceWebpageText(replacements: TextNode[], ruby: boolean = false) {
     }
   });
 }
-
-
-
-// Forces LTR. Only gets called for Arabizi
-// function directionLTR() {
-//   // document.documentElement.setAttribute("lang", "en");
-//   document.documentElement.setAttribute("dir", "ltr");
-//   const style = document.createElement('style')
-//   style.textContent = `body * {direction: ltr;}`;
-//   document.head.appendChild(style);
-// }
 
 export { getTextNodesInRange, getTextElementsAndIndexDOM, replaceWebpageText };
