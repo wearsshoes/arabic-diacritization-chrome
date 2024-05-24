@@ -93,7 +93,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
 
           const validResponse = validateResponse(originalText, diacritizedText);
           if (validResponse) {
-            messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl: tabUrl, replacements: replacements, ruby: ruby });
+            messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl: tabUrl, method: 'fullDiacritics', replacements: replacements, ruby: ruby });
             return replacements;
           }
         } catch (error) {

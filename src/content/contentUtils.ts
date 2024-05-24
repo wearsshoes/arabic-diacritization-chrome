@@ -26,31 +26,35 @@ const onContentLoaded = () => {
   }
 };
 
-const listener = (request: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse) => void) => {
-  console.log('contentUtils received message:', request.action);
-
+const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse) => void) => {
+  console.log('contentUtils received message:', message.action);
+  if (message.tabUrl && message.tabUrl !== window.location.href) {
+    throw new Error('Tab URL does not match the current window location.');
+  }
   const actionHandlers: Record<string, (message: AppMessage) => Promise<AppResponse>> = {
     'getWebsiteData': handleGetWebsiteData,
     'getWebsiteMetadata': handleGetWebsiteMetadata,
     'getWebsiteText': handleGetWebsiteText,
     'getSelectedNodes': handleGetSelectedNodes,
     'updateWebsiteText': handleUpdateWebsiteText,
-    'toggleWidget': async () => ({ status: 'success' }), // Dummy handler to prevent 'Invalid action
+    // Dummy handlers to prevent 'Invalid action'
+    'updateProgressBar': async () => ({ status: 'success' }),
+    'toggleWidget': async () => ({ status: 'success' }),
     'diacritizationBatchesStarted': async () => ({ status: 'success' }),
   };
 
-  const handler = actionHandlers[request.action];
+  const handler = actionHandlers[message.action];
 
   if (handler) {
-    handler(request)
+    handler(message)
       .then((response) => sendResponse(response))
       .catch((error) => {
-        console.error(`Error processing ${request.action}:`, error);
+        console.error(`Error processing ${message.action}:`, error);
         sendResponse({ status: 'error', error: error as Error });
       });
     return true;
   } else {
-    console.error(`Invalid action: ${request.action}`);
+    console.error(`Invalid action: ${message.action}`);
     sendResponse({ status: 'error', error: new Error('Invalid action') });
   }
 };
@@ -89,16 +93,31 @@ async function handleGetSelectedNodes(): Promise<AppResponse> {
 }
 
 async function handleUpdateWebsiteText(message: AppMessage): Promise<AppResponse> {
+  const { replacements, method, ruby } = message;
   editingContent = true;
-  if (message.replacements && message.method && message.tabUrl === window.location.href) {
-    // console.log('listener says ruby is', message.ruby)
-    replaceWebpageText(message.replacements, message.ruby);
-    diacritizedStatus = message.method;
-  } else {
-    throw new Error('Could not update website text.');
+
+  try {
+    if (!replacements) {
+      throw new Error('Missing replacements data in the message.');
+    }
+    if (!method) {
+      throw new Error('Missing method information in the message.');
+    }
+    replaceWebpageText(replacements, ruby);
+    diacritizedStatus = method;
+    editingContent = false;
+    return { status: 'success' };
+  } catch (error) {
+    editingContent = false;
+
+    if (error instanceof Error) {
+      console.error('Error updating website text:', error.message, replacements);
+      return { status: 'error', error: error };
+    } else {
+      console.error('Unknown error updating website text:', error);
+      return { status: 'error', error: new Error('An unknown error occurred.')};
+    }
   }
-  editingContent = false;
-  return { status: 'success' };
 }
 
 // Scrape webpage data for the content script
