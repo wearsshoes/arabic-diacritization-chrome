@@ -6,8 +6,6 @@ import theme from './widget_theme';
 import ContentWidget from "./widget";
 import contentUtils from "./contentUtils";
 
-contentUtils();
-
 const hasArabic = /\[\\u0600-\\u06FF\]/;
 export const mainNode = (document.body.querySelector('main, #main, #root') as HTMLElement || document.body);
 export const language = document.documentElement.lang || (hasArabic.test(document.body.innerText) ? 'ar' : 'en');
@@ -25,15 +23,11 @@ const emotionCache = createCache({
 });
 
 createRoot(shadowRoot).render(
-  <CacheProvider value={emotionCache}>
-    <ChakraProvider theme={theme}>
-      <ContentWidget siteLanguage={language} />
-    </ChakraProvider>
-  </CacheProvider>
+    <CacheProvider value={emotionCache}>
+      <ChakraProvider theme={theme}>
+        <ContentWidget siteLanguage={language} />
+      </ChakraProvider>
+    </CacheProvider>
 );
 
-window.addEventListener('error', event => {
-  if (event.message.includes('Failed to fetch dynamically imported module')) {
-    window.location.reload();
-  }
-});
+contentUtils();
