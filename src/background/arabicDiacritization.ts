@@ -29,7 +29,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
   let validationFailures = 0;
 
   const strLength = selectedNodes.flatMap((textNode) => textNode.text.split(' ')).length;
-  messageContentScript(tabId, { action: 'diacritizationBatchesStarted', tabUrl: tabUrl, strLength });
+  messageContentScript(tabId, { action: 'beginProcessing', tabUrl: tabUrl, strLength });
   console.log('Full diacritization, ruby: ', ruby)
 
   // diacritize the texts in parallel with retries
@@ -81,7 +81,6 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
               messageContentScript(tabId, {
                 action: 'updateWebsiteText',
                 replacements: [validNode],
-                method: 'fullDiacritics',
                 tabUrl,
                 ruby
               });
@@ -105,7 +104,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
 
           const validResponse = validateResponse(originalText, diacritizedText);
           if (validResponse) {
-            messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl: tabUrl, method: 'fullDiacritics', replacements, ruby: ruby });
+            messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl, replacements, ruby });
             return replacements;
           }
         } catch (error) {
@@ -114,7 +113,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
           }
           throw new Error(`Failed to diacritize chunk: ${error}`);
         }
-        messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl: tabUrl, method: 'fullDiacritics', originals, ruby: ruby });
+        messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl, replacements: originals, ruby });
         messageContentScript(tabId, { action: 'updateProgressBar', strLength: -acc });
         if (tries < maxTries) {
           console.log('Failed validation. trying again: try', tries + 1, 'of', maxTries);

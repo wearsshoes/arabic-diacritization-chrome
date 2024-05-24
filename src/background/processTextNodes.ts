@@ -25,7 +25,7 @@ export async function processSelectedText(tab: chrome.tabs.Tab, method: string =
 
   console.log("Doing ", method, "for selected nodes:", selectedNodes);
   const replacementText = await fullDiacritization(tab.id, tab.url, selectedNodes, controller.signal, method === 'arabizi');
-  await messageContentScript(tab.id, { action: 'updateWebsiteText', tabUrl: tab.url, replacements: replacementText, method, ruby: (method === 'arabizi') });
+  await messageContentScript(tab.id, { action: 'updateWebsiteText', tabUrl: tab.url, replacements: replacementText, ruby: (method === 'arabizi') });
 }
 
 export async function processWebpage(tab: chrome.tabs.Tab, method: string): Promise<AppResponse> {
