@@ -1,49 +1,39 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-
-import contentUtils from "./contentUtils";
-import ContentWidget from "./widget";
-
+import { createRoot } from 'react-dom/client';
+import { ChakraProvider } from '@chakra-ui/react';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
+import theme from './widget_theme';
+import ContentWidget from "./widget";
+import contentUtils from "./contentUtils";
 
-const language = document.documentElement.lang;
+contentUtils();
+
+const hasArabic = /\[\\u0600-\\u06FF\]/;
+export const mainNode = (document.body.querySelector('main, #main, #root') as HTMLElement || document.body);
+export const language = document.documentElement.lang || (hasArabic.test(document.body.innerText) ? 'ar' : 'en');
 
 // Create the main container
 const appContainer = document.createElement("div");
 appContainer.id = "crx-app-container";
 document.body.appendChild(appContainer);
 
-// Create a Shadow Root
+// Create the shadow root
 const shadowRoot = appContainer.attachShadow({ mode: 'open' });
-
-// Create a div for your React app inside the shadow root
-const root = document.createElement("div");
-root.id = "crx-root";
-shadowRoot.appendChild(root);
-
-// Create a custom emotion cache
-const shadowHost = shadowRoot; // Your shadow DOM root
 const emotionCache = createCache({
-  key: 'your-custom-key',
-  container: shadowHost
+  key: 'crx-emotion',
+  container: shadowRoot,
 });
 
-// Mount your React app to the shadow root
-
-const reactRoot = ReactDOM.createRoot(root);
-reactRoot.render(
-  <React.StrictMode>
-    <CacheProvider value={emotionCache}>
+createRoot(shadowRoot).render(
+  <CacheProvider value={emotionCache}>
+    <ChakraProvider theme={theme}>
       <ContentWidget siteLanguage={language} />
-    </CacheProvider>
-  </React.StrictMode>
+    </ChakraProvider>
+  </CacheProvider>
 );
 
-window.addEventListener('error', (event) => {
+window.addEventListener('error', event => {
   if (event.message.includes('Failed to fetch dynamically imported module')) {
     window.location.reload();
   }
 });
-
-contentUtils()
