@@ -27,7 +27,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
   const delimiter = '|';
   let validationFailures = 0;
 
-  messageContentScript(tabId, { action: 'diacritizationBatchesStarted', tabUrl: tabUrl, batches: diacritizationBatches.length });
+  messageContentScript(tabId, { action: 'diacritizationBatchesStarted', tabUrl: tabUrl, batches: selectedNodes.length });
   console.log('Full diacritization, ruby: ', ruby)
 
   // diacritize the texts in parallel with retries
@@ -72,6 +72,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
               const validNode: TextNode[] = [{ ...textNode, text: extractedText }]
               replacements.push(validNode[0]);
               messageContentScript(tabId, { action: 'updateWebsiteText', replacements: validNode, method: 'fullDiacritics', tabUrl: tabUrl, ruby: ruby })
+              messageContentScript(tabId, { action: 'updateProgressBar' })
             } else {
               console.warn(`Validation failed:\n${extractedText}\n${strippedText}\n${refText}`);
               replacements.push(textNode);
@@ -90,7 +91,6 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
           const validResponse = validateResponse(originalText, diacritizedText);
           if (validResponse) {
             messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl: tabUrl, replacements: replacements, ruby: ruby });
-            messageContentScript(tabId, { action: 'diacritizationChunkFinished', tabUrl: tabUrl, method: 'fullDiacritics' });
             return replacements;
           }
         } catch (error) {

@@ -2,13 +2,12 @@ import { PageMetadata, TextNode } from '../common/webpageDataClass';
 import { calculateHash } from '../common/utils';
 import { getTextElementsAndIndexDOM, replaceWebpageText, getTextNodesInRange } from './domUtils';
 import { AppMessage, AppResponse, ElementAttributes } from '../common/types';
+import { mainNode, language } from './content';
 
 let textElements: TextNode[] = [];
 let pageMetadata: PageMetadata | null = null;
-let mainNode = document.body;
 let diacritizedStatus = 'original';
 let editingContent = false;
-const language = document.documentElement.lang;
 
 const observerOptions = {
   childList: true,
@@ -18,13 +17,13 @@ const observerOptions = {
 
 const onContentLoaded = () => {
   document.removeEventListener('DOMContentLoaded', onContentLoaded);
-
-  mainNode = (document.body.querySelector('main, #main, #root') as HTMLElement || document.body);
-  console.log('Content loaded, main node:', mainNode, 'scraping/labeling content');
-  scrapeContent(mainNode).then(() => {
-    chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'contentLoaded' });
-    observer.observe(document.body, observerOptions);
-  });
+  console.log(`EasyPeasy Arabeasy extension: \nLanguage: ${language}, main node: "${mainNode.tagName} ${mainNode.id} ${mainNode.className} ${mainNode.role}"`);
+  if (language === 'ar') {
+    scrapeContent(mainNode).then(() => {
+      chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'contentLoaded' });
+      observer.observe(document.body, observerOptions);
+    });
+  }
 };
 
 const listener = (request: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse) => void) => {
@@ -38,7 +37,6 @@ const listener = (request: AppMessage, _sender: chrome.runtime.MessageSender, se
     'updateWebsiteText': handleUpdateWebsiteText,
     'toggleWidget': async () => ({ status: 'success' }), // Dummy handler to prevent 'Invalid action
     'diacritizationBatchesStarted': async () => ({ status: 'success' }),
-    'diacritizationChunkFinished': async () => ({ status: 'success' }),
   };
 
   const handler = actionHandlers[request.action];
@@ -170,7 +168,7 @@ const observer = new MutationObserver((mutations) => {
     const isChildListChange = mutation.type === 'childList';
     const isCharacterDataChange = mutation.type === 'characterData' && targetElement?.parentElement?.tagName !== 'SCRIPT';
 
-    return isNotWidget && isMainContentChange && (isChildListChange || isCharacterDataChange );
+    return isNotWidget && isMainContentChange && (isChildListChange || isCharacterDataChange);
   });
 
   if (significantChange && !editingContent && diacritizedStatus === 'original') {

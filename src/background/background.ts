@@ -8,6 +8,7 @@ import { processWebpage, processSelectedText } from './processTextNodes';
 
 // Check whether new version is installed
 chrome.runtime.onInstalled.addListener(function (details) {
+
   if (details.reason == "install") {
     console.log("ArabEasy successfully installed! Thank you for using this app.");
   } else if (details.reason == "update") {
@@ -249,3 +250,5 @@ function cancelTask(tabId: number) {
     controllerMap.delete(tabId);
   }
 }
+
+console.log('Background script loaded.');
