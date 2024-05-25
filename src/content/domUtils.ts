@@ -33,10 +33,11 @@ function isVisible(element: Element): boolean {
   return css.display !== 'none' && css.visibility !== 'hidden' && css.opacity !== '0' && !inRender;
 }
 
-function collectTextNodes(target: Range | Node = document.body): TextNode[] {
+function collectTextNodes(target: Range | Node = document.body): Set<TextNode> {
+
   const node = target instanceof Range ? target.commonAncestorContainer : target;
   const elements = (node as Element).querySelectorAll('[crxid]');
-  const textNodes: TextNode[] = [];
+  const textNodes = new Set<TextNode>();
 
   Array.from(elements).forEach((element) => {
     const elementId = element.getAttribute('crxid') ?? '';
@@ -44,16 +45,15 @@ function collectTextNodes(target: Range | Node = document.body): TextNode[] {
     const inRange = target instanceof Range ? target.intersectsNode(element) : true;
 
     if (elementId && text && inRange) {
-      textNodes.push({ elementId, text });
+      textNodes.add({ elementId, text });
     }
   });
 
   return textNodes;
 }
 
-function replaceWebpageText(replacements: TextNode[]) {
+function replaceWebpageText(replacements: Set<TextNode>) {
   replacements.forEach((textNode) => {
-
     const { elementId, text } = textNode;
     if (elementId === '' || text === '') return;
 

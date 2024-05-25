@@ -3,6 +3,7 @@ import { calculateHash } from '../common/utils';
 import { labelDOM, replaceWebpageText, collectTextNodes } from './domUtils';
 import { AppMessage, AppResponse } from '../common/types';
 import { mainNode, language } from './content';
+import { TextNode } from '../common/webpageDataClass';
 import { arabicToArabizi } from "../background/arabizi";
 
 const pageMetadata: PageMetadata = {
@@ -10,7 +11,8 @@ const pageMetadata: PageMetadata = {
   lastVisited: new Date(),
 };
 // TODO: re-implement diacritizedStatus tracking; currently static
-const diacritizedStatus = 'original';
+let editStatus = 'original';
+const collectedNodes = new Set<TextNode>();
 let labelCounter = 0;
 
 const observerOptions: MutationObserverInit = {
@@ -32,7 +34,10 @@ const onContentLoaded = () => {
 
 const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {
   pageMetadata.contentSignature = await calculateHash(mainNode.innerText || '');
-  if (diacritizedStatus === 'original') labelCounter = labelDOM(mainNode);
+  if (editStatus === 'original') labelCounter = labelDOM(mainNode);
+  collectTextNodes(mainNode).forEach((node) => {
+    collectedNodes.add(node);
+  });
 };
 
 const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse | void) => void) => {
@@ -40,7 +45,6 @@ const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, se
   const actionHandlers: Record<string, (message: AppMessage) => Promise<AppResponse> | Promise<void>> = {
     'getWebsiteData': handleGetWebsiteData,
     'getWebsiteText': handleGetWebsiteText,
-    'getWebsiteMetadata': handleGetWebsiteMetadata,
     'getSelectedNodes': handleGetSelectedNodes,
     'updateWebsiteText': handleUpdateWebsiteText,
     // Dummy handlers to prevent 'Invalid action' #TODO: remove these
@@ -69,6 +73,7 @@ const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, se
 const observer = new MutationObserver((mutations) => {
 
   const significantChange = mutations.some((mutation) => {
+
     const targetElement = mutation.target as HTMLElement;
 
     const conditions = [
@@ -86,8 +91,7 @@ const observer = new MutationObserver((mutations) => {
   });
 
 
-  if (significantChange && diacritizedStatus === 'original') {
-
+  if (significantChange && editStatus === 'original') {
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
         if (node instanceof HTMLElement && node.innerText && node.innerText.length > 0) {
@@ -112,40 +116,42 @@ const main = () => {
 // ----------------- Functions ----------------- //
 
 export async function handleGetWebsiteData(): Promise<AppResponse> {
+
   const characterCount = mainNode.innerText?.length || 0;
   return { status: 'success', language, characterCount };
 }
 
-export async function handleGetWebsiteMetadata(): Promise<AppResponse> {
-  if (pageMetadata && diacritizedStatus) {
-    return { status: 'success', pageMetadata, diacritizedStatus };
-  } else {
-    throw new Error('No metadata available');
-  }
-}
-
 export async function handleGetWebsiteText(): Promise<AppResponse> {
-  const textElements = collectTextNodes(mainNode);
-  return { status: 'success', selectedNodes: textElements };
+
+  if (!pageMetadata && !editStatus) throw new Error('No page metadata or diacritized status found.');
+  const textElements = editStatus === 'original' ? collectTextNodes(mainNode) : collectedNodes;
+  if (editStatus === 'original') textElements.forEach((node) => collectedNodes.add(node));
+  console.log('Sent collected all text nodes.');
+  return { status: 'success', selectedNodes: Array.from(textElements), diacritizedStatus: editStatus, pageMetadata };
 }
 
 export async function handleGetSelectedNodes(): Promise<AppResponse> {
+
   const range = window.getSelection()?.getRangeAt(0);
   if (!range) return { status: 'error', error: new Error('No text selected.') };
-  const ancestor = range.commonAncestorContainer instanceof Element ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
-  console.log(ancestor);
-  // get parent of ancestor if ancestor is a text node
 
-  if (ancestor && !ancestor.querySelectorAll('[crxid]').length){
-    labelCounter = labelDOM(ancestor, labelCounter);
-  }
+  const ancestor = range.commonAncestorContainer instanceof Element ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
+  observer.disconnect();
+  labelCounter = labelDOM(ancestor ?? document.body, labelCounter);
+  observer.observe(document.body, observerOptions);
+
   const selectedNodes = collectTextNodes(range);
-  return { status: 'success', selectedNodes, diacritizedStatus };
+  if (editStatus === 'original') {
+    selectedNodes.forEach((node) => collectedNodes.add(node));
+  }
+  console.log('Sending selected text for processing:', selectedNodes);
+  return { status: 'success', selectedNodes: Array.from(selectedNodes), diacritizedStatus: editStatus };
 }
 
 export async function handleUpdateWebsiteText(message: AppMessage): Promise<AppResponse> {
+ let replacements = new Set<TextNode>(message.replacements);
   const { ruby } = message;
-  let { replacements } = message;
+  editStatus = 'changed'
 
   if (!replacements) throw new Error('Text not provided.');
   if (ruby) replacements = arabicToArabizi(replacements);

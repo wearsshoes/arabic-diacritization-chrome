@@ -48,6 +48,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
   useEffect(() => {
     if (finishedBatches >= totalBatches && isAnimating) {
       setIsAnimating(false);
+      console.log(`Finished updating webpage/selection with ${method}.`);
     }
   }, [method, pageRenders, isAnimating, totalBatches, finishedBatches]);
 
@@ -56,6 +57,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
     console.log('selected task: ', task, 'current method: ', method, 'existing pageRenders:', pageRenders)
     if (pageRenders.includes(task)) {
       setPageState(task);
+      chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processWebpage', method: task });
     }
   };
 
@@ -224,6 +226,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
               variant={method === 'original' ? 'solid' : 'outline'}
               flex={1}
               onClick={() => taskChoiceHandler('original')}
+              disabled={method === 'original'}
             >
               {translations.original[language]}
             </Button>
@@ -231,6 +234,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
               variant={method === 'fullDiacritics' ? 'solid' : 'outline'}
               flex={1}
               onClick={() => taskChoiceHandler('fullDiacritics')}
+              disabled={method === 'fullDiacritics'}
             >
               {translations.tashkil[language]}
             </Button>
@@ -238,6 +242,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
               variant={method === 'arabizi' ? 'solid' : 'outline'}
               flex={1}
               onClick={() => taskChoiceHandler('arabizi')}
+              disabled={method === 'arabizi'}
             >
               {translations.arabizi[language]}
             </Button>

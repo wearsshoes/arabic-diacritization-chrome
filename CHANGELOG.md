@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.3 (Current)
+- option to process selected text from widget.
+- better site language detection.
+- better labeling of updated elements.
+- console logs are simpler and more enlightening now.
+
 ## 0.4.2 (2024-05-24)
 - Rename to "Easy Peasy Arabizi"
 - Now adds romanization (arabizi) as ruby text!
