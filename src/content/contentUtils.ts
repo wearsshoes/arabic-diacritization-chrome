@@ -132,6 +132,13 @@ export async function handleGetWebsiteText(): Promise<AppResponse> {
 export async function handleGetSelectedNodes(): Promise<AppResponse> {
   const range = window.getSelection()?.getRangeAt(0);
   if (!range) return { status: 'error', error: new Error('No text selected.') };
+  const ancestor = range.commonAncestorContainer instanceof Element ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
+  console.log(ancestor);
+  // get parent of ancestor if ancestor is a text node
+
+  if (ancestor && !ancestor.querySelectorAll('[crxid]').length){
+    labelCounter = labelDOM(ancestor, labelCounter);
+  }
   const selectedNodes = collectTextNodes(range);
   return { status: 'success', selectedNodes, diacritizedStatus };
 }

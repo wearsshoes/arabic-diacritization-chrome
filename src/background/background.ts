@@ -147,7 +147,7 @@ async function handleProcessSelection(message: AppMessage, sender: chrome.runtim
   let tab: chrome.tabs.Tab;
   if (sender.tab) tab = sender.tab;
   else tab = await getActiveTab();
-  processWebpage(tab, message.method ?? 'fullDiacritics')
+  processSelectedText(tab, message.method ?? 'fullDiacritics')
   return ({ status: 'success' });
 }
 
