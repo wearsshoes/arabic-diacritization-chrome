@@ -174,7 +174,7 @@ const App: React.FC = () => {
     <Box padding='2' w='360px'>
       <Stack spacing={2} align="auto">
         <Stack>
-          <Heading fontFamily={'basmala'} padding={2} marginTop={5} marginBottom={0} textAlign='center' lineHeight={0}>ArabEasy</Heading>
+          <Heading fontFamily={'basmala'} padding={2} marginTop={5} marginBottom={0} textAlign='center' lineHeight={0}>Easy Peasy Arabizi</Heading>
           <Text fontSize={'md'} align={'center'}> This popup is still under construction. Recommend using the onscreen widget (Control-Shift-U / Command-Shift-U to restore if closed).</Text>
         </Stack>
         <Button size='xs' onClick={() => chrome.runtime.openOptionsPage()}>Open Options Page</Button>

@@ -20,7 +20,7 @@ const observerOptions: MutationObserverInit = {
 
 const onContentLoaded = () => {
   document.removeEventListener('DOMContentLoaded', onContentLoaded);
-  console.log(`EasyPeasy Arabeasy extension: \nLanguage: ${language}, main node: "${mainNode.tagName} ${mainNode.id} ${mainNode.className} ${mainNode.role}"`);
+  console.log(`Easy Peasy Arabizi extension: \nLanguage: ${language}, main node: "${mainNode.tagName} ${mainNode.id} ${mainNode.className} ${mainNode.role}"`);
   if (language === 'ar') {
     scrapeContent(mainNode).then(() => {
       chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'contentLoaded' });

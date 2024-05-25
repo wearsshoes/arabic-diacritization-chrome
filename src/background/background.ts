@@ -10,10 +10,14 @@ import { processWebpage, processSelectedText } from './processTextNodes';
 chrome.runtime.onInstalled.addListener(function (details) {
 
   if (details.reason == "install") {
-    console.log("ArabEasy successfully installed! Thank you for using this app.");
+    console.log("Easy Peasy Arabizi successfully installed! Thank you for using this app.");
   } else if (details.reason == "update") {
     const thisVersion = chrome.runtime.getManifest().version;
-    console.log("Updated from " + details.previousVersion + " to " + thisVersion + "!");
+    if (details.previousVersion === thisVersion) {
+      console.log("Easy Peasy Arabizi refreshed.");
+    } else {
+      console.log("Easy Peasy Arabizi updated from " + details.previousVersion + " to " + thisVersion + "!");
+    }
   }
 
   chrome.contextMenus.create({
@@ -140,8 +144,8 @@ async function handleProcessWebpage(message: AppMessage, sender: chrome.runtime.
   let tab: chrome.tabs.Tab;
   if (sender.tab) tab = sender.tab;
   else tab = await getActiveTab();
-    if (message.method) {
-      processWebpage(tab, message.method)
+  if (message.method) {
+    processWebpage(tab, message.method)
   } else {
     console.log('No method specified. Defaulting to full diacritics.');
     processWebpage(tab, 'fullDiacritics')

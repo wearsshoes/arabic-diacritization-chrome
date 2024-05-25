@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.2 (2024-05-24)
+- Rename to "Easy Peasy Arabizi"
+- Now adds romanization (arabizi) as ruby text!
+- Text streams fluidly onto the page as Claude returns it rather than updating in chunks.
+- Bilingual widget.
+- Better validation so Claude doesn't screw up as much.
+- Widget auto-hides on non-Arabic pages.
+- Command+Shift+U to show/hide widget now.
+- Nicer progress bar.
+- Internal DOM logic much neater now.
+- Known bug: saves don't work currently.
+
 ## 0.4.1 (2024-05-12)
 - There's now a cancel button on the widget.
 - Fixed problems with DOM element matching where the program could not always find correct element to replace.

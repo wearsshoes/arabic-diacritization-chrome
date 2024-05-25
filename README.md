@@ -1,17 +1,17 @@
-# ArabEasy
+# Easy Peasy Arabizi
 
-ArabEasy is a powerful Chrome extension that adds full diacritics (tashkeel) to Arabic text using Claude 3 (Haiku), a large language model from Anthropic. This tool is designed to enhance the readability and understanding of Arabic text on the web, especially for newcomers to the language.
+Easy Peasy Arabizi is a powerful Chrome extension that adds full diacritics (tashkeel) to Arabic text using Claude 3 (Haiku), a large language model from Anthropic. This tool is designed to enhance the readability and understanding of Arabic text on the web, especially for newcomers to the language.
 
 ## Features
 
-- **Automatic Diacritics Addition**: ArabEasy adds helpful diacritics to Arabic text, and can transliterate into Arabizi.
-- **LLM API Integration**: ArabEasy uses the Anthropic API to ensure that accurate and reliable diacritics are added.
+- **Automatic Diacritics Addition**: Easy Peasy Arabizi adds helpful diacritics to Arabic text, and can transliterate into Arabizi.
+- **LLM API Integration**: Easy Peasy Arabizi uses the Anthropic API to ensure that accurate and reliable diacritics are added.
 
 ## Installation
 
 1. Open Google Chrome
 2. Go to Chrome Web Store
-3. Search for "ArabEasy"
+3. Search for "Easy Peasy Arabizi"
 4. Click on "Add to Chrome"
 
 ## Usage

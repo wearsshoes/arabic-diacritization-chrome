@@ -5,7 +5,7 @@ import { crx, defineManifest } from '@crxjs/vite-plugin';
 // Define the manifest dynamically
 const manifest = defineManifest({
   manifest_version: 3,
-  name: "ArabEasy",
+  name: "Easy Peasy Arabizi",
   version: "0.4.1",
   description: "Allows users to add pronunciation diacritics (taškīl) to Arabic text or convert Arabic text to Arabizi.",
   permissions: [
@@ -35,7 +35,7 @@ const manifest = defineManifest({
   },
   action: {
     default_popup: "src/popup/extensionPopup.html",
-    default_title: "ArabEasy"
+    default_title: "Easy Peasy Arabizi"
   },
   commands: {
     "toggle-widget": {
