@@ -85,8 +85,8 @@ export async function handleGetWebsiteText(): Promise<AppResponse> {
 export async function handleGetSelectedNodes(): Promise<AppResponse> {
   const range = window.getSelection()?.getRangeAt(0);
   if (!range) return { status: 'error', error: new Error('No text selected.') };
-    const selectedNodes = collectTextNodes(range);
-    return { status: 'success', selectedNodes, diacritizedStatus };
+  const selectedNodes = collectTextNodes(range);
+  return { status: 'success', selectedNodes, diacritizedStatus };
 }
 
 export async function handleUpdateWebsiteText(message: AppMessage): Promise<AppResponse> {
@@ -123,7 +123,7 @@ const observer = new MutationObserver((mutations) => {
 
   if (significantChange && diacritizedStatus === 'original') {
     console.log('Significant change, reindexing DOM', diacritizedStatus, mutations);
-    // Disconnect the observer before making DOM changes
+
     observer.disconnect();
     scrapeContent(mainNode)
       .finally(() => {
@@ -131,7 +131,6 @@ const observer = new MutationObserver((mutations) => {
       })
       .catch((error) => {
         console.error('Error during scrapeContent:', error);
-        observer.observe(document.body, observerOptions);
       });
   }
 });
