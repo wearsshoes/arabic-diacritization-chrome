@@ -46,7 +46,6 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
 
   const actionHandlers: Record<string, (message: AppMessage, sender: chrome.runtime.MessageSender) => Promise<AppResponse>> = {
     'widgetHandshake': handleWidgetHandshake,
-    'contentLoaded': handleContentLoaded,
     'cancelTask': handleCancelTask,
     'getAPIKey': handleGetAPIKey,
     'getSystemPromptLength': handleGetSystemPromptLength,
@@ -81,7 +80,6 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
     return;
   }
   if (info.menuItemId === "processSelectedText") {
-    console.log("Diacritizing selected text...");
     processSelectedText(tab, 'fullDiacritics')
       .then(() => {
         console.log('Website text updated with diacritics.');
@@ -124,8 +122,6 @@ chrome.commands.onCommand.addListener((command) => {
 
 // ----------------- Functions ----------------- //
 
-let contentScriptReady = false;
-
 export const dataManager = DiacritizationDataManager.getInstance();
 
 async function getActiveTab(): Promise<chrome.tabs.Tab> {
@@ -143,12 +139,7 @@ async function handleProcessWebpage(message: AppMessage, sender: chrome.runtime.
   let tab: chrome.tabs.Tab;
   if (sender.tab) tab = sender.tab;
   else tab = await getActiveTab();
-  if (message.method) {
-    processWebpage(tab, message.method)
-  } else {
-    console.log('No method specified. Defaulting to full diacritics.');
-    processWebpage(tab, 'fullDiacritics')
-  }
+  processWebpage(tab, message.method ?? 'fullDiacritics')
   return ({ status: 'success' });
 }
 
@@ -156,21 +147,11 @@ async function handleProcessSelection(message: AppMessage, sender: chrome.runtim
   let tab: chrome.tabs.Tab;
   if (sender.tab) tab = sender.tab;
   else tab = await getActiveTab();
-  if (message.method) {
-    processSelectedText(tab, message.method)
-  } else {
-    console.log('No method specified. Defaulting to full diacritics.');
-    processSelectedText(tab, 'fullDiacritics')
-  }
+  processWebpage(tab, message.method ?? 'fullDiacritics')
   return ({ status: 'success' });
 }
 
 async function handleWidgetHandshake(): Promise<AppResponse> {
-  return { status: 'success' }
-}
-
-async function handleContentLoaded(): Promise<AppResponse> {
-  contentScriptReady = true;
   return { status: 'success' }
 }
 
@@ -241,21 +222,17 @@ async function handleGetSavedDiacritizations(_message: AppMessage, sender: chrom
 }
 
 export function messageContentScript(tabId: number, message: AppMessage): Promise<AppResponse> {
-  if (contentScriptReady) {
     return new Promise((resolve, reject) => {
       chrome.tabs.sendMessage<AppMessage, AppResponse>(tabId, message, (response) => {
         if (chrome.runtime.lastError) {
-          console.log('Error sending message:', message);
+          console.error('Error sending message:', message);
           reject(chrome.runtime.lastError);
         } else {
           resolve(response !== undefined ? response : { status: 'error', error: new Error('No response') });
         }
       });
     });
-  } else {
-    return Promise.resolve({ status: 'error', error: new Error('Content script not ready') });
   }
-}
 
 export const controllerMap = new Map<number, AbortController>();
 
@@ -266,5 +243,3 @@ function cancelTask(tabId: number) {
     controllerMap.delete(tabId);
   }
 }
-
-console.log('Background script loaded.');

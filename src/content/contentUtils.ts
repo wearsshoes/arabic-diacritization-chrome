@@ -22,11 +22,16 @@ const onContentLoaded = () => {
   document.removeEventListener('DOMContentLoaded', onContentLoaded);
   console.log(`Easy Peasy Arabizi: \nLanguage: ${language} \nMain node: "${mainNode.tagName} ${mainNode.id} ${mainNode.className} ${mainNode.role}"`);
   if (language === 'ar') {
-    scrapeContent(mainNode).then(() => {
-      chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'contentLoaded' });
+    scrapeContent(mainNode)
+    .then(() => {
       observer.observe(document.body, observerOptions);
     });
   }
+};
+
+const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {
+  pageMetadata.contentSignature = await calculateHash(mainNode.textContent || '');
+  if (diacritizedStatus === 'original') labelDOM(mainNode);
 };
 
 const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse | void) => void) => {
@@ -60,56 +65,7 @@ const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, se
   }
 };
 
-// ----------------- Functions ----------------- //
-
-export async function handleGetWebsiteData(): Promise<AppResponse> {
-  console.log({ 'Main node': mainNode, 'PageMetadata': pageMetadata });
-  const characterCount = mainNode.innerText?.length || 0;
-  return { status: 'success', language, characterCount };
-}
-
-export async function handleGetWebsiteMetadata(): Promise<AppResponse> {
-  if (pageMetadata && diacritizedStatus) {
-    return { status: 'success', pageMetadata, diacritizedStatus };
-  } else {
-    throw new Error('No metadata available');
-  }
-}
-
-export async function handleGetWebsiteText(): Promise<AppResponse> {
-  const textElements = collectTextNodes(mainNode);
-  console.log('Sending website text:', textElements);
-  return { status: 'success', selectedNodes: textElements };
-}
-
-export async function handleGetSelectedNodes(): Promise<AppResponse> {
-  const range = window.getSelection()?.getRangeAt(0);
-  if (!range) return { status: 'error', error: new Error('No text selected.') };
-  const selectedNodes = collectTextNodes(range);
-  return { status: 'success', selectedNodes, diacritizedStatus };
-}
-
-export async function handleUpdateWebsiteText(message: AppMessage): Promise<AppResponse> {
-  const { ruby } = message;
-  let { replacements } = message;
-
-  if (!replacements) throw new Error('Text not provided.');
-  if (ruby) replacements = arabicToArabizi(replacements);
-
-  observer.disconnect();
-  replaceWebpageText(replacements);
-  observer.observe(document.body, observerOptions);
-  return { status: 'success' };
-}
-
-// Scrape webpage data for the content script
-const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {
-  pageMetadata.contentSignature = await calculateHash(mainNode.textContent || '');
-  if (diacritizedStatus === 'original') labelDOM(mainNode);
-};
-
 const observer = new MutationObserver((mutations) => {
-  // Check if the mutations indicate a significant content change
 
   const significantChange = mutations.some((mutation) => {
     const targetElement = mutation.target instanceof Element ? mutation.target : null;
@@ -135,7 +91,6 @@ const observer = new MutationObserver((mutations) => {
   }
 });
 
-// MAIN
 const main = () => {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', onContentLoaded);
@@ -143,6 +98,46 @@ const main = () => {
     onContentLoaded();
   }
   chrome.runtime.onMessage.addListener(listener);
+}
+
+// ----------------- Functions ----------------- //
+
+export async function handleGetWebsiteData(): Promise<AppResponse> {
+  const characterCount = mainNode.innerText?.length || 0;
+  return { status: 'success', language, characterCount };
+}
+
+export async function handleGetWebsiteMetadata(): Promise<AppResponse> {
+  if (pageMetadata && diacritizedStatus) {
+    return { status: 'success', pageMetadata, diacritizedStatus };
+  } else {
+    throw new Error('No metadata available');
+  }
+}
+
+export async function handleGetWebsiteText(): Promise<AppResponse> {
+  const textElements = collectTextNodes(mainNode);
+  return { status: 'success', selectedNodes: textElements };
+}
+
+export async function handleGetSelectedNodes(): Promise<AppResponse> {
+  const range = window.getSelection()?.getRangeAt(0);
+  if (!range) return { status: 'error', error: new Error('No text selected.') };
+  const selectedNodes = collectTextNodes(range);
+  return { status: 'success', selectedNodes, diacritizedStatus };
+}
+
+export async function handleUpdateWebsiteText(message: AppMessage): Promise<AppResponse> {
+  const { ruby } = message;
+  let { replacements } = message;
+
+  if (!replacements) throw new Error('Text not provided.');
+  if (ruby) replacements = arabicToArabizi(replacements);
+
+  observer.disconnect();
+  replaceWebpageText(replacements);
+  observer.observe(document.body, observerOptions);
+  return { status: 'success' };
 }
 
 export default main;

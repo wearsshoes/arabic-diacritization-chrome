@@ -24,7 +24,7 @@ export class Claude {
     const models = Object.values(claude);
     const newModel = models.find(model => model.level === n);
     if (newModel) this.model = newModel;
-    console.log('Escalated model to:', this.model);
+    console.log('Escalated task to:', this.model);
   }
 }
 
@@ -103,37 +103,23 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
           })
       });
 
-      console.log('Received final result for:', hash, finalResult);
+      console.log(`Job ${hash} completed.`);
       return finalResult;
 
-
     } catch (error) {
+
+      // Log rate limit details
       if (error instanceof Anthropic.APIError) {
         console.error('Anthropic API Error:', error.message);
-
-        // Parse rate limit headers
-        const rateLimitHeaders = error.headers;
-        if (rateLimitHeaders) {
-          const requestsLimit = rateLimitHeaders['anthropic-ratelimit-requests-limit'];
-          const requestsRemaining = rateLimitHeaders['anthropic-ratelimit-requests-remaining'];
-          const requestsReset = rateLimitHeaders['anthropic-ratelimit-requests-reset'];
-          const tokensLimit = rateLimitHeaders['anthropic-ratelimit-tokens-limit'];
-          const tokensRemaining = rateLimitHeaders['anthropic-ratelimit-tokens-remaining'];
-          const tokensReset = rateLimitHeaders['anthropic-ratelimit-tokens-reset'];
-
-          console.log('Rate Limit Details:');
-          console.log('Requests Limit:', requestsLimit);
-          console.log('Requests Remaining:', requestsRemaining);
-          console.log('Requests Reset:', requestsReset);
-          console.log('Tokens Limit:', tokensLimit);
-          console.log('Tokens Remaining:', tokensRemaining);
-          console.log('Tokens Reset:', tokensReset);
-        }
-      } else if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          console.log('Request aborted for:', hash);
-        } else {
-          console.error('Error message:', error.message);
+        const { headers } = error;
+        if (headers) {
+          console.error(`Rate Limit Details:
+          Requests Limit: ${headers['anthropic-ratelimit-requests-limit']}
+          Requests Remaining: ${headers['anthropic-ratelimit-requests-remaining']}
+          Requests Reset: ${headers['anthropic-ratelimit-requests-reset']}
+          Tokens Limit: ${headers['anthropic-ratelimit-tokens-limit']}
+          Tokens Remaining: ${headers['anthropic-ratelimit-tokens-remaining']}
+          Tokens Reset: ${headers['anthropic-ratelimit-tokens-reset']}`);
         }
       }
       throw error;

@@ -23,8 +23,8 @@ export async function processSelectedText(tab: chrome.tabs.Tab, method: string =
     return;
   }
 
-  console.log("Doing ", method, "for selected nodes:", selectedNodes);
-  fullDiacritization(tab.id, tab.url, selectedNodes, controller.signal, method === 'arabizi')
+  console.log(`Processing ${method} for:`, selectedNodes);
+  await fullDiacritization(tab.id, tab.url, selectedNodes, controller.signal, method === 'arabizi')
 }
 
 export async function processWebpage(tab: chrome.tabs.Tab, method: string): Promise<AppResponse> {
@@ -137,7 +137,6 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
 
   // Update the saved metadata
   let message = {} as AppResponse;
-  console.log('Updating saved web page data');
   dataManager.updateWebpageData(tab.url, webpageDiacritizationData)
     .then(() => {
       console.log('Saved webpage data updated:', webpageDiacritizationData)

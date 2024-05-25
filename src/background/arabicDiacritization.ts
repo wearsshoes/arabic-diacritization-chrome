@@ -26,11 +26,11 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
   const claude = new Claude()
   const maxTries = 3;
   const delimiter = '|';
-  let validationFailures = 0;
+  let elementValidationFailures = 0;
+  let chunkValidationFailures = 0;
 
   const strLength = selectedNodes.flatMap((textNode) => textNode.text.split(' ')).length;
   messageContentScript(tabId, { action: 'beginProcessing', tabUrl: tabUrl, strLength });
-  console.log('Full diacritization, ruby: ', ruby)
 
   // diacritize the texts in parallel with retries
   const diacritizedNodes = await Promise.all(
@@ -87,7 +87,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
             } else {
               console.warn(`Validation failed:\n${newText}\n${checkText}\n${refText}`);
               replacements.push(textNode);
-              validationFailures++;
+              elementValidationFailures++;
             }
 
             messageContentScript(tabId, { action: 'updateProgressBar', strLength: words });
@@ -99,7 +99,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
           const response = await anthropicAPICall(msg, claude.apiKey, abortSignal, eventEmitter);
           eventEmitter?.emit('text', delimiter);
           const diacritizedText: string = response.content[0].text;
-          console.log('originals:\n', originalText, 'diacritized:\n', diacritizedText);
+          console.log(`Original: \n${originalText} \nResult: \n${diacritizedText}`);
 
           const validResponse = validateResponse(originalText, diacritizedText);
           if (validResponse) {
@@ -113,8 +113,9 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
         }
         messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl, replacements: originals, ruby });
         messageContentScript(tabId, { action: 'updateProgressBar', strLength: -acc });
+        chunkValidationFailures++;
         if (tries < maxTries) {
-          console.log('Failed validation. trying again: try', tries + 1, 'of', maxTries);
+          console.error('Failed validation. trying again: try', tries + 1, 'of', maxTries);
           claude.escalateModel(tries);
         } else {
           console.warn('Failed to diacritize chunk after', maxTries, 'tries,');
@@ -125,7 +126,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
     })
   ).then((result) => { return result.flat() });
 
-  console.log('Diacritized text:', diacritizedNodes, 'Validation failures:', validationFailures);
+  console.log('Failed elements:', elementValidationFailures, '\nFailed chunks:', chunkValidationFailures, '\nDiacritized text:', diacritizedNodes);
   return diacritizedNodes;
 
   function stripDiacritics(text: string): string {
@@ -133,7 +134,6 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
   }
 
   function validateResponse(originalText: string, diacritizedText: string): boolean {
-    // check if the diacritized text is longer than the original text
     const rightDelimiters = originalText.split(delimiter).length - diacritizedText.split(delimiter).length;
     console.log('Difference in delimiters:', Math.abs(rightDelimiters));
     return (rightDelimiters === 0);
