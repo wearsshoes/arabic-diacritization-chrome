@@ -230,12 +230,12 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
                 onClick={() => beginDiacritization()}
               />
             </ButtonGroup>
-            <ButtonGroup id="taskButtons"
+            <ButtonGroup id="progressBar"
               width={"100%"}
               isAttached
               size="xs"
               colorScheme="blue"
-            // display={isAnimating ? "flex" : "none"}
+            display={isAnimating ? "flex" : "none"}
             >
               <Button
                 variant={"solid"}
