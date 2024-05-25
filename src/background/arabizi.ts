@@ -76,7 +76,7 @@ export function arabicToArabizi(textNodes: TextNode[], dialect: string = "msa"):
         result += text[i];
       }
     }
-    console.log(result);
+    // console.log(result);
     return result;
   }
 

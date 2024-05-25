@@ -58,7 +58,7 @@ function replaceWebpageText(replacements: TextNode[]) {
 
     const element = document.querySelector(`[crxid="${elementId}"]`) as HTMLElement;
     if (element) {
-      console.log(`Replacing ${element.textContent} with ${text.includes("<span") ? 'ruby' : text} at ${elementId}`);
+      // console.log(`Replacing ${element.textContent} with ${text.includes("<span") ? 'ruby' : text} at ${elementId}`);
       element.innerHTML = text;
       element.animate([
         { background: 'rgba(76, 175, 80, 0.8)' },
