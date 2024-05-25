@@ -4,7 +4,7 @@ import { TextNode } from "../common/webpageDataClass";
 
 function labelDOM(node: Node = document.body, i = 0): number {
   if (node.nodeType === Node.ELEMENT_NODE && isVisible(node as Element) && !(node as Element).hasAttribute('crxid')) {
-    node.childNodes.forEach(childNode => {
+    for (const childNode of Array.from(node.childNodes)) {
       if (childNode.nodeType === Node.TEXT_NODE && childNode.textContent?.trim()) {
         const sentences = splitTextIntoSentences(childNode.textContent);
         const fragment = document.createDocumentFragment();
