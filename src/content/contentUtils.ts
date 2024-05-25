@@ -1,6 +1,6 @@
 import { PageMetadata } from '../common/webpageDataClass';
 import { calculateHash } from '../common/utils';
-import { labelDOM, collectElements, replaceWebpageText, getTextNodesInRange } from './domUtils';
+import { labelDOM, replaceWebpageText, collectTextNodes } from './domUtils';
 import { AppMessage, AppResponse } from '../common/types';
 import { mainNode, language } from './content';
 import { arabicToArabizi } from "../background/arabizi";
@@ -20,7 +20,7 @@ const observerOptions: MutationObserverInit = {
 
 const onContentLoaded = () => {
   document.removeEventListener('DOMContentLoaded', onContentLoaded);
-  console.log(`Easy Peasy Arabizi extension: \nLanguage: ${language}, main node: "${mainNode.tagName} ${mainNode.id} ${mainNode.className} ${mainNode.role}"`);
+  console.log(`Easy Peasy Arabizi: \nLanguage: ${language} \nMain node: "${mainNode.tagName} ${mainNode.id} ${mainNode.className} ${mainNode.role}"`);
   if (language === 'ar') {
     scrapeContent(mainNode).then(() => {
       chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'contentLoaded' });
@@ -77,7 +77,7 @@ export async function handleGetWebsiteMetadata(): Promise<AppResponse> {
 }
 
 export async function handleGetWebsiteText(): Promise<AppResponse> {
-  const textElements = collectElements(mainNode);
+  const textElements = collectTextNodes(mainNode);
   console.log('Sending website text:', textElements);
   return { status: 'success', selectedNodes: textElements };
 }
@@ -87,8 +87,8 @@ export async function handleGetSelectedNodes(): Promise<AppResponse> {
   if (selection !== null) {
     console.log(selection.toString());
     const range = selection.getRangeAt(0);
-    const textNodes = getTextNodesInRange(range);
-    return { status: 'success', selectedNodes: textNodes, diacritizedStatus };
+    const selectedNodes = collectTextNodes(range);
+    return { status: 'success', selectedNodes, diacritizedStatus };
   } else {
     throw new Error('No selection available');
   }

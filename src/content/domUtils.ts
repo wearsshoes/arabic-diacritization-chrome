@@ -2,59 +2,24 @@ import { TextNode } from "../common/webpageDataClass";
 
 // -------------- Functions -------------- //
 
-function labelDOM(node: Node = document.body, i = 0): number {
-  if (node.nodeType === Node.ELEMENT_NODE && isVisible(node as Element) && !(node as Element).hasAttribute('crxid')) {
-    for (const childNode of Array.from(node.childNodes)) {
-      if (childNode.nodeType === Node.TEXT_NODE && childNode.textContent?.trim()) {
-        const sentences = splitTextIntoSentences(childNode.textContent);
+function labelDOM(element: Element = document.body, i = 0): number {
+  if (isVisible(element) && !(element).hasAttribute('crxid')) {
+    for (const child of Array.from(element.childNodes)) {
+      if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim()) {
         const fragment = document.createDocumentFragment();
-        sentences.forEach((sentence) => {
+        splitTextIntoSentences(child.textContent).forEach((sentence) => {
           const spanElement = document.createElement('span');
           spanElement.textContent = sentence;
           spanElement.setAttribute('crxid', `position-${i++}`);
           fragment.appendChild(spanElement);
         });
-        childNode.parentNode?.replaceChild(fragment, childNode);
-      } else {
-        i = labelDOM(childNode, i);
+        child.parentNode?.replaceChild(fragment, child);
+      } else if (child.nodeType === Node.ELEMENT_NODE){
+        i = labelDOM(child as Element, i);
       }
     }
   }
   return i;
-}
-
-function getTextNodesInRange(range: Range): TextNode[] {
-  const textNodes: TextNode[] = [];
-
-  const walker = document.createTreeWalker(
-    range.commonAncestorContainer,
-    NodeFilter.SHOW_TEXT,
-    {
-      acceptNode: (node: Node) => {
-        return range.intersectsNode(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-      }
-    }
-  );
-
-  let currentNode = walker.nextNode();
-  while (currentNode) {
-    const text = currentNode.textContent ?? '';
-    const elementId = currentNode.parentElement?.getAttribute('crxid') ?? '';
-    if (text.trim() !== '' && elementId !== '') {
-      textNodes.push({ elementId, text });
-    }
-    currentNode = walker.nextNode();
-  }
-  return textNodes;
-}
-
-function collectElements(node: Node = document.body): TextNode[] {
-  return Array.from((node as Element).querySelectorAll('[crxid]'))
-    .map(element => ({
-      elementId: element.getAttribute('crxid') ?? '',
-      text: element.textContent ?? ''
-    }))
-    .filter(textElement => textElement.elementId && textElement.text);
 }
 
 function splitTextIntoSentences(text: string): string[] {
@@ -65,6 +30,24 @@ function splitTextIntoSentences(text: string): string[] {
 function isVisible(element: Element): boolean {
   const css = window.getComputedStyle(element);
   return css.display !== 'none' && css.visibility !== 'hidden'
+}
+
+function collectTextNodes(target: Range | Node = document.body): TextNode[] {
+  const node = target instanceof Range ? target.commonAncestorContainer : target;
+  const elements = (node as Element).querySelectorAll('[crxid]');
+  const textNodes: TextNode[] = [];
+
+  Array.from(elements).forEach((element) => {
+    const elementId = element.getAttribute('crxid') ?? '';
+    const text = element.textContent ?? '';
+    const inRange = target instanceof Range ? target.intersectsNode(element) : true;
+
+    if (elementId && text && inRange) {
+      textNodes.push({ elementId, text });
+    }
+  });
+
+  return textNodes;
 }
 
 function replaceWebpageText(replacements: TextNode[]) {
@@ -87,4 +70,4 @@ function replaceWebpageText(replacements: TextNode[]) {
   });
 }
 
-export { getTextNodesInRange, labelDOM, collectElements, replaceWebpageText };
+export { labelDOM, collectTextNodes, replaceWebpageText };
