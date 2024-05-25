@@ -19,7 +19,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
   const [textIsSelected, setTextIsSelected] = useState(false);
 
   const [method, setMethod] = useState('fullDiacritics');
-  const [pageRenders, setPageRenders] = useState(['original']);
+  const [pageRenders, setPageRenders] = useState(new Set<string>(['original']));
   const [pageState, setPageState] = useState('original');
 
   const [totalBatches, setTotal] = useState(0);
@@ -55,7 +55,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
   const taskChoiceHandler = (task: string) => {
     setMethod(task);
     console.log('selected task: ', task, 'current method: ', method, 'existing pageRenders:', pageRenders)
-    if (pageRenders.includes(task)) {
+    if (pageRenders.has(task)) {
       setPageState(task);
       chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processWebpage', method: task });
     }
@@ -105,7 +105,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
         case "allDone":
           setProgress(totalBatches);
           setPageState(method);
-          setPageRenders([method, ...pageRenders]);
+          setPageRenders((prev) => new Set([...prev, method]));
           break;
         case "toggleWidget":
           onToggle();
