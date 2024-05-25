@@ -3,7 +3,7 @@ import { TextNode } from "../common/webpageDataClass";
 // -------------- Functions -------------- //
 
 function labelDOM(node: Node = document.body, i = 0): number {
-  if (node.nodeType === Node.ELEMENT_NODE && isVisible(node as Element)) {
+  if (node.nodeType === Node.ELEMENT_NODE && isVisible(node as Element) && !(node as Element).hasAttribute('crxid')) {
     node.childNodes.forEach(childNode => {
       if (childNode.nodeType === Node.TEXT_NODE && childNode.textContent?.trim()) {
         const sentences = splitTextIntoSentences(childNode.textContent);
@@ -11,7 +11,7 @@ function labelDOM(node: Node = document.body, i = 0): number {
         sentences.forEach((sentence) => {
           const spanElement = document.createElement('span');
           spanElement.textContent = sentence;
-          spanElement.setAttribute('crxid', `${i++}`);
+          spanElement.setAttribute('crxid', `position-${i++}`);
           fragment.appendChild(spanElement);
         });
         childNode.parentNode?.replaceChild(fragment, childNode);
