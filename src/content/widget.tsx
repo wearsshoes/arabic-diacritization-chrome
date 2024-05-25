@@ -16,6 +16,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
 
   const [language, setLanguage] = useState<Languages>('en');
   const shouldDisplay = ['ar', 'arz'].includes(siteLanguage)
+  const [textIsSelected, setTextIsSelected] = useState(false);
 
   const [method, setMethod] = useState('fullDiacritics');
   const [pageRenders, setPageRenders] = useState(['original']);
@@ -61,11 +62,14 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
 
   const beginDiacritization = () => {
     try {
-      // setDiacritizeStatus('Processing ...');
-      chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processWebpage', method });
-      // console.log(`${method} response:`, response);
+      if (isAnimating) return;
+      if (textIsSelected) {
+        chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processSelection', method });
+      } else {
+        chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processWebpage', method });
+      }
     } catch (error) {
-      // setDiacritizeStatus(`Error processing ${method}:` + error);
+
       console.error(`Error in ${method}:`, error);
     }
   };
@@ -76,6 +80,13 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
       onExpand();
     }
   }, [isAnimating, onOpen, onExpand]);
+
+  useEffect(() => {
+    document.addEventListener('selectionchange', () => {
+      const selectedText = window.getSelection()?.toString().trim() ?? '';
+      selectedText.length > 0 ? setTextIsSelected(true) : setTextIsSelected(false);
+    });
+  }, [textIsSelected]);
 
   useEffect(() => {
     const listener = (message: AppMessage) => {
@@ -131,6 +142,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
       >
         <Stack
           id="header"
+          width="100%"
           direction="row"
           justify="flex-start"
           align="center"
@@ -170,7 +182,11 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
             flex="1"
             textAlign="center"
           >
-            {isExpanded ? translations.easyPeasyArabizi[language] : translations.arabizi[language]}
+            {isExpanded ?
+              (textIsSelected ?
+                'Selection on Page' :
+                translations.easyPeasyArabizi[language]) :
+              translations.arabizi[language]}
           </Text>
           <Stack direction="row" spacing="4px">
             <IconButton
@@ -189,82 +205,87 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
             />
           </Stack>
         </Stack>
-        <Stack id="content" width="100%" paddingBottom={"4px"}>
-          <Stack width="100%" spacing="0px" {...disclosureProps}>
-            <ButtonGroup id="taskButtons"
-              width={"100%"}
-              isAttached
-              size="xs"
-              colorScheme="blue"
-              display={isAnimating ? "none" : "flex"}
+        <Stack
+          id="content"
+          width="256px"
+          spacing="0px"
+          paddingBottom={"4px"}
+          {...disclosureProps}
+        >
+          <ButtonGroup
+            id="taskButtons"
+            width={"100%"}
+            isAttached
+            size="xs"
+            colorScheme="blue"
+            display={isAnimating ? "none" : "flex"}
+          >
+            <Button
+              variant={method === 'original' ? 'solid' : 'outline'}
+              flex={1}
+              onClick={() => taskChoiceHandler('original')}
             >
-              <Button
-                variant={method === 'original' ? 'solid' : 'outline'}
-                flex={1}
-                onClick={() => taskChoiceHandler('original')}
-              >
-                {translations.original[language]}
-              </Button>
-              <Button
-                variant={method === 'fullDiacritics' ? 'solid' : 'outline'}
-                flex={1}
-                onClick={() => taskChoiceHandler('fullDiacritics')}
-              >
-                {translations.tashkil[language]}
-              </Button>
-              <Button
-                variant={method === 'arabizi' ? 'solid' : 'outline'}
-                flex={1}
-                onClick={() => taskChoiceHandler('arabizi')}
-              >
-                {translations.arabizi[language]}
-              </Button>
-              <IconButton
-                aria-label="Update website text"
-                icon={
-                  (method === pageState) ? <CheckIcon /> :
-                    (isAnimating ? <SpinnerIcon /> : <ArrowForwardIcon />)
-                }
-                colorScheme={method === pageState ? "teal" : "orange"}
-                isDisabled={method === pageState || isAnimating}
-                onClick={() => beginDiacritization()}
-              />
-            </ButtonGroup>
-            <ButtonGroup id="progressBar"
-              width={"100%"}
-              isAttached
-              size="xs"
-              colorScheme="blue"
+              {translations.original[language]}
+            </Button>
+            <Button
+              variant={method === 'fullDiacritics' ? 'solid' : 'outline'}
+              flex={1}
+              onClick={() => taskChoiceHandler('fullDiacritics')}
+            >
+              {translations.tashkil[language]}
+            </Button>
+            <Button
+              variant={method === 'arabizi' ? 'solid' : 'outline'}
+              flex={1}
+              onClick={() => taskChoiceHandler('arabizi')}
+            >
+              {translations.arabizi[language]}
+            </Button>
+            <IconButton
+              aria-label="Update website text"
+              icon={
+                (method === pageState) ? <CheckIcon /> :
+                  (isAnimating ? <SpinnerIcon /> : <ArrowForwardIcon />)
+              }
+              colorScheme={method === pageState ? "teal" : "orange"}
+              isDisabled={method === pageState || isAnimating}
+              onClick={() => beginDiacritization()}
+            />
+          </ButtonGroup>
+          <ButtonGroup
+            id="progressBar"
+            width={"100%"}
+            isAttached
+            size="xs"
+            colorScheme="blue"
             display={isAnimating ? "flex" : "none"}
+          >
+            <Button
+              variant={"solid"}
+              flex={1}
+              size="xs"
+              onClick={cancelAction}
+              colorScheme="blue"
             >
-              <Button
-                variant={"solid"}
-                flex={1}
-                size="xs"
-                onClick={cancelAction}
+              <Progress
+                value={progressPercent}
                 colorScheme="blue"
-              >
-                <Progress
-                  value={progressPercent}
-                  colorScheme="blue"
-                  hasStripe={isAnimating}
-                  isAnimated={isAnimating}
-                  flex={1}
-                />
-                <Text
-                  pos={"absolute"}
-                >{finishedBatches}/{totalBatches}</Text>
-
-              </Button>
-              <IconButton
-                aria-label="Cancel"
-                icon={<CloseIcon />}
-                colorScheme="red"
-                onClick={cancelAction}
+                hasStripe={isAnimating}
+                isAnimated={isAnimating}
+                flex={1}
               />
-            </ButtonGroup>
+              <Text
+                pos={"absolute"}
+              >{finishedBatches}/{totalBatches}</Text>
 
-          </Stack>
+            </Button>
+            <IconButton
+              aria-label="Cancel"
+              icon={<CloseIcon />}
+              colorScheme="red"
+              onClick={cancelAction}
+            />
+          </ButtonGroup>
         </Stack>
       </Stack>
     </Container>

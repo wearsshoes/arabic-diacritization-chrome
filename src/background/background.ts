@@ -56,6 +56,7 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
     'clearWebpageData': handleClearWebpageData,
     'clearDatabase': handleClearDatabase,
     'processWebpage': handleProcessWebpage,
+    'processSelection': handleProcessSelection,
   };
 
   const handler = actionHandlers[message.action];
@@ -102,8 +103,6 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.url) cancelTask(tabId);
-  // if (changeInfo.discarded) queueUpdates(tabId, tab.url);
-  // if (changeInfo.status === 'complete') completeUpdates(tabId, tab.url || '')
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
@@ -149,6 +148,19 @@ async function handleProcessWebpage(message: AppMessage, sender: chrome.runtime.
   } else {
     console.log('No method specified. Defaulting to full diacritics.');
     processWebpage(tab, 'fullDiacritics')
+  }
+  return ({ status: 'success' });
+}
+
+async function handleProcessSelection(message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
+  let tab: chrome.tabs.Tab;
+  if (sender.tab) tab = sender.tab;
+  else tab = await getActiveTab();
+  if (message.method) {
+    processSelectedText(tab, message.method)
+  } else {
+    console.log('No method specified. Defaulting to full diacritics.');
+    processSelectedText(tab, 'fullDiacritics')
   }
   return ({ status: 'success' });
 }
