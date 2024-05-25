@@ -6,7 +6,7 @@ import theme from './widget_theme';
 import ContentWidget from "./widget";
 import contentUtils from "./contentUtils";
 
-const hasArabic = /\[\\u0600-\\u06FF\]/;
+const hasArabic = /[\u0600-\u06FF]/;
 export const mainNode = (
   document.body.querySelector('main, #main') as HTMLElement
   ?? document.body.querySelector('#root') as HTMLElement
