@@ -148,6 +148,7 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
       message = { status: 'error', error };
     });
 
+  messageContentScript(tabId, { action: 'allDone' });
   return message;
 
 }

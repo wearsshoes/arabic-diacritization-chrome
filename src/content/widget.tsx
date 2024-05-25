@@ -48,7 +48,6 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
   useEffect(() => {
     if (finishedBatches >= totalBatches && isAnimating) {
       setIsAnimating(false);
-      setPageState(method);
     }
   }, [method, pageRenders, isAnimating, totalBatches, finishedBatches]);
 
@@ -103,6 +102,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
           break;
         case "allDone":
           setProgress(totalBatches);
+          setPageState(method);
           setPageRenders([method, ...pageRenders]);
           break;
         case "toggleWidget":
@@ -248,7 +248,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
                   (isAnimating ? <SpinnerIcon /> : <ArrowForwardIcon />)
               }
               colorScheme={method === pageState ? "teal" : "orange"}
-              isDisabled={method === pageState || isAnimating}
+              isDisabled={method === pageState}
               onClick={() => beginDiacritization()}
             />
           </ButtonGroup>

@@ -73,7 +73,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
             const diff = Math.abs(refText.length - checkText.length);
             const fudgeFactor = Math.ceil(refText.length / 50)
 
-            const words = newText.split(' ').length;
+            const words = textNode.text.split(' ').length;
             acc += words;
 
             if (checkText === refText || diff <= fudgeFactor) {
@@ -84,14 +84,13 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
                 tabUrl,
                 ruby
               });
-
-              messageContentScript(tabId, { action: 'updateProgressBar', strLength: words });
             } else {
               console.warn(`Validation failed:\n${newText}\n${checkText}\n${refText}`);
               replacements.push(textNode);
               validationFailures++;
             }
 
+            messageContentScript(tabId, { action: 'updateProgressBar', strLength: words });
             queue = queue.slice(index + 1);
           }
         });
@@ -127,7 +126,6 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
   ).then((result) => { return result.flat() });
 
   console.log('Diacritized text:', diacritizedNodes, 'Validation failures:', validationFailures);
-  messageContentScript(tabId, { action: 'allDone' });
   return diacritizedNodes;
 
   function stripDiacritics(text: string): string {
