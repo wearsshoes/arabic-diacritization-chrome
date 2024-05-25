@@ -11,6 +11,7 @@ const pageMetadata: PageMetadata = {
 };
 // TODO: re-implement diacritizedStatus tracking; currently static
 const diacritizedStatus = 'original';
+let labelCounter = 0;
 
 const observerOptions: MutationObserverInit = {
   childList: true,
@@ -23,15 +24,15 @@ const onContentLoaded = () => {
   console.log(`Easy Peasy Arabizi: \nLanguage: ${language} \nMain node: "${mainNode.tagName} ${mainNode.id} ${mainNode.className} ${mainNode.role}"`);
   if (language === 'ar') {
     scrapeContent(mainNode)
-    .then(() => {
-      observer.observe(document.body, observerOptions);
-    });
+      .then(() => {
+        observer.observe(document.body, observerOptions);
+      });
   }
 };
 
 const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {
-  pageMetadata.contentSignature = await calculateHash(mainNode.textContent || '');
-  if (diacritizedStatus === 'original') labelDOM(mainNode);
+  pageMetadata.contentSignature = await calculateHash(mainNode.innerText || '');
+  if (diacritizedStatus === 'original') labelCounter = labelDOM(mainNode);
 };
 
 const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse | void) => void) => {
@@ -68,26 +69,34 @@ const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, se
 const observer = new MutationObserver((mutations) => {
 
   const significantChange = mutations.some((mutation) => {
-    const targetElement = mutation.target instanceof Element ? mutation.target : null;
-    const isMainContentChange = targetElement?.closest(mainNode.tagName);
-    const isNotWidget = !targetElement?.closest('crx-app-container');
-    const isChildListChange = mutation.type === 'childList';
-    const isCharacterDataChange = mutation.type === 'characterData' && targetElement?.parentElement?.tagName !== 'SCRIPT';
+    const targetElement = mutation.target as HTMLElement;
 
-    return isNotWidget && isMainContentChange && (isChildListChange || isCharacterDataChange);
+    const conditions = [
+      !targetElement?.closest('crx-app-container'),
+      !targetElement?.closest('iframe'),
+      !targetElement?.tagName.includes('figure'),
+      !targetElement?.closest('figure'),
+      !targetElement?.closest('svg'),
+      targetElement?.closest(mainNode.tagName),
+      mutation.type === 'childList',
+      Array.from(mutation.addedNodes).some((node) => node instanceof HTMLElement && node.innerText)
+    ];
+
+    return conditions.every(Boolean);
   });
 
-  if (significantChange && diacritizedStatus === 'original') {
-    console.log('Significant change, reindexing DOM', diacritizedStatus, mutations);
 
-    observer.disconnect();
-    scrapeContent(mainNode)
-      .finally(() => {
-        observer.observe(document.body, observerOptions);
-      })
-      .catch((error) => {
-        console.error('Error during scrapeContent:', error);
+  if (significantChange && diacritizedStatus === 'original') {
+
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node instanceof HTMLElement && node.innerText && node.innerText.length > 0) {
+          observer.disconnect();
+          labelCounter = labelDOM(node, labelCounter);
+          observer.observe(document.body, observerOptions);
+        }
       });
+    });
   }
 });
 

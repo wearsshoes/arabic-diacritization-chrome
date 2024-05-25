@@ -7,7 +7,11 @@ import ContentWidget from "./widget";
 import contentUtils from "./contentUtils";
 
 const hasArabic = /\[\\u0600-\\u06FF\]/;
-export const mainNode = (document.body.querySelector('main, #main, #root') as HTMLElement || document.body);
+export const mainNode = (
+  document.body.querySelector('main, #main') as HTMLElement
+  ?? document.body.querySelector('#root') as HTMLElement
+  ?? document.body
+);
 export const language = document.documentElement.lang || (hasArabic.test(document.body.innerText) ? 'ar' : 'en');
 
 // Create the main container
@@ -23,11 +27,11 @@ const emotionCache = createCache({
 });
 
 createRoot(shadowRoot).render(
-    <CacheProvider value={emotionCache}>
-      <ChakraProvider theme={theme}>
-        <ContentWidget siteLanguage={language} />
-      </ChakraProvider>
-    </CacheProvider>
+  <CacheProvider value={emotionCache}>
+    <ChakraProvider theme={theme}>
+      <ContentWidget siteLanguage={language} />
+    </ChakraProvider>
+  </CacheProvider>
 );
 
 contentUtils();

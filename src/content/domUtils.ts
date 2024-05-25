@@ -28,8 +28,9 @@ function splitTextIntoSentences(text: string): string[] {
 }
 
 function isVisible(element: Element): boolean {
+  const inRender = element.closest('svg, figure');
   const css = window.getComputedStyle(element);
-  return css.display !== 'none' && css.visibility !== 'hidden'
+  return css.display !== 'none' && css.visibility !== 'hidden' && css.opacity !== '0' && !inRender;
 }
 
 function collectTextNodes(target: Range | Node = document.body): TextNode[] {
