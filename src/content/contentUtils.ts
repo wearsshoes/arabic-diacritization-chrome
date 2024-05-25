@@ -83,15 +83,10 @@ export async function handleGetWebsiteText(): Promise<AppResponse> {
 }
 
 export async function handleGetSelectedNodes(): Promise<AppResponse> {
-  const selection = window.getSelection();
-  if (selection !== null) {
-    console.log(selection.toString());
-    const range = selection.getRangeAt(0);
+  const range = window.getSelection()?.getRangeAt(0);
+  if (!range) return { status: 'error', error: new Error('No text selected.') };
     const selectedNodes = collectTextNodes(range);
     return { status: 'success', selectedNodes, diacritizedStatus };
-  } else {
-    throw new Error('No selection available');
-  }
 }
 
 export async function handleUpdateWebsiteText(message: AppMessage): Promise<AppResponse> {
