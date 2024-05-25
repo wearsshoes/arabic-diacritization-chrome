@@ -1,18 +1,13 @@
 import { calculateHash } from "./utils";
-import { ElementAttributes } from "./types";
-
 export interface PageMetadata {
     pageUrl: string,
     lastVisited: Date,
-    contentSignature: string,
-    structuralMetadata: { [key: string]: ElementAttributes },
+    contentSignature?: string,
 }
-
 export interface TextNode {
     elementId: string;
     text: string;
 }
-
 export class WebpageDiacritizationData {
     diacritizations: {
         [method: string]: TextNode[]

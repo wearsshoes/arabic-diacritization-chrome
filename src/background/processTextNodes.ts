@@ -16,16 +16,15 @@ export async function processSelectedText(tab: chrome.tabs.Tab, method: string =
     return;
   }
 
-  const { selectedNodes = [] } = request;
-  if (selectedNodes.length === 0) {
+  const { selectedNodes } = request;
+  if (!selectedNodes) {
     console.log("No text selected, processing full webpage.");
     await processWebpage(tab, method);
     return;
   }
 
   console.log("Doing ", method, "for selected nodes:", selectedNodes);
-  const replacementText = await fullDiacritization(tab.id, tab.url, selectedNodes, controller.signal, method === 'arabizi');
-  await messageContentScript(tab.id, { action: 'updateWebsiteText', tabUrl: tab.url, replacements: replacementText, ruby: (method === 'arabizi') });
+  fullDiacritization(tab.id, tab.url, selectedNodes, controller.signal, method === 'arabizi')
 }
 
 export async function processWebpage(tab: chrome.tabs.Tab, method: string): Promise<AppResponse> {
@@ -137,16 +136,18 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
   }
 
   // Update the saved metadata
+  let message = {} as AppResponse;
   console.log('Updating saved web page data');
   dataManager.updateWebpageData(tab.url, webpageDiacritizationData)
-    .then(() => console.log('Saved webpage data updated:', webpageDiacritizationData))
-    .catch((error) => console.error('Failed to update saved webpage data:', error));
+    .then(() => {
+      console.log('Saved webpage data updated:', webpageDiacritizationData)
+      message = { status: 'success', userMessage };
+    })
+    .catch((error) => {
+      console.error('Failed to update saved webpage data:', error)
+      message = { status: 'error', error };
+    });
 
-  // Update the website text
-  const diacritization = webpageDiacritizationData.getDiacritization(method);
-  const result = await messageContentScript(tab.id, { action: 'updateWebsiteText', tabUrl: tab.url, replacements: diacritization, method })
-  if (result.status === 'success') {
-    chrome.tabs.sendMessage(tab.id, { action: 'allDone', tabId: tab.id, method })
-  }
-  return result;
+  return message;
+
 }

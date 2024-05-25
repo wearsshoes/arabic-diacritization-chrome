@@ -1,17 +1,18 @@
-import { PageMetadata, TextNode } from '../common/webpageDataClass';
+import { PageMetadata } from '../common/webpageDataClass';
 import { calculateHash } from '../common/utils';
 import { labelDOM, collectElements, replaceWebpageText, getTextNodesInRange } from './domUtils';
-import { AppMessage, AppResponse, ElementAttributes } from '../common/types';
+import { AppMessage, AppResponse } from '../common/types';
 import { mainNode, language } from './content';
 import { arabicToArabizi } from "../background/arabizi";
 
-let textElements: TextNode[] = [];
-let pageMetadata: PageMetadata | null = null;
+const pageMetadata: PageMetadata = {
+  pageUrl: '',
+  lastVisited: new Date(),
+};
 // TODO: re-implement diacritizedStatus tracking; currently static
 const diacritizedStatus = 'original';
-let editingContent = false;
 
-const observerOptions = {
+const observerOptions: MutationObserverInit = {
   childList: true,
   characterData: true,
   subtree: true,
@@ -28,19 +29,19 @@ const onContentLoaded = () => {
   }
 };
 
-const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse) => void) => {
+const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse | void) => void) => {
 
-  const actionHandlers: Record<string, (message: AppMessage) => Promise<AppResponse>> = {
+  const actionHandlers: Record<string, (message: AppMessage) => Promise<AppResponse> | Promise<void>> = {
     'getWebsiteData': handleGetWebsiteData,
-    'getWebsiteMetadata': handleGetWebsiteMetadata,
     'getWebsiteText': handleGetWebsiteText,
+    'getWebsiteMetadata': handleGetWebsiteMetadata,
     'getSelectedNodes': handleGetSelectedNodes,
     'updateWebsiteText': handleUpdateWebsiteText,
-    // Dummy handlers to prevent 'Invalid action'
-    'allDone': async () => ({ status: 'success' }),
-    'updateProgressBar': async () => ({ status: 'success' }),
-    'toggleWidget': async () => ({ status: 'success' }),
-    'beginProcessing': async () => ({ status: 'success' }),
+    // Dummy handlers to prevent 'Invalid action' #TODO: remove these
+    'allDone': async () => { },
+    'updateProgressBar': async () => { },
+    'toggleWidget': async () => { },
+    'beginProcessing': async () => { },
   };
 
   const handler = actionHandlers[message.action];
@@ -62,7 +63,7 @@ const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, se
 // ----------------- Functions ----------------- //
 
 export async function handleGetWebsiteData(): Promise<AppResponse> {
-  console.log({ 'Main node': mainNode, 'PageMetadata': pageMetadata, 'Text elements': textElements });
+  console.log({ 'Main node': mainNode, 'PageMetadata': pageMetadata });
   const characterCount = mainNode.innerText?.length || 0;
   return { status: 'success', language, characterCount };
 }
@@ -76,6 +77,7 @@ export async function handleGetWebsiteMetadata(): Promise<AppResponse> {
 }
 
 export async function handleGetWebsiteText(): Promise<AppResponse> {
+  const textElements = collectElements(mainNode);
   console.log('Sending website text:', textElements);
   return { status: 'success', selectedNodes: textElements };
 }
@@ -99,72 +101,17 @@ export async function handleUpdateWebsiteText(message: AppMessage): Promise<AppR
   if (!replacements) throw new Error('Text not provided.');
   if (ruby) replacements = arabicToArabizi(replacements);
 
-  try {
-    editingContent = true;
-    replaceWebpageText(replacements);
-    return { status: 'success' };
-  } finally {
-    editingContent = false;
-  }
+  observer.disconnect();
+  replaceWebpageText(replacements);
+  observer.observe(document.body, observerOptions);
+  return { status: 'success' };
 }
 
 // Scrape webpage data for the content script
 const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {
-  try {
-    const structuralMetadata = await summarizeMetadata();
-    const contentSignature = await calculateContentSignature();
-
-    const metadata: PageMetadata = {
-      pageUrl: window.location.href,
-      lastVisited: new Date(),
-      contentSignature,
-      structuralMetadata,
-    };
-
-    pageMetadata = metadata;
-
-    if (diacritizedStatus === 'original') {
-      editingContent = true;
-      labelDOM(mainNode);
-      (textElements = collectElements(mainNode));
-      console.log('Scraped text elements:', textElements);
-      editingContent = false;
-    }
-  } catch (error) {
-    console.error('Error during initialization:', error);
-    editingContent = false;
-    throw error;
-  }
+  pageMetadata.contentSignature = await calculateHash(mainNode.textContent || '');
+  if (diacritizedStatus === 'original') labelDOM(mainNode);
 };
-
-async function calculateContentSignature(): Promise<string> {
-  // for any *remotely* dynamic content, this will be different every time
-  // might be able to do it as part of newRecurseDOM
-  const content = mainNode.querySelectorAll('*');
-  const textContent = Array.from(content).map((element) => element.textContent).join("");
-  const signature = await calculateHash(textContent);
-  return signature;
-}
-
-async function summarizeMetadata(): Promise<{ [key: string]: ElementAttributes }> {
-  const content = mainNode.querySelectorAll('*');
-  const elementAttributes: { [summary: string]: ElementAttributes } = {};
-  const contentSummaries: string[] = [];
-
-  content.forEach((element) => {
-    const { tagName, id, className, textContent = "" } = element;
-    const summary = `${tagName}${id}${className}${textContent}`;
-    elementAttributes[summary] = { tagName, id, className };
-    contentSummaries.push(summary);
-  });
-
-  // Hash all the content summaries at once, and then remap them onto the element attributes
-  const contentKeys = await calculateHash(contentSummaries);
-
-  return Object.fromEntries(
-    contentKeys.map((key, index) => [key, elementAttributes[contentSummaries[index]]])
-  );
-}
 
 const observer = new MutationObserver((mutations) => {
   // Check if the mutations indicate a significant content change
@@ -179,8 +126,8 @@ const observer = new MutationObserver((mutations) => {
     return isNotWidget && isMainContentChange && (isChildListChange || isCharacterDataChange);
   });
 
-  if (significantChange && !editingContent && diacritizedStatus === 'original') {
-    console.log('Significant change, reindexing DOM', editingContent, diacritizedStatus, mutations);
+  if (significantChange && diacritizedStatus === 'original') {
+    console.log('Significant change, reindexing DOM', diacritizedStatus, mutations);
     // Disconnect the observer before making DOM changes
     observer.disconnect();
     scrapeContent(mainNode)
