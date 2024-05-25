@@ -144,7 +144,8 @@ export async function handleGetSelectedNodes(): Promise<AppResponse> {
   if (editStatus === 'original') {
     selectedNodes.forEach((node) => collectedNodes.add(node));
   }
-  console.log('Sending selected text for processing:', selectedNodes);
+  const selectedTexts = Array.from(selectedNodes).map((node) => node.text)
+  console.log('Sending selected text for processing:', selectedTexts);
   return { status: 'success', selectedNodes: Array.from(selectedNodes), diacritizedStatus: editStatus };
 }
 

@@ -25,7 +25,8 @@ export async function processSelectedText(tab: chrome.tabs.Tab, method: string =
   }
 
   console.log(`Processing ${method} for:`, selectedNodes.size, selectedNodes);
-  await fullDiacritization(tab.id, tab.url, selectedNodes, controller.signal, method === 'arabizi')
+  await fullDiacritization(tab.id, tab.url, selectedNodes, controller.signal, method === 'arabizi');
+  chrome.tabs.sendMessage(tab.id, { action: 'updateProgressBar', strLength: 100000 }); //lmao
 }
 
 export async function processWebpage(tab: chrome.tabs.Tab, method: string): Promise<AppResponse> {
@@ -52,7 +53,7 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
   switch (method) {
     case 'original': {
       const original = webpageDiacritizationData.getDiacritization('original');
-      messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl, replacements: original, method });
+      messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl, replacements: Array.from(original), method });
       break;
     }
     case 'fullDiacritics':

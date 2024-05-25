@@ -156,7 +156,6 @@ function createBatches(textNodes: Set<TextNode>, maxChars: number): Set<TextNode
     if (acc > 0 && (acc + text.length) > maxChars) {
       stats.push({length: acc, reason: 'maxChars', batch: currentBatch});
       textBatches.push(currentBatch);
-      console.log('Max chars:', textBatches);
       currentBatch = new Set<TextNode>()
       acc = 0;
     }
@@ -168,12 +167,9 @@ function createBatches(textNodes: Set<TextNode>, maxChars: number): Set<TextNode
       stats.push({length: acc, reason: 'endOfSentence', batch: currentBatch});
       stats
       textBatches.push(currentBatch);
-      console.log('End of sentence:', textBatches);
       currentBatch = new Set<TextNode>();
       acc = 0;
     }
-
-    console.log('Current batch:', currentBatch);
   });
 
   if (currentBatch.size > 0) {
