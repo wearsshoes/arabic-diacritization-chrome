@@ -20,7 +20,7 @@ async function getPrompt(): Promise<Prompt> {
 }
 
 // Full diacritization
-export async function fullDiacritization(tabId: number, tabUrl: string, selectedNodes: Set<TextNode>, abortSignal: AbortSignal, ruby: boolean = false): Promise<Set<TextNode>> {
+export async function fullDiacritization(tabId: number, tabUrl: string, selectedNodes: TextNode[], abortSignal: AbortSignal, ruby: boolean = false): Promise<TextNode[]> {
 
   const diacritizationBatches = createBatches(selectedNodes, 750);
   const prompt = await getPrompt();
@@ -46,7 +46,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
         return originals;
       }
 
-      const replacements = new Set<TextNode>;
+      const replacements: TextNode[] = [];
 
       const eventEmitter = new EventEmitter();
       const msg = constructAnthropicMessage(originalText, prompt, claude);
@@ -81,7 +81,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
             acc += words;
 
             if (checkText === refText || diff <= fudgeFactor) {
-              replacements.add(validNode);
+              replacements.push(validNode);
               messageContentScript(tabId, {
                 action: 'updateWebsiteText',
                 replacements: [validNode],
@@ -90,7 +90,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
               });
             } else {
               console.warn(`Validation failed:\n${newText}\n${checkText}\n${refText}`);
-              replacements.add(textNode);
+              replacements.push(textNode);
               elementValidationFailures++;
             }
 
@@ -125,7 +125,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
   ).then((result) => { return result.flat() });
 
   console.log('Failed elements:', elementValidationFailures, '\nFailed chunks:', chunkValidationFailures, '\nDiacritized text:', diacritizedNodes);
-  return new Set(diacritizedNodes.flatMap(set => [...set]));
+  return diacritizedNodes;
 
   function stripDiacritics(text: string): string {
     return text.trim().normalize('NFC').replace(/\s+/g, ' ').replace(/([\u064B-\u0652\u0621-\u0626\u0640])/g, '')
@@ -139,11 +139,11 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
 }
 
 // Create batches of elements according to sentence boundaries and API character limit.
-function createBatches(textNodes: Set<TextNode>, maxChars: number): Set<TextNode>[] {
+function createBatches(textNodes: TextNode[], maxChars: number): TextNode[][] {
   const endOfSentence = /[.!?؟]+\s*\n*/g;
-  const textBatches: Set<TextNode>[] = [];
-  const stats: { length: number, reason: string, batch: Set<TextNode> }[] = [];
-  let currentBatch = new Set<TextNode>;
+  const textBatches: TextNode[][] = [];
+  const stats: { length: number, reason: string, batch: TextNode[] }[] = [];
+  const currentBatch: TextNode[] = [];
   let acc = 0;
 
   textNodes.forEach((textNode) => {
@@ -153,23 +153,23 @@ function createBatches(textNodes: Set<TextNode>, maxChars: number): Set<TextNode
     if (acc > 0 && (acc + text.length) > maxChars) {
       stats.push({ length: acc, reason: 'maxChars', batch: currentBatch });
       textBatches.push(currentBatch);
-      currentBatch = new Set<TextNode>()
+      currentBatch.length = 0;
       acc = 0;
     }
 
-    currentBatch.add(textNode);
+    currentBatch.push(textNode);
     acc += text.length;
 
     if (text.match(endOfSentence) && acc > maxChars * 2 / 3) {
       stats.push({ length: acc, reason: 'endOfSentence', batch: currentBatch });
       stats
       textBatches.push(currentBatch);
-      currentBatch = new Set<TextNode>();
+      currentBatch.length = 0;
       acc = 0;
     }
   });
 
-  if (currentBatch.size > 0) {
+  if (currentBatch.length > 0) {
     stats.push({ length: acc, reason: 'endOfText', batch: currentBatch });
     textBatches.push(currentBatch);
   }

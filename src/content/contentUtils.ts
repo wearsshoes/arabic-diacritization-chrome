@@ -12,7 +12,7 @@ const pageMetadata: PageMetadata = {
 };
 // TODO: re-implement diacritizedStatus tracking; currently static
 let editStatus = 'original';
-const collectedNodes = new Set<TextNode>();
+const collectedNodes: TextNode[] = [];
 let labelCounter = 0;
 
 const observerOptions: MutationObserverInit = {
@@ -36,7 +36,7 @@ const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {
   pageMetadata.contentSignature = await calculateHash(mainNode.innerText || '');
   if (editStatus === 'original') labelCounter = labelDOM(mainNode);
   collectTextNodes(mainNode).forEach((node) => {
-    collectedNodes.add(node);
+    collectedNodes.push(node);
   });
 };
 
@@ -61,12 +61,12 @@ const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, se
       .then((response) => sendResponse(response))
       .catch((error) => {
         console.error(`Error processing ${message.action}:`, error);
-        sendResponse({ status: 'error', errorMessage: error.message});
+        sendResponse({ status: 'error', errorMessage: error.message });
       });
     return true;
   } else {
     console.error(`Invalid action: ${message.action}`);
-    sendResponse({ status: 'error', errorMessage: 'Invalid action'});
+    sendResponse({ status: 'error', errorMessage: 'Invalid action' });
   }
 };
 
@@ -125,7 +125,7 @@ export async function handleGetWebsiteText(): Promise<AppResponse> {
 
   if (!pageMetadata && !editStatus) throw new Error('No page metadata or diacritized status found.');
   const textElements = editStatus === 'original' ? collectTextNodes(mainNode) : collectedNodes;
-  if (editStatus === 'original') textElements.forEach((node) => collectedNodes.add(node));
+  if (editStatus === 'original') textElements.forEach((node) => collectedNodes.push(node));
   console.log('Sent collected all text nodes.');
   return { status: 'success', selectedNodes: Array.from(textElements), diacritizedStatus: editStatus, pageMetadata };
 }
@@ -143,7 +143,7 @@ export async function handleGetSelectedNodes(): Promise<AppResponse> {
 
   const selectedNodes = collectTextNodes(range);
   if (editStatus === 'original') {
-    selectedNodes.forEach((node) => collectedNodes.add(node));
+    selectedNodes.forEach((node) => collectedNodes.push(node));
   }
   const selectedTexts = Array.from(selectedNodes).map((node) => node.text)
   console.log('Sending selected text for processing:', selectedTexts);
@@ -151,7 +151,7 @@ export async function handleGetSelectedNodes(): Promise<AppResponse> {
 }
 
 export async function handleUpdateWebsiteText(message: AppMessage): Promise<AppResponse> {
- let replacements = new Set<TextNode>(message.replacements);
+  let { replacements } = message;
   const { ruby } = message;
   editStatus = 'changed'
 

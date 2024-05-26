@@ -115,7 +115,8 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
         case "allDone":
           setProgress(totalBatches);
           setPageState(method);
-          setPageRenders((prev) => new Set([...prev, method]));
+          // setPageRenders((prev) => new Set([...prev, method]))
+          setPageRenders(new Set(['arabizi', 'fullDiacritics', 'original']));
           break;
         case "toggleWidget":
           onToggle();

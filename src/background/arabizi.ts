@@ -5,7 +5,7 @@ interface TransliterationDict {
   [key: string]: string[];
 }
 
-export function arabicToArabizi(textNodes: Set<TextNode>, dialect: string = "msa"): Set<TextNode> {
+export function arabicToArabizi(textNodes: TextNode[], dialect: string = "msa"): TextNode[] {
 
   let chars: TransliterationDict;
   let digraphs: TransliterationDict;
@@ -94,14 +94,14 @@ export function arabicToArabizi(textNodes: Set<TextNode>, dialect: string = "msa
     return result.trim();
   }
 
-  console.log('Transliterating text nodes:', textNodes.size)
-  const resultSet = new Set<TextNode>();
+  console.log('Transliterating text nodes:', textNodes.length)
+  const results: TextNode[] = [];
   textNodes.forEach(arabicText => {
     const arabiziText = transliterate(arabicText.text);
-    resultSet.add({ ...arabicText, text: araRuby(arabicText.text, arabiziText) });
+    results.push({ ...arabicText, text: araRuby(arabicText.text, arabiziText) });
   });
 
-  return resultSet;
+  return results;
 }
 
 // TODO: joined vowels -- fii instead of fiy, etc

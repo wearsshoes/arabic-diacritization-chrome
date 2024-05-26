@@ -29,7 +29,7 @@ export class DiacritizationDataManager {
     }
     try {
       const urlHash = await calculateHash(url);
-      console.log("Getting data for", urlHash);
+      console.log("Getting data for", url);
       const serializedData = await loadData<{ id: string, data: string }>(this.db, "diacritizations_msa", urlHash);
       if (serializedData) {
         console.log("Data found", serializedData);
@@ -50,7 +50,7 @@ export class DiacritizationDataManager {
       try {
         const urlHash = await calculateHash(url);
         const serializedData = JSON.stringify(data);
-        console.log("Updating data for", urlHash, data, serializedData);
+        console.log("Updating data for", url);
         await saveData(this.db, "diacritizations_msa", { item: serializedData, key: urlHash });
         return Promise.resolve();
       } catch (error) {
@@ -67,7 +67,7 @@ export class DiacritizationDataManager {
     } else {
       try {
         const urlHash = await calculateHash(url);
-        console.log("Clearing data for", urlHash);
+        console.log("Clearing data for", url);
         await clearData(this.db, "diacritizations_msa", urlHash);
         return Promise.resolve();
       } catch (error) {
@@ -108,7 +108,6 @@ function saveData(db: IDBDatabase, storeName: string, { item, key }: { item: str
     const transaction = db.transaction(storeName, 'readwrite');
     const store = transaction.objectStore(storeName);
     const data = { id: key, data: item };
-    console.log("Saving data", data);
     const request = store.put(data);
 
     request.onsuccess = () => resolve()
