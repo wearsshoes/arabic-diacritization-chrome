@@ -4,27 +4,20 @@
 
 ## Features
 
-- 1.0 when there's saved results, partially update based on matching.
-
-### Bugs
-
-- 0.4.3 Fails to find prompt upon first load.
-- 0.4.3 Webpage saves don't work properly, and don't show up properly.
-- 0.4.3 Can't go back to other results.
-- 1.0 Claude still attempts translation sometimes. Check that the number of non-diacritic arabic letters in prompt matches number of arabic letters in response.
+- 0.4.4 transliterations of selected text should also get saved somehow (set matching?)
+- 0.4.4 when there's saved results, partially update based on matching.
 
 ### UI
 
-- 0.4.3 Redesign options page to be simpler and cleaner.
-- 0.4.3 Add FAQs/tooltips to options page.
-- 0.4.3 Redesign extension popup to be simpler and cleaner.
+- 1.0 Redesign options page to be simpler and cleaner.
+- 1.0 Add FAQs/tooltips to options page.
+- 1.0 Redesign extension popup to be simpler and cleaner.
 
 ## Future
 
 ### Bugs
 
 - 1.1.x something's messing with browser's back/forward cache and forcing reload
-- 1.1.x processing selected text should also save results to IndexedDB.
 
 ### Features
 

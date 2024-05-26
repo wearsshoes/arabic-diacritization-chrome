@@ -5,8 +5,6 @@ import { Prompt } from '../common/types'
 import prompts from './defaultPrompts.json';
 import { EventEmitter } from 'events';
 
-// import { mainNode } from '../content/content';
-
 const defaultPrompt = prompts[1];
 
 async function getPrompt(): Promise<Prompt> {
@@ -19,7 +17,6 @@ async function getPrompt(): Promise<Prompt> {
   }
 }
 
-// Full diacritization
 export async function fullDiacritization(tabId: number, tabUrl: string, selectedNodes: TextNode[], abortSignal: AbortSignal, ruby: boolean = false): Promise<TextNode[]> {
 
   const diacritizationBatches = createBatches(selectedNodes, 750);

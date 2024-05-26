@@ -1,10 +1,17 @@
 # Changelog
 
-## 0.4.3 (Current)
-- option to process selected text from widget.
-- better site language detection.
-- better labeling of updated elements.
-- console logs are simpler and more enlightening now.
+## 0.4.3 (2024-05-25)
+- You can now flip between original, diacritics, and transliteration easily once the whole page is rendered.
+- Saves now work again! Saves you some compute money.
+- Option to process selected text from widget.
+- Current jobs are cancelled when you close a tab.
+- Site language detection now triggers on arabic pages without language labels.
+- Internally, the labeling of HTMLElements is better organized.
+- Console logs are simpler and more enlightening now.
+
+Known bugs:
+- Saves will break webpages that have changed since save time.
+- Options page is a bit broken.
 
 ## 0.4.2 (2024-05-24)
 - Rename to "Easy Peasy Arabizi"
