@@ -36,7 +36,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
     if (response.status === 'success') {
       setIsAnimating(false);
     } else {
-      console.error('Error canceling:', response.error);
+      console.error('Error canceling:', response.errorMessage);
     }
   };
 
@@ -57,7 +57,8 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
     console.log('selected task: ', task, 'current method: ', method, 'existing pageRenders:', pageRenders)
     if (pageRenders.has(task)) {
       setPageState(task);
-      chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processWebpage', method: task });
+      chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processWebpage', method: task })
+        .catch((error) => console.error(`Error in ${task}:`, error));
     }
   };
 
@@ -65,12 +66,21 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
     try {
       if (isAnimating) return;
       if (textIsSelected) {
-        chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processSelection', method });
+        chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processSelection', method })
+          .then((result) => {
+            result.status === 'success' ?
+              console.log('Selection processed:', result)
+              : console.error('Error processing selection:', result.errorMessage)
+          });
       } else {
-        chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processWebpage', method });
+        chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processWebpage', method })
+          .then((result) => {
+            result.status === 'success' ?
+              console.log('Webpage processed:', result)
+              : console.error('Error processing webpage:', result.errorMessage)
+          });
       }
     } catch (error) {
-
       console.error(`Error in ${method}:`, error);
     }
   };

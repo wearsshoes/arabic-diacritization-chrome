@@ -4,6 +4,7 @@ import { messageContentScript } from './background';
 import { Prompt } from '../common/types'
 import prompts from './defaultPrompts.json';
 import { EventEmitter } from 'events';
+
 // import { mainNode } from '../content/content';
 
 const defaultPrompt = prompts[1];
@@ -34,9 +35,11 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
   messageContentScript(tabId, { action: 'beginProcessing', tabUrl: tabUrl, strLength });
 
   // diacritize the texts in parallel with retries
+
   const diacritizedNodes = await Promise.all(
 
     diacritizationBatches.map(async (originals) => {
+
       const originalText = Array.from(originals).map((textNode) => textNode.text.replace(delimiter, '')).join(delimiter);
       if (originalText.replace(/[^\u0621-\u064A]/g, '') === '') {
         console.warn('Skipping diacritization of totally non-Arabic text');
@@ -96,27 +99,21 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
           }
         });
 
-        try {
-          const response = await anthropicAPICall(msg, claude.apiKey, abortSignal, eventEmitter);
-          eventEmitter?.emit('text', delimiter);
-          const diacritizedText: string = response.content[0].text;
-          console.log(`Original: \n${originalText} \nResult: \n${diacritizedText}`);
+        const response = await anthropicAPICall(msg, claude.apiKey, abortSignal, eventEmitter);
+        eventEmitter?.emit('text', delimiter);
+        const diacritizedText: string = response.content[0].text;
+        console.log(`Original: \n${originalText} \nResult: \n${diacritizedText}`);
 
-          const validResponse = validateResponse(originalText, diacritizedText);
-          if (validResponse) {
-            return replacements;
-          }
-        } catch (error) {
-          if (error instanceof Error && error.name === 'AbortError') {
-            throw error;
-          }
-          throw new Error(`Failed to diacritize chunk: ${error}`);
+        const validResponse = validateResponse(originalText, diacritizedText);
+        if (validResponse) {
+          return replacements;
         }
+
         messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl, replacements: Array.from(originals), ruby });
         messageContentScript(tabId, { action: 'updateProgressBar', strLength: -acc });
         chunkValidationFailures++;
         if (tries < maxTries) {
-          console.error('Failed validation. trying again: try', tries + 1, 'of', maxTries);
+          console.warn('Failed validation. trying again: try', tries + 1, 'of', maxTries);
           claude.escalateModel(tries);
         } else {
           console.warn('Failed to diacritize chunk after', maxTries, 'tries,');
@@ -145,16 +142,16 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
 function createBatches(textNodes: Set<TextNode>, maxChars: number): Set<TextNode>[] {
   const endOfSentence = /[.!?؟]+\s*\n*/g;
   const textBatches: Set<TextNode>[] = [];
-  const stats: {length: number, reason: string, batch: Set<TextNode>}[] = [];
+  const stats: { length: number, reason: string, batch: Set<TextNode> }[] = [];
   let currentBatch = new Set<TextNode>;
   let acc = 0;
 
   textNodes.forEach((textNode) => {
-    const {text} = textNode;
+    const { text } = textNode;
     if (!text) return;
 
     if (acc > 0 && (acc + text.length) > maxChars) {
-      stats.push({length: acc, reason: 'maxChars', batch: currentBatch});
+      stats.push({ length: acc, reason: 'maxChars', batch: currentBatch });
       textBatches.push(currentBatch);
       currentBatch = new Set<TextNode>()
       acc = 0;
@@ -164,7 +161,7 @@ function createBatches(textNodes: Set<TextNode>, maxChars: number): Set<TextNode
     acc += text.length;
 
     if (text.match(endOfSentence) && acc > maxChars * 2 / 3) {
-      stats.push({length: acc, reason: 'endOfSentence', batch: currentBatch});
+      stats.push({ length: acc, reason: 'endOfSentence', batch: currentBatch });
       stats
       textBatches.push(currentBatch);
       currentBatch = new Set<TextNode>();
@@ -173,7 +170,7 @@ function createBatches(textNodes: Set<TextNode>, maxChars: number): Set<TextNode
   });
 
   if (currentBatch.size > 0) {
-    stats.push({length: acc, reason: 'endOfText', batch: currentBatch});
+    stats.push({ length: acc, reason: 'endOfText', batch: currentBatch });
     textBatches.push(currentBatch);
   }
 

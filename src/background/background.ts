@@ -3,6 +3,8 @@ import { DiacritizationDataManager } from './datamanager';
 import { getAPIKey } from "../common/utils";
 import { AppMessage, AppResponse } from '../common/types';
 import { processWebpage, processSelectedText } from './processTextNodes';
+// @ts-expect-error No types for "bottleneck/light"
+import BottleneckLight from "bottleneck/light.js";
 
 // ----------------- Event Listeners ----------------- //
 
@@ -123,6 +125,12 @@ chrome.commands.onCommand.addListener((command) => {
 // ----------------- Functions ----------------- //
 
 export const dataManager = DiacritizationDataManager.getInstance();
+const schedulerOptions: BottleneckLight.ConstructorOptions = {
+  maxConcurrent: 3,
+  minTime: 1500
+}
+
+export let scheduler = new BottleneckLight(schedulerOptions);
 
 async function getActiveTab(): Promise<chrome.tabs.Tab> {
   return chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => tabs[0]);
@@ -139,8 +147,14 @@ async function handleProcessWebpage(message: AppMessage, sender: chrome.runtime.
   let tab: chrome.tabs.Tab;
   if (sender.tab) tab = sender.tab;
   else tab = await getActiveTab();
-  processWebpage(tab, message.method ?? 'fullDiacritics')
-  return ({ status: 'success' });
+  return processWebpage(tab, message.method ?? 'fullDiacritics')
+    .then((result) => {
+      return result;
+    })
+    .catch((error) => {
+      return { status: 'error', error: new Error(`Error caught at handleProcessWebpage: ${error}`)};
+    });
+
 }
 
 async function handleProcessSelection(message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
@@ -222,17 +236,17 @@ async function handleGetSavedDiacritizations(_message: AppMessage, sender: chrom
 }
 
 export function messageContentScript(tabId: number, message: AppMessage): Promise<AppResponse> {
-    return new Promise((resolve, reject) => {
-      chrome.tabs.sendMessage<AppMessage, AppResponse>(tabId, message, (response) => {
-        if (chrome.runtime.lastError) {
-          console.error('Error sending message:', message);
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve(response !== undefined ? response : { status: 'error', error: new Error('No response') });
-        }
-      });
+  return new Promise((resolve, reject) => {
+    chrome.tabs.sendMessage<AppMessage, AppResponse>(tabId, message, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('Error sending message:', message);
+        reject(chrome.runtime.lastError);
+      } else {
+        resolve(response !== undefined ? response : { status: 'error', error: new Error('No response') });
+      }
     });
-  }
+  });
+}
 
 export const controllerMap = new Map<number, AbortController>();
 
@@ -240,6 +254,8 @@ function cancelTask(tabId: number) {
   if (controllerMap.has(tabId)) {
     const controller = controllerMap.get(tabId);
     controller?.abort();
+    scheduler.stop();
     controllerMap.delete(tabId);
+    scheduler = new BottleneckLight(schedulerOptions);
   }
 }

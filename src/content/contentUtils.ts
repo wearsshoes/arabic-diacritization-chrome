@@ -61,12 +61,12 @@ const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, se
       .then((response) => sendResponse(response))
       .catch((error) => {
         console.error(`Error processing ${message.action}:`, error);
-        sendResponse({ status: 'error', error: error as Error });
+        sendResponse({ status: 'error', errorMessage: error.message});
       });
     return true;
   } else {
     console.error(`Invalid action: ${message.action}`);
-    sendResponse({ status: 'error', error: new Error('Invalid action') });
+    sendResponse({ status: 'error', errorMessage: 'Invalid action'});
   }
 };
 
@@ -133,7 +133,8 @@ export async function handleGetWebsiteText(): Promise<AppResponse> {
 export async function handleGetSelectedNodes(): Promise<AppResponse> {
 
   const range = window.getSelection()?.getRangeAt(0);
-  if (!range) return { status: 'error', error: new Error('No text selected.') };
+  const errorMessage = 'No text selected.';
+  if (!range) return { status: 'error', errorMessage };
 
   const ancestor = range.commonAncestorContainer instanceof Element ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
   observer.disconnect();

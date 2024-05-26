@@ -1,10 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
-// @ts-expect-error No types for "bottleneck/light"
-import BottleneckLight from "bottleneck/light.js";
 import { calculateHash } from '../common/utils';
 import { getAPIKey } from "../common/utils";
 import { Prompt } from '../common/types';
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'events'
+import { scheduler } from './background';
 
 export { claude, defaultModel, anthropicAPICall, countSysPromptTokens };
 
@@ -36,11 +35,6 @@ interface Model {
   currentVersion: string;
   level: number;
 }
-// Rate-limited Anthropic API call function
-const anthropicLimiter = new BottleneckLight({
-  maxConcurrent: 3,
-  minTime: 1500
-});
 
 interface SysPromptTokenCache {
   hash: string;
@@ -66,64 +60,65 @@ const claude: Models = {
 const defaultModel: Model = claude.haiku;
 
 async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: string, signal?: AbortSignal, eventEmitter?: EventEmitter): Promise<Anthropic.Message> {
-
   // generate a hash to identify the job
   const hash = await calculateHash(JSON.stringify(params));
 
   // get the API key if it's not provided
   const apiKey = key || await getAPIKey();
   if (!apiKey) {
-    // should rewrite to pass getAPIKey error to the caller
     throw new Error('API key not set');
   }
-
   const client = new Anthropic({ apiKey: apiKey });
   console.log('Queued job', hash);
 
-  // TODO: write abortSignal handling for bottleneck
-  return anthropicLimiter.schedule(async () => {
-    try {
-      console.log('Sent job', hash, 'to', params.model);
+  return new Promise((resolve, reject) => {
 
-      const finalResult: Anthropic.Message = await new Promise((resolve, reject) => {
-        client.messages.stream(params, { signal })
-          .on('text', (textDelta) => {
-            eventEmitter?.emit('text', textDelta);
-          })
-          .on('finalMessage', (message) => {
-            resolve(message);
-          })
-          .on('error', (error) => {
-            console.error('Received error:', error);
-            reject(error);
-          })
-          .on('abort', (error) => {
-            console.error('Stream aborted:', error);
-            reject(error);
-          })
-      });
+    scheduler.schedule(async () => {
+      try {
+        console.log('Sent job', hash, 'to', params.model);
 
-      console.log(`Job ${hash} completed.`);
-      return finalResult;
+        const finalResult: Anthropic.Message = await new Promise((resolve, reject) => {
+          client.messages.stream(params, { signal })
+            .on('text', (textDelta) => {
+              eventEmitter?.emit('text', textDelta);
+            })
+            .on('finalMessage', (message) => {
+              resolve(message);
+            })
+            .on('error', (error) => {
+              console.error('Received error:', error);
+              reject(error);
+            })
+            .on('abort', (error) => {
+              // console.error('Stream aborted:', error);
+              reject(error);
+            });
+        });
 
-    } catch (error) {
-
-      // Log rate limit details
-      if (error instanceof Anthropic.APIError) {
-        console.error('Anthropic API Error:', error.message);
-        const { headers } = error;
-        if (headers) {
-          console.error(`Rate Limit Details:
-          Requests Limit: ${headers['anthropic-ratelimit-requests-limit']}
-          Requests Remaining: ${headers['anthropic-ratelimit-requests-remaining']}
-          Requests Reset: ${headers['anthropic-ratelimit-requests-reset']}
-          Tokens Limit: ${headers['anthropic-ratelimit-tokens-limit']}
-          Tokens Remaining: ${headers['anthropic-ratelimit-tokens-remaining']}
-          Tokens Reset: ${headers['anthropic-ratelimit-tokens-reset']}`);
+        console.log(`Job ${hash} completed.`);
+        resolve(finalResult);
+      } catch (error) {
+        // Log rate limit details
+        if (error instanceof Anthropic.APIError) {
+          const { headers, message } = error;
+          if (message === 'Request was aborted.') {
+            console.warn('Anthropic API request was aborted.');
+          }
+          if (headers && message === 'Rate limit exceeded.') {
+            console.error(`Rate Limit Details:
+            Requests Limit: ${headers['anthropic-ratelimit-requests-limit']}
+            Requests Remaining: ${headers['anthropic-ratelimit-requests-remaining']}
+            Requests Reset: ${headers['anthropic-ratelimit-requests-reset']}
+            Tokens Limit: ${headers['anthropic-ratelimit-tokens-limit']}
+            Tokens Remaining: ${headers['anthropic-ratelimit-tokens-remaining']}
+            Tokens Reset: ${headers['anthropic-ratelimit-tokens-reset']}`);
+          }
         }
+        reject(error);
       }
-      throw error;
-    }
+    }).catch((error: Error) => {
+      reject(error);
+    });
   });
 }
 

@@ -12,13 +12,13 @@ export async function processSelectedText(tab: chrome.tabs.Tab, method: string =
 
   const request = await messageContentScript(tab.id, { action: "getSelectedNodes" });
   if (request.status === 'error') {
-    console.error('Error getting selected nodes:', request.error);
+    console.error('Error getting selected nodes:', request.errorMessage);
     return;
   }
 
   console.log(request);
   const selectedNodes = new Set(request.selectedNodes);
-  if ( !selectedNodes ) {
+  if (!selectedNodes) {
     console.log("No text selected, processing full webpage.");
     await processWebpage(tab, method);
     return;
@@ -30,70 +30,85 @@ export async function processSelectedText(tab: chrome.tabs.Tab, method: string =
 }
 
 export async function processWebpage(tab: chrome.tabs.Tab, method: string): Promise<AppResponse> {
-
-  if (!tab.id || !tab.url) return ({ status: 'error', error: new Error('No tab ID or URL found') });
-  const { id: tabId, url: tabUrl } = tab;
-
-  const controller = new AbortController();
-  controllerMap.set(tab.id, controller);
-
-  const latest = await messageContentScript(tab.id, { action: 'getWebsiteText' });
-  if (latest.status === 'error') return latest;
-  const { pageMetadata } = latest;
-  const selectedNodes = new Set<TextNode>(latest.selectedNodes);
-  if (!pageMetadata) throw new Error('No page metadata found');
-  if (!selectedNodes) throw new Error('No selected nodes found');
-  const webpageDiacritizationData = await WebpageDiacritizationData.build(pageMetadata);
-  await webpageDiacritizationData.createOriginal(selectedNodes);
-
-  checkSaves();
-
-  // Process the webpage
-  console.log('Processing webpage:', tabUrl, 'with method:', method)
-  switch (method) {
-    case 'original': {
-      const original = webpageDiacritizationData.getDiacritization('original');
-      messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl, replacements: Array.from(original), method });
-      break;
+  try {
+    if (!tab.id || !tab.url) {
+      const error = new Error('Tab id or url not found');
+      console.error('Failed to process webpage:', error);
+      return ({ status: 'error', errorMessage: error.message });
     }
-    case 'fullDiacritics':
-      await fullDiacritization(tabId, tabUrl, webpageDiacritizationData.getDiacritization('original'), controller.signal)
-        .then((result) => {
-          webpageDiacritizationData.addDiacritization(result, method);
-        });
-      break;
-    case 'arabizi': {
-      if (!webpageDiacritizationData.diacritizations['fullDiacritics']) {
-        console.log("Full diacritization doesn't exist, Diacritizing text first");
-        await fullDiacritization(tabId, tabUrl, webpageDiacritizationData.getDiacritization('original'), controller.signal, true)
-          .then((result) => {
-            webpageDiacritizationData.addDiacritization(result, 'fullDiacritics');
-          });
+    const { id: tabId, url: tabUrl } = tab;
+
+    const controller = new AbortController();
+    controllerMap.set(tab.id, controller);
+
+    const latest = await messageContentScript(tab.id, { action: 'getWebsiteText' });
+    if (latest.status === 'error') return latest;
+    const { pageMetadata } = latest;
+    const selectedNodes = new Set<TextNode>(latest.selectedNodes);
+    if (!pageMetadata) throw new Error('No page metadata found');
+    if (!selectedNodes) throw new Error('No selected nodes found');
+    const webpageDiacritizationData = await WebpageDiacritizationData.build(pageMetadata);
+    await webpageDiacritizationData.createOriginal(selectedNodes);
+
+    checkSaves();
+
+    // Process the webpage
+    console.log('Processing webpage:', tabUrl, 'with method:', method)
+    switch (method) {
+      case 'original': {
+        const original = webpageDiacritizationData.getDiacritization('original');
+        messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl, replacements: Array.from(original), method });
+        break;
       }
-      const arabiziNodes: Set<TextNode> = arabicToArabizi(webpageDiacritizationData.getDiacritization('fullDiacritics'));
-      webpageDiacritizationData.addDiacritization(arabiziNodes, method);
-      break;
+      case 'fullDiacritics':
+        await fullDiacritization(tabId, tabUrl, webpageDiacritizationData.getDiacritization('original'), controller.signal)
+          .then((result) => {
+            webpageDiacritizationData.addDiacritization(result, method);
+          })
+
+        break;
+      case 'arabizi': {
+        if (!webpageDiacritizationData.diacritizations['fullDiacritics']) {
+          console.log("Full diacritization doesn't exist, Diacritizing text first");
+          await fullDiacritization(tabId, tabUrl, webpageDiacritizationData.getDiacritization('original'), controller.signal, true)
+            .then((result) => {
+              webpageDiacritizationData.addDiacritization(result, 'fullDiacritics');
+            });
+        }
+        const arabiziNodes: Set<TextNode> = arabicToArabizi(webpageDiacritizationData.getDiacritization('fullDiacritics'));
+        webpageDiacritizationData.addDiacritization(arabiziNodes, method);
+        break;
+      }
+
+      default:
+        throw new Error(method + ' is not implemented yet');
     }
 
-    default:
-      throw new Error(method + ' is not implemented yet');
+    // Update the saved metadata
+    let message = {} as AppResponse;
+    dataManager.updateWebpageData(tab.url, webpageDiacritizationData)
+      .then(() => {
+        console.log('Saved webpage data updated:', webpageDiacritizationData)
+        message = { status: 'success', userMessage: 'Webpage diacritization complete.' };
+      })
+      .catch((error) => {
+        console.error('Failed to update saved webpage data:', error)
+        message = { status: 'error', errorMessage: (error as Error).message };
+      });
+
+    messageContentScript(tabId, { action: 'allDone' });
+    return message;
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        console.warn('Aborted processing webpage:', error.message);
+        return ({ status: 'error', errorMessage: 'Processing aborted' });
+      }
+      console.error(`Failed to process webpage: ${error.message}`, error.stack);
+      return ({ status: 'error', errorMessage: error.message });
+    }
   }
-
-  // Update the saved metadata
-  let message = {} as AppResponse;
-  dataManager.updateWebpageData(tab.url, webpageDiacritizationData)
-    .then(() => {
-      console.log('Saved webpage data updated:', webpageDiacritizationData)
-      message = { status: 'success', userMessage: 'Webpage diacritization complete.' };
-    })
-    .catch((error) => {
-      console.error('Failed to update saved webpage data:', error)
-      message = { status: 'error', error };
-    });
-
-  messageContentScript(tabId, { action: 'allDone' });
-  return message;
-
+  return ({ status: 'error', errorMessage: 'Unknown error occurred' });
 }
 
 function checkSaves() {
