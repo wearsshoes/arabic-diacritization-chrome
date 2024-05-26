@@ -7,7 +7,7 @@ import { TextNode } from '../common/webpageDataClass';
 import { arabicToArabizi } from "../background/arabizi";
 
 const pageMetadata: PageMetadata = {
-  pageUrl: '',
+  pageUrl: window.location.href,
   lastVisited: new Date(),
 };
 // TODO: re-implement diacritizedStatus tracking; currently static
