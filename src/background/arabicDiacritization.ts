@@ -143,7 +143,7 @@ function createBatches(textNodes: TextNode[], maxChars: number): TextNode[][] {
   const endOfSentence = /[.!?؟]+\s*\n*/g;
   const textBatches: TextNode[][] = [];
   const stats: { length: number, reason: string, batch: TextNode[] }[] = [];
-  const currentBatch: TextNode[] = [];
+  let currentBatch: TextNode[] = [];
   let acc = 0;
 
   textNodes.forEach((textNode) => {
@@ -153,7 +153,7 @@ function createBatches(textNodes: TextNode[], maxChars: number): TextNode[][] {
     if (acc > 0 && (acc + text.length) > maxChars) {
       stats.push({ length: acc, reason: 'maxChars', batch: currentBatch });
       textBatches.push(currentBatch);
-      currentBatch.length = 0;
+      currentBatch = [];
       acc = 0;
     }
 
@@ -164,7 +164,7 @@ function createBatches(textNodes: TextNode[], maxChars: number): TextNode[][] {
       stats.push({ length: acc, reason: 'endOfSentence', batch: currentBatch });
       stats
       textBatches.push(currentBatch);
-      currentBatch.length = 0;
+      currentBatch = [];
       acc = 0;
     }
   });
