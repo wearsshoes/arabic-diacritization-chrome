@@ -40,7 +40,9 @@ interface SuccessResponse {
 
 interface ErrorResponse {
   status: 'error';
-  error: Error;
+  errorMessage?: string;
+  // TODO: errors are not passed between background and content scripts.
+  error?: Error;
 }
 
 export type AppResponse = SuccessResponse | ErrorResponse;
