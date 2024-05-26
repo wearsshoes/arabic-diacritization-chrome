@@ -10,7 +10,7 @@ export interface TextNode {
 }
 export class WebpageDiacritizationData {
     diacritizations: {
-        [method: string]: Set<TextNode>
+        [method: string]: TextNode[]
     } = {};
 
     private constructor(
@@ -25,15 +25,15 @@ export class WebpageDiacritizationData {
         return new WebpageDiacritizationData(id, metadata)
     }
 
-    async createOriginal(websiteText: Set<TextNode>) {
-        this.diacritizations = { ['original']: new Set(websiteText) };
+    async createOriginal(websiteText: TextNode[]) {
+        this.diacritizations = { ['original']: websiteText };
     }
 
-    async addDiacritization(diacritizedText: Set<TextNode>, method: string) {
-        this.diacritizations[method] = new Set(diacritizedText);
+    async addDiacritization(diacritizedText: TextNode[], method: string) {
+        this.diacritizations[method] = diacritizedText;
     }
 
-    getDiacritization(method: string): Set<TextNode> {
+    getDiacritization(method: string): TextNode[] {
         if (this.diacritizations === undefined) {
             throw new Error('Diacritizations not created yet.');
         } else {

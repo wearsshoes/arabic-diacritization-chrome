@@ -50,7 +50,8 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
     const webpageDiacritizationData = await WebpageDiacritizationData.build(pageMetadata);
     await webpageDiacritizationData.createOriginal(selectedNodes);
 
-    checkSaves();
+    const doneThatAlready = await checkSaves(webpageDiacritizationData, method, tab)
+    if (doneThatAlready) return ({ status: 'success', userMessage: 'yay it existed' });
 
     // Process the webpage
     console.log('Processing webpage:', tabUrl, 'with method:', method)
@@ -111,46 +112,61 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
   return ({ status: 'error', errorMessage: 'Unknown error occurred' });
 }
 
-function checkSaves() {
-  // // Load the saved data for the current webpage
-  // const retrievedPageData = await dataManager.getWebpageData(tab.url);
-  // console.log('Retrieved page data:', retrievedPageData);
+async function checkSaves(data: WebpageDiacritizationData, method: string, tab: chrome.tabs.Tab): Promise<boolean> {
+  // Load the saved data for the current webpage
+  const { id: tabId, url: tabUrl } = tab;
+  if (!tabId || !tabUrl) return false;
 
-  // let userMessage: string = '';
+  const retrievedPageData = await dataManager.getWebpageData(tabUrl);
+  if (!retrievedPageData) return false;
 
-  // const requestMatchesSaved = function (): boolean {
-  //   // If there's no saved data, continue
-  //   if (!retrievedPageData) {
-  //     userMessage = "There's no saved webpage data, continuing";
-  //     return false;
-  //   }
-
-  //   // If saved data is available but has changed, ignore old data, continue
-  //   const oldSig = retrievedPageData.metadata.contentSignature;
-  //   const currentSig = pageMetadata.contentSignature;
-  //   if (oldSig !== currentSig) {
-  //     userMessage = `Content has changed, will regenerate diacritization and discard all old ones. Current hash: ${currentSig}, Saved hash: ${oldSig}`;
-  //     return false;
-  //     // TODO: only update the elements that have changed
-  //     // logChanges(retrievedPageData.metadata, pageMetadata);
-  //   }
-
-  //   // If saved data doesn't contain the requested diacritization method, retrieve all other saved diacritizations, continue
-  //   if (!Object.hasOwn(retrievedPageData.diacritizations, method)) {
-  //     webpageDiacritizationData.diacritizations = retrievedPageData.diacritizations;
-  //     userMessage = `Webpage is unchanged, generating ${method} from saved data: ${retrievedPageData.diacritizations}`;
-  //     return false;
-  //   }
-
-  //   // If saved data contains the requested method, update the website text with the saved data, stop
-  //   const diacritization = retrievedPageData.getDiacritization(method);
-  //   messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl: tab.url, replacements: diacritization, method });
-  //   userMessage = `Webpage is unchanged, using saved ${method} data`;
-  //   return true;
-  // };
-
-  // // Stop here if we've already processed the request.
-  // if (requestMatchesSaved()) {
-  //   return ({ status: 'success', userMessage });
-  // }
+  console.log('Retrieved page data:', retrievedPageData);
+  const same = retrievedPageData.metadata.contentSignature === data.metadata.contentSignature
+  const fr = Object.hasOwn(retrievedPageData.diacritizations, method);
+  if (same && fr) {
+    const diacritization = retrievedPageData.getDiacritization(method);
+    console.log(`Using saved data for ${method}`, diacritization);
+    messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl: tab.url, replacements: Array.from(diacritization), method });
+    return true;
+  }
+  return false;
 }
+
+    // let userMessage: string = '';
+
+    // const requestMatchesSaved = function (): boolean {
+    // If there's no saved data, continue
+    // if (!retrievedPageData) {
+    //   userMessage = "There's no saved webpage data, continuing";
+    //   return false;
+    // }
+    // }
+
+    //   // If saved data is available but has changed, ignore old data, continue
+    //   const oldSig = retrievedPageData.metadata.contentSignature;
+    //   const currentSig = pageMetadata.contentSignature;
+    //   if (oldSig !== currentSig) {
+    //     userMessage = `Content has changed, will regenerate diacritization and discard all old ones. Current hash: ${currentSig}, Saved hash: ${oldSig}`;
+    //     return false;
+    //     // TODO: only update the elements that have changed
+    //     // logChanges(retrievedPageData.metadata, pageMetadata);
+    //   }
+
+    //   // If saved data doesn't contain the requested diacritization method, retrieve all other saved diacritizations, continue
+    //   if (!Object.hasOwn(retrievedPageData.diacritizations, method)) {
+    //     webpageDiacritizationData.diacritizations = retrievedPageData.diacritizations;
+    //     userMessage = `Webpage is unchanged, generating ${method} from saved data: ${retrievedPageData.diacritizations}`;
+    //     return false;
+    //   }
+
+    //   // If saved data contains the requested method, update the website text with the saved data, stop
+    //   const diacritization = retrievedPageData.getDiacritization(method);
+    //   messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl: tab.url, replacements: diacritization, method });
+    //   userMessage = `Webpage is unchanged, using saved ${method} data`;
+    //   return true;
+    // };
+
+    // // Stop here if we've already processed the request.
+    // if (requestMatchesSaved()) {
+    //   return ({ status: 'success', userMessage });
+    // }

@@ -50,6 +50,7 @@ export class DiacritizationDataManager {
       try {
         const urlHash = await calculateHash(url);
         const serializedData = JSON.stringify(data);
+        console.log("Updating data for", urlHash, data, serializedData);
         await saveData(this.db, "diacritizations_msa", { item: serializedData, key: urlHash });
         return Promise.resolve();
       } catch (error) {
@@ -106,10 +107,15 @@ function saveData(db: IDBDatabase, storeName: string, { item, key }: { item: str
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(storeName, 'readwrite');
     const store = transaction.objectStore(storeName);
-    const request = store.put(item, key);
+    const data = { id: key, data: item };
+    console.log("Saving data", data);
+    const request = store.put(data);
 
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve()
+    request.onerror = () => {
+      console.error("Error saving data", request.error);
+      reject(request.error);
+    }
   });
 }
 
