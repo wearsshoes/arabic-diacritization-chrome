@@ -1,6 +1,6 @@
 import { TextNode } from '../common/webpageDataClass';
 import { Claude, anthropicAPICall, constructAnthropicMessage } from "./anthropicCaller";
-import { messageContentScript } from './background';
+import { messageContentScript, controllerMap } from './background';
 import { Prompt } from '../common/types'
 import prompts from './defaultPrompts.json';
 import { EventEmitter } from 'events';
@@ -17,7 +17,11 @@ async function getPrompt(): Promise<Prompt> {
   }
 }
 
-export async function fullDiacritization(tabId: number, tabUrl: string, selectedNodes: TextNode[], abortSignal: AbortSignal, ruby: boolean = false): Promise<TextNode[]> {
+export async function fullDiacritization(tabId: number, tabUrl: string, selectedNodes: TextNode[], ruby: boolean = false): Promise<TextNode[]> {
+
+  const controller = new AbortController();
+  const { signal: abortSignal } = controller;
+  controllerMap.set(tabId, controller);
 
   const diacritizationBatches = createBatches(selectedNodes, 750);
   const prompt = await getPrompt();

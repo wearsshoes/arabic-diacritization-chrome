@@ -2,30 +2,27 @@ import { AppResponse } from '../common/types';
 import { WebpageDiacritizationData } from "../common/webpageDataClass";
 import { fullDiacritization } from "./arabicDiacritization";
 import { arabicToArabizi } from './arabizi';
-import { messageContentScript, controllerMap } from './background';
+import { messageContentScript } from './background';
 
 export async function processSelectedText(tab: chrome.tabs.Tab, method: string = 'fullDiacritics'): Promise<void> {
-  if (!tab.id || !tab.url) return;
-
-  const controller = new AbortController();
-  controllerMap.set(tab.id, controller);
+  if (!tab.id || !tab.url) {
+    Promise.reject('Tab id or url not found'); return;
+  }
 
   const request = await messageContentScript(tab.id, { action: "getSelectedNodes" });
   if (request.status === 'error') {
-    console.error('Error getting selected nodes:', request.errorMessage);
+    Promise.reject(request.errorMessage);
     return;
   }
 
-  console.log(request);
   const { selectedNodes } = request;
   if (!selectedNodes) {
-    console.log("No text selected, processing full webpage.");
     await processWebpage(tab, method);
     return;
   }
 
   console.log(`Processing ${method} for:`, selectedNodes.length, selectedNodes);
-  await fullDiacritization(tab.id, tab.url, selectedNodes, controller.signal, method === 'arabizi');
+  await fullDiacritization(tab.id, tab.url, selectedNodes, method === 'arabizi');
   chrome.tabs.sendMessage(tab.id, { action: 'updateProgressBar', strLength: 100000 }); //lmao
 }
 
@@ -36,9 +33,6 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
       return ({ status: 'error', errorMessage: error.message });
     }
     const { id: tabId, url: tabUrl } = tab;
-
-    const controller = new AbortController();
-    controllerMap.set(tab.id, controller);
 
     const latest = await messageContentScript(tab.id, { action: 'getWebsiteText' });
     if (latest.status === 'error') return latest;
@@ -60,7 +54,7 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
         break;
       }
       case 'fullDiacritics': {
-        await fullDiacritization(tabId, tabUrl, webpageDiacritizationData.getDiacritization('original'), controller.signal)
+        await fullDiacritization(tabId, tabUrl, webpageDiacritizationData.getDiacritization('original'))
           .then((result) => {
             webpageDiacritizationData.addDiacritization(result, method);
           })
@@ -69,7 +63,7 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
       case 'arabizi': {
         if (!webpageDiacritizationData.getDiacritization('fullDiacritics')) {
           console.log("Full diacritization doesn't exist, Diacritizing text first");
-          await fullDiacritization(tabId, tabUrl, webpageDiacritizationData.getDiacritization('original'), controller.signal, true)
+          await fullDiacritization(tabId, tabUrl, webpageDiacritizationData.getDiacritization('original'), true)
             .then((result) => {
               webpageDiacritizationData.addDiacritization(result, 'fullDiacritics');
             });
