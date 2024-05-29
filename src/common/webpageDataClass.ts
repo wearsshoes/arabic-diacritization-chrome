@@ -4,7 +4,7 @@ export interface TextNode {
     text: string;
 }
 export class WebpageDiacritizationData {
-    diacritizations: {
+    private diacritizations: {
         [method: string]: TextNode[]
     } = {}
 

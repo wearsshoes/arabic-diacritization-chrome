@@ -71,7 +71,7 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
         break;
       }
       case 'arabizi': {
-        if (!webpageDiacritizationData.diacritizations['fullDiacritics']) {
+        if (!webpageDiacritizationData.getDiacritization('fullDiacritics')) {
           console.log("Full diacritization doesn't exist, Diacritizing text first");
           await fullDiacritization(tabId, tabUrl, webpageDiacritizationData.getDiacritization('original'), controller.signal, true)
             .then((result) => {
