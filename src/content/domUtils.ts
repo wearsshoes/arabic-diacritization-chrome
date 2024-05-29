@@ -61,7 +61,7 @@ function replaceWebpageText(replacements: TextNode[]) {
     if (element) {
       element.innerHTML = text;
       element.animate([
-        { background: 'rgba(76, 175, 80, 0.8)' },
+        { background: 'rgba(76, 175, 80, 0.4)' },
         { background: 'rgba(76, 175, 80, 0.0)' },
       ], 500);
     } else {
