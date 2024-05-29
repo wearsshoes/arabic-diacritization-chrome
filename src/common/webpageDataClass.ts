@@ -44,12 +44,4 @@ export class WebpageDiacritizationData {
         this.lastVisited = date
     }
 
-    // Deserialization method
-    static fromJSON(json: string): WebpageDiacritizationData {
-        const parsedData = JSON.parse(json);
-        const { id, pageUrl, lastVisited, contentSignature, diacritizations } = parsedData;
-        const instance = new WebpageDiacritizationData(id, pageUrl, lastVisited, contentSignature) ;
-        instance.diacritizations = diacritizations;
-        return instance;
-    }
 }
