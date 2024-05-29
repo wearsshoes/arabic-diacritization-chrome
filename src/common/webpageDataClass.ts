@@ -1,9 +1,4 @@
 import { calculateHash } from "./utils";
-export interface PageMetadata {
-    pageUrl: string,
-    lastVisited: Date,
-    contentSignature?: string,
-}
 export interface TextNode {
     elementId: string;
     text: string;
@@ -11,18 +6,22 @@ export interface TextNode {
 export class WebpageDiacritizationData {
     diacritizations: {
         [method: string]: TextNode[]
-    } = {};
+    } = {}
 
     private constructor(
         public id: string,
-        public metadata: PageMetadata,
+        public pageUrl: string,
+        public lastVisited: Date,
+        public contentSignature: string,
     ) { }
 
     static async build(
-        metadata: PageMetadata,
+        pageUrl: string,
+        contentSignature: string
     ) {
-        const id = await calculateHash(metadata.pageUrl)
-        return new WebpageDiacritizationData(id, metadata)
+        const id = await calculateHash(pageUrl)
+        const lastVisited = new Date();
+        return new WebpageDiacritizationData(id, pageUrl, lastVisited, contentSignature)
     }
 
     async createOriginal(websiteText: TextNode[]) {
@@ -42,14 +41,14 @@ export class WebpageDiacritizationData {
     }
 
     updateLastVisited(date: Date): void {
-        this.metadata.lastVisited = date
+        this.lastVisited = date
     }
 
     // Deserialization method
     static fromJSON(json: string): WebpageDiacritizationData {
         const parsedData = JSON.parse(json);
-        const { id, metadata, diacritizations } = parsedData;
-        const instance = new WebpageDiacritizationData(id, metadata);
+        const { id, pageUrl, lastVisited, contentSignature, diacritizations } = parsedData;
+        const instance = new WebpageDiacritizationData(id, pageUrl, lastVisited, contentSignature) ;
         instance.diacritizations = diacritizations;
         return instance;
     }

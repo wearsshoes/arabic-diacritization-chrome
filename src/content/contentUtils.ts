@@ -1,4 +1,3 @@
-import { PageMetadata } from '../common/webpageDataClass';
 import { calculateHash } from '../common/utils';
 import { labelDOM, replaceWebpageText, collectTextNodes } from './domUtils';
 import { AppMessage, AppResponse } from '../common/types';
@@ -6,10 +5,11 @@ import { mainNode, language } from './content';
 import { TextNode } from '../common/webpageDataClass';
 import { arabicToArabizi } from "../background/arabizi";
 
-const pageMetadata: PageMetadata = {
+const pageMetadata = {
   pageUrl: window.location.href,
-  lastVisited: new Date(),
+  contentSignature: '',
 };
+
 // TODO: re-implement diacritizedStatus tracking; currently static
 let editStatus = 'original';
 const collectedNodes: TextNode[] = [];

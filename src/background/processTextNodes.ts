@@ -46,7 +46,7 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
     const { pageMetadata, selectedNodes } = latest;
     if (!pageMetadata) throw new Error('No page metadata found');
     if (!selectedNodes) throw new Error('No selected nodes found');
-    const webpageDiacritizationData = await WebpageDiacritizationData.build(pageMetadata);
+    const webpageDiacritizationData = await WebpageDiacritizationData.build(tabUrl, pageMetadata.contentSignature);
     await webpageDiacritizationData.createOriginal(selectedNodes);
 
     const doneThatAlready = await checkSaves(webpageDiacritizationData, method, tab)
@@ -126,7 +126,7 @@ async function checkSaves(data: WebpageDiacritizationData, method: string, tab: 
   if (!retrievedPageData) return false;
 
   console.log('Retrieved page data:', retrievedPageData);
-  const same = retrievedPageData.metadata.contentSignature === data.metadata.contentSignature
+  const same = retrievedPageData.contentSignature === data.contentSignature
   const fr = Object.hasOwn(retrievedPageData.diacritizations, method);
   if (same && fr) {
     const diacritization = retrievedPageData.getDiacritization(method);
