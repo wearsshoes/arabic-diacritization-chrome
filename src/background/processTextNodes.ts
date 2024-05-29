@@ -1,7 +1,7 @@
 import { AppResponse } from '../common/types';
-import { TextNode, WebpageDiacritizationData } from "../common/webpageDataClass";
-import { arabicToArabizi } from "./arabizi";
+import { WebpageDiacritizationData } from "../common/webpageDataClass";
 import { fullDiacritization } from "./arabicDiacritization";
+import { arabicToArabizi } from './arabizi';
 import { messageContentScript, controllerMap } from './background';
 
 export async function processSelectedText(tab: chrome.tabs.Tab, method: string = 'fullDiacritics'): Promise<void> {
@@ -33,7 +33,6 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
   try {
     if (!tab.id || !tab.url) {
       const error = new Error('Tab id or url not found');
-      console.error('Failed to process webpage:', error);
       return ({ status: 'error', errorMessage: error.message });
     }
     const { id: tabId, url: tabUrl } = tab;
@@ -65,9 +64,6 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
           .then((result) => {
             webpageDiacritizationData.addDiacritization(result, method);
           })
-        // get the arabizi nodes either way!
-        const arabiziNodes: TextNode[] = arabicToArabizi(webpageDiacritizationData.getDiacritization('fullDiacritics'));
-        webpageDiacritizationData.addDiacritization(arabiziNodes, 'arabizi');
         break;
       }
       case 'arabizi': {
@@ -77,9 +73,10 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
             .then((result) => {
               webpageDiacritizationData.addDiacritization(result, 'fullDiacritics');
             });
-          // get the arabizi nodes either way!
-          const arabiziNodes: TextNode[] = arabicToArabizi(webpageDiacritizationData.getDiacritization('fullDiacritics'));
-          webpageDiacritizationData.addDiacritization(arabiziNodes, 'arabizi');
+        } else {
+          console.log("Full diacritization exists, using it for Arabizi conversion");
+          const replacements = arabicToArabizi(webpageDiacritizationData.getDiacritization('fullDiacritics'));
+            messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl, replacements, method });
         }
         break;
       }
@@ -87,8 +84,6 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
       default:
         throw new Error(method + ' is not implemented yet');
     }
-
-
 
     // Update the saved metadata
     let message = {} as AppResponse;
