@@ -1,5 +1,5 @@
 import { countSysPromptTokens } from './anthropicCaller'
-import { DiacritizationDataManager } from './datamanager';
+// import { DiacritizationDataManager } from './datamanager';
 import { getAPIKey } from "../common/utils";
 import { AppMessage, AppResponse } from '../common/types';
 import { processWebpage, processSelectedText } from './processTextNodes';
@@ -124,7 +124,7 @@ chrome.commands.onCommand.addListener((command) => {
 
 // ----------------- Functions ----------------- //
 
-export const dataManager = DiacritizationDataManager.getInstance();
+// export const dataManager = DiacritizationDataManager.getInstance();
 const schedulerOptions: BottleneckLight.ConstructorOptions = {
   maxConcurrent: 3,
   minTime: 1500
@@ -138,7 +138,7 @@ async function getActiveTab(): Promise<chrome.tabs.Tab> {
 
 async function getSavedInfo(tab: chrome.tabs.Tab): Promise<string[]> {
   if (!tab.url) throw new Error('No URL to get saved info for.');
-  const response = await dataManager.getWebpageData(tab.url);
+  const response = await chrome.storage.local.get(tab.url);
   const savedDiacritizations = (Object.keys(response?.diacritizations || {})).filter((key) => (key !== 'original'));
   return savedDiacritizations;
 }
@@ -201,13 +201,13 @@ async function handleOpenOptionsPage(): Promise<AppResponse> {
 async function handleClearWebpageData(): Promise<AppResponse> {
   const tab = await getActiveTab()
   if (!tab.url) throw new Error('No URL to clear saved info for..');
-  await dataManager.clearWebpageData(tab.url);
+  await chrome.storage.local.remove(tab.url);
   if (tab.id) chrome.tabs.reload(tab.id);
   return { status: 'success' }
 }
 
 async function handleClearDatabase(): Promise<AppResponse> {
-  await dataManager.clearAllData();
+  await chrome.storage.local.clear();
   return { status: 'success' }
 }
 

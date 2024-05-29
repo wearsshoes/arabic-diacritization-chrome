@@ -2,7 +2,7 @@ import { AppResponse } from '../common/types';
 import { TextNode, WebpageDiacritizationData } from "../common/webpageDataClass";
 import { arabicToArabizi } from "./arabizi";
 import { fullDiacritization } from "./arabicDiacritization";
-import { messageContentScript, dataManager, controllerMap } from './background';
+import { messageContentScript, controllerMap } from './background';
 
 export async function processSelectedText(tab: chrome.tabs.Tab, method: string = 'fullDiacritics'): Promise<void> {
   if (!tab.id || !tab.url) return;
@@ -49,8 +49,8 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
     const webpageDiacritizationData = await WebpageDiacritizationData.build(tabUrl, pageMetadata.contentSignature);
     await webpageDiacritizationData.createOriginal(selectedNodes);
 
-    const doneThatAlready = await checkSaves(webpageDiacritizationData, method, tab)
-    if (doneThatAlready) return ({ status: 'success', userMessage: 'yay it existed' });
+    // const doneThatAlready = await checkSaves(webpageDiacritizationData, method, tab)
+    // if (doneThatAlready) return ({ status: 'success', userMessage: 'yay it existed' });
 
     // Process the webpage
     console.log('Processing webpage:', tabUrl, 'with method:', method)
@@ -92,14 +92,14 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
 
     // Update the saved metadata
     let message = {} as AppResponse;
-    dataManager.updateWebpageData(tab.url, webpageDiacritizationData)
+    chrome.storage.local.set({ [tabUrl]: webpageDiacritizationData })
       .then(() => {
-        console.log('Saved webpage data updated:', webpageDiacritizationData)
+        chrome.storage.local.get(tabUrl, (data) => console.log('Saved webpage data:', data));
         message = { status: 'success', userMessage: 'Webpage diacritization complete.' };
       })
-      .catch((error) => {
+      .catch((error: Error) => {
         console.error('Failed to update saved webpage data:', error)
-        message = { status: 'error', errorMessage: (error as Error).message };
+        message = { status: 'error', errorMessage: (error).message };
       });
 
     messageContentScript(tabId, { action: 'allDone' });
@@ -117,25 +117,25 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
   return ({ status: 'error', errorMessage: 'Unknown error occurred' });
 }
 
-async function checkSaves(data: WebpageDiacritizationData, method: string, tab: chrome.tabs.Tab): Promise<boolean> {
-  // Load the saved data for the current webpage
-  const { id: tabId, url: tabUrl } = tab;
-  if (!tabId || !tabUrl) return false;
+// async function checkSaves(data: WebpageDiacritizationData, method: string, tab: chrome.tabs.Tab): Promise<boolean> {
+//   // Load the saved data for the current webpage
+//   const { id: tabId, url: tabUrl } = tab;
+//   if (!tabId || !tabUrl) return false;
 
-  const retrievedPageData = await dataManager.getWebpageData(tabUrl);
-  if (!retrievedPageData) return false;
+//   const retrievedPageData = await chrome.storage.local.get(tabUrl);
+//   if (!retrievedPageData) return false;
 
-  console.log('Retrieved page data:', retrievedPageData);
-  const same = retrievedPageData.contentSignature === data.contentSignature
-  const fr = Object.hasOwn(retrievedPageData.diacritizations, method);
-  if (same && fr) {
-    const diacritization = retrievedPageData.getDiacritization(method);
-    console.log(`Using saved data for ${method}`, diacritization);
-    messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl: tab.url, replacements: Array.from(diacritization), method });
-    return true;
-  }
-  return false;
-}
+//   console.log('Retrieved page data:', retrievedPageData);
+//   const same = retrievedPageData.contentSignature === data.contentSignature
+//   const fr = Object.hasOwn(retrievedPageData.diacritizations, method);
+//   if (same && fr) {
+//     const diacritization = retrievedPageData.getDiacritization(method);
+//     console.log(`Using saved data for ${method}`, diacritization);
+//     messageContentScript(tabId, { action: 'updateWebsiteText', tabUrl: tab.url, replacements: Array.from(diacritization), method });
+//     return true;
+//   }
+//   return false;
+// }
 
 // let userMessage: string = '';
 
