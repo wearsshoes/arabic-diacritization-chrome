@@ -185,24 +185,18 @@ async function handleGetWebsiteData(_message: AppMessage, sender: chrome.runtime
   }
 }
 
-async function handleGetSavedDiacritizations(_message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
-  let tab: chrome.tabs.Tab;
-  if (sender.tab && sender.tab.id) tab = sender.tab;
-  else tab = await getActiveTab();
-  if (tab.id) {
-    const savedInfo = await getSavedInfo(tab);
-    return { status: 'success', savedInfo };
-  } else {
-    return { status: 'error', error: new Error('No tab ID to get saved diacritizations') }
-  }
+  async function handleGetSavedDiacritizations(_message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
+    const tab = sender.tab && sender.tab.id ? sender.tab : await getActiveTab();
 
-  async function getSavedInfo(tab: chrome.tabs.Tab): Promise<string[]> {
-    if (!tab.url) throw new Error('No URL to get saved info for.');
+    if (!tab.id || !tab.url) {
+      return { status: 'error', error: new Error('No tab ID or URL to get saved diacritizations') };
+    }
+
     const response = await chrome.storage.local.get(tab.url);
-    const savedDiacritizations = (Object.keys(response?.diacritizations || {})).filter((key) => (key !== 'original'));
-    return savedDiacritizations;
+    const savedDiacritizations = Object.keys(response?.diacritizations || {});
+
+    return { status: 'success', savedInfo: savedDiacritizations };
   }
-}
 
 // ----------------- Functions ----------------- //
 
