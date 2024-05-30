@@ -5,14 +5,10 @@ import { mainNode, language } from './content';
 import { TextNode } from '../common/webpageDataClass';
 import { arabicToArabizi } from "../background/arabizi";
 
-const pageMetadata = {
-  pageUrl: window.location.href,
-  contentSignature: '',
-};
-
 // TODO: re-implement diacritizedStatus tracking; currently static
 let editStatus = 'original';
 const collectedNodes: TextNode[] = [];
+let contentSignature = '';
 let labelCounter = 0;
 
 const observerOptions: MutationObserverInit = {
@@ -33,7 +29,7 @@ const onContentLoaded = () => {
 };
 
 const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {
-  pageMetadata.contentSignature = await calculateHash(mainNode.innerText || '');
+contentSignature = await calculateHash(mainNode.innerText || '');
   if (editStatus === 'original') labelCounter = labelDOM(mainNode);
   collectTextNodes(mainNode).forEach((node) => {
     collectedNodes.push(node);
@@ -123,11 +119,11 @@ export async function handleGetWebsiteData(): Promise<AppResponse> {
 
 export async function handleGetWebsiteText(): Promise<AppResponse> {
 
-  if (!pageMetadata && !editStatus) throw new Error('No page metadata or diacritized status found.');
+  if (!contentSignature && !editStatus) throw new Error('No page metadata or diacritized status found.');
   const textElements = editStatus === 'original' ? collectTextNodes(mainNode) : collectedNodes;
   if (editStatus === 'original') textElements.forEach((node) => collectedNodes.push(node));
   console.log('Sent collected all text nodes.');
-  return { status: 'success', selectedNodes: Array.from(textElements), diacritizedStatus: editStatus, pageMetadata };
+  return { status: 'success', selectedNodes: Array.from(textElements), diacritizedStatus: editStatus, contentSignature };
 }
 
 export async function handleGetSelectedNodes(): Promise<AppResponse> {

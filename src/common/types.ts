@@ -1,6 +1,6 @@
 // Definition of types used in the application
 
-import { TextNode, PageMetadata } from "./webpageDataClass";
+import { TextNode } from "./webpageDataClass";
 
 export interface Prompt {
   name: string;
@@ -30,7 +30,7 @@ interface SuccessResponse {
   userMessage?: string;
   error?: Error;
   selectedNodes?: TextNode[];
-  pageMetadata?: PageMetadata;
+  contentSignature?: string;
   diacritizedStatus?: string;
   language?: string;
   characterCount?: number;
