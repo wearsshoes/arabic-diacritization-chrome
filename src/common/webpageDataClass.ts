@@ -24,8 +24,8 @@ export class WebpageDiacritizationData {
         return new WebpageDiacritizationData(id, pageUrl, lastVisited, contentSignature)
     }
 
-    updateDiacritization(updates: TextNode[], method: string) {
-        if (this.diacritizations[method] === undefined) {
+    updateDiacritization(updates: TextNode[], method: string, clear: boolean = false) {
+        if (this.diacritizations[method] === undefined || clear) {
             this.diacritizations[method] = updates;
         } else {
             const textNodes = new Map(this.diacritizations[method].map(textNode => [textNode.elementId, textNode]));
