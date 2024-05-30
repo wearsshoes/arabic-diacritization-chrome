@@ -11,7 +11,7 @@ export class WebpageDiacritizationData {
     private constructor(
         public id: string,
         public pageUrl: string,
-        public lastVisited: Date,
+        public lastVisited: string,
         public contentSignature: string,
     ) { }
 
@@ -20,7 +20,7 @@ export class WebpageDiacritizationData {
         contentSignature: string
     ) {
         const id = await calculateHash(pageUrl)
-        const lastVisited = new Date();
+        const lastVisited = new Date().toISOString();
         return new WebpageDiacritizationData(id, pageUrl, lastVisited, contentSignature)
     }
 
@@ -41,7 +41,7 @@ export class WebpageDiacritizationData {
     }
 
     updateLastVisited(date: Date): void {
-        this.lastVisited = date
+        this.lastVisited = date.toISOString();
     }
 
 }
