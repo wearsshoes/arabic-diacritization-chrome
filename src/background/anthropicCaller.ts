@@ -1,6 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { calculateHash } from '../common/utils';
-import { getAPIKey } from "../common/utils";
 import { Prompt } from '../common/types';
 import { EventEmitter } from 'events'
 import { scheduler } from './background';
@@ -16,7 +15,7 @@ export class Claude {
   }
 
   async initialize() {
-    this.apiKey = await getAPIKey();
+    ({ apiKey: this.apiKey } = await chrome.storage.sync.get('apiKey'));
   }
 
   escalateModel(n: number = 1) {
@@ -64,7 +63,7 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
   const hash = await calculateHash(JSON.stringify(params));
 
   // get the API key if it's not provided
-  const apiKey = key || await getAPIKey();
+  const apiKey = key;
   if (!apiKey) {
     throw new Error('API key not set');
   }

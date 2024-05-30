@@ -7,12 +7,6 @@ export interface Prompt {
   text: string;
 }
 
-export interface ElementAttributes {
-  tagName: string;
-  id?: string;
-  className?: string; // space separated list of classes, not an array
-}
-
 // TODO: structure AppMessage and AppResponse more strictly based on the message types
 export interface AppMessage {
   action: string;

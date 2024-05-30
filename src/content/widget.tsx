@@ -181,7 +181,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
               size="xs"
               variant="ghost"
               icon={<SettingsIcon boxSize={4} />}
-              onClick={() => chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'openOptionsPage' })}
+              onClick={() => chrome.runtime.openOptionsPage()}
             />
             <Button
               aria-label='Toggle Language'

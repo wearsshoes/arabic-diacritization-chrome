@@ -71,10 +71,6 @@ export async function processText(tab: chrome.tabs.Tab, method: string = 'fullDi
   return ({ status: 'error', errorMessage: 'Unknown error occurred' });
 }
 
-export async function processWebpage(tab: chrome.tabs.Tab, method: string): Promise<AppResponse> {
-  return processText(tab, method, true);
-}
-
 async function buildData(tabId: number, tabUrl: string, selectedNodes?: TextNode[]): Promise<{ pageData: WebpageDiacritizationData }> {
 
   let pageData: WebpageDiacritizationData;

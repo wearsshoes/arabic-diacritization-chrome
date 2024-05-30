@@ -1,8 +1,6 @@
 import { countSysPromptTokens } from './anthropicCaller'
-// import { DiacritizationDataManager } from './datamanager';
-import { getAPIKey } from "../common/utils";
 import { AppMessage, AppResponse } from '../common/types';
-import { processWebpage, processText } from './processTextNodes';
+import { processText } from './processTextNodes';
 // @ts-expect-error No types for "bottleneck/light"
 import BottleneckLight from "bottleneck/light.js";
 
@@ -47,15 +45,11 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
   console.log(`Received message: ${message.action} from ${typeof sender.tab?.index === 'number' ? 'extension script in tab #' + (sender.tab.index + 1) : 'popup'}`);
 
   const actionHandlers: Record<string, (message: AppMessage, sender: chrome.runtime.MessageSender) => Promise<AppResponse>> = {
-    'widgetHandshake': handleWidgetHandshake,
     'cancelTask': handleCancelTask,
-    'getAPIKey': handleGetAPIKey,
     'getSystemPromptLength': handleGetSystemPromptLength,
-    'openOptionsPage': handleOpenOptionsPage,
     'getWebsiteData': handleGetWebsiteData,
     'getSavedDiacritizations': handleGetSavedDiacritizations,
     'clearWebpageData': handleClearWebpageData,
-    'clearDatabase': handleClearDatabase,
     'processWebpage': handleProcessWebpage,
     'processSelection': handleProcessSelection,
   };
@@ -147,7 +141,7 @@ async function handleProcessWebpage(message: AppMessage, sender: chrome.runtime.
   let tab: chrome.tabs.Tab;
   if (sender.tab) tab = sender.tab;
   else tab = await getActiveTab();
-  return processWebpage(tab, message.method ?? 'fullDiacritics')
+  return processText(tab, message.method ?? 'fullDiacritics', true)
     .then((result) => {
       return result;
     })
@@ -161,12 +155,13 @@ async function handleProcessSelection(message: AppMessage, sender: chrome.runtim
   let tab: chrome.tabs.Tab;
   if (sender.tab) tab = sender.tab;
   else tab = await getActiveTab();
-  processText(tab, message.method ?? 'fullDiacritics')
-  return ({ status: 'success' });
-}
-
-async function handleWidgetHandshake(): Promise<AppResponse> {
-  return { status: 'success' }
+  return processText(tab, message.method ?? 'fullDiacritics', false)
+    .then((result) => {
+      return result;
+    })
+    .catch((error) => {
+      return { status: 'error', error: new Error(`Error caught at handleProcessSelection: ${error}`)};
+    });
 }
 
 async function handleCancelTask(_message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
@@ -179,11 +174,6 @@ async function handleCancelTask(_message: AppMessage, sender: chrome.runtime.Mes
   }
 }
 
-async function handleGetAPIKey(): Promise<AppResponse> {
-  const key = await getAPIKey();
-  return { status: 'success', key }
-}
-
 async function handleGetSystemPromptLength(message: AppMessage): Promise<AppResponse> {
   if (message.prompt) {
     const tokens = await countSysPromptTokens(message.prompt);
@@ -193,21 +183,11 @@ async function handleGetSystemPromptLength(message: AppMessage): Promise<AppResp
   }
 }
 
-async function handleOpenOptionsPage(): Promise<AppResponse> {
-  chrome.runtime.openOptionsPage();
-  return { status: 'success' }
-}
-
 async function handleClearWebpageData(): Promise<AppResponse> {
   const tab = await getActiveTab()
   if (!tab.url) throw new Error('No URL to clear saved info for..');
   await chrome.storage.local.remove(tab.url);
   if (tab.id) chrome.tabs.reload(tab.id);
-  return { status: 'success' }
-}
-
-async function handleClearDatabase(): Promise<AppResponse> {
-  await chrome.storage.local.clear();
   return { status: 'success' }
 }
 
