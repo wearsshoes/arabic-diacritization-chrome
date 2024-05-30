@@ -28,18 +28,19 @@ export class WebpageDiacritizationData {
         this.diacritizations = { ['original']: websiteText };
     }
 
-    updateDiacritization(diacritizedText: TextNode[], method: string) {
+    updateDiacritization(updates: TextNode[], method: string) {
         if (this.diacritizations[method] === undefined) {
-            this.diacritizations[method] = diacritizedText;
+            this.diacritizations[method] = updates;
         } else {
-            const set = new Set([...this.diacritizations[method], ...diacritizedText]);
-            this.diacritizations[method] = Array.from(set);
+            const textNodes = new Map(this.diacritizations[method].map(textNode => [textNode.elementId, textNode]));
+            updates.forEach(textNode => textNodes.set(textNode.elementId, textNode));
+            this.diacritizations[method] = Array.from(textNodes.values());
         }
     }
 
     getDiacritization(method: string): TextNode[] {
         if (this.diacritizations === undefined) {
-            throw new Error('Diacritizations not created yet.');
+            return [];
         } else {
             return this.diacritizations[method];
         }
