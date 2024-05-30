@@ -154,7 +154,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
 
   const diacritizationBatches = createBatches(selectedNodes, 750);
   const prompt = await getPrompt();
-  const claude = new Claude();
+  const claude = await Claude.init();
   const maxTries = 3;
   const delimiter = '|';
   let elementValidationFailures = 0;

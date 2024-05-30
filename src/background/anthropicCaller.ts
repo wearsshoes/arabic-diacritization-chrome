@@ -7,15 +7,16 @@ import { scheduler } from './background';
 export { claude, defaultModel, anthropicAPICall, countSysPromptTokens };
 
 export class Claude {
-  constructor(
-    public model: Model = defaultModel,
-    public apiKey: string = ''
-  ) {
-    this.initialize();
-  }
 
-  async initialize() {
-    ({ apiKey: this.apiKey } = await chrome.storage.sync.get('apiKey'));
+  private constructor(
+    public model: Model,
+    public apiKey: string = ''
+  ) {}
+
+  static async init() {
+    const model = defaultModel;
+    const { apiKey } = await chrome.storage.sync.get('apiKey');
+    return new Claude(model, apiKey);
   }
 
   escalateModel(n: number = 1) {
