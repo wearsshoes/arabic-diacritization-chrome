@@ -54,20 +54,37 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
     let diacritics: TextNode[];
 
     if (saveExists) {
-      diacritics = pageData.getDiacritization(method === 'original' ? 'original' : 'fullDiacritics');
+      const diacriticsSet = new Set(pageData.getDiacritization('fullDiacritics').map(node => node.elementId));
+      const original = pageData.getDiacritization('original');
+
+      const [oldNodes, newNodes] = original.reduce<TextNode[][]>(
+        (result, node) => {
+          result[diacriticsSet.has(node.elementId) ? 0 : 1].push(node);
+          return result;
+        }, [[], []]);
+
+      console.log('Processing old nodes:', oldNodes);
+      await messageContentScript(tabId, {
+        action: 'updateWebsiteText',
+        tabUrl: tabUrl,
+        replacements: oldNodes,
+        method,
+        ruby: method === 'arabizi'
+      });
+
+      if (newNodes.length > 0) {
+        console.log('Processing new nodes:', newNodes);
+        const newDiacritics = await fullDiacritization(tabId, tabUrl, newNodes, method === 'arabizi');
+        pageData.updateDiacritization(newDiacritics, 'fullDiacritics');
+        diacritics = [...oldNodes, ...newDiacritics];
+      } else {
+        diacritics = oldNodes;
+      }
     } else {
       const original = pageData.getDiacritization('original');
       diacritics = await fullDiacritization(tabId, tabUrl, original, method === 'arabizi');
       pageData.updateDiacritization(diacritics, 'fullDiacritics');
     }
-
-    messageContentScript(tabId, {
-      action: 'updateWebsiteText',
-      tabUrl: tab.url,
-      replacements: diacritics,
-      method,
-      ruby: method === 'arabizi'
-    });
 
     await chrome.storage.local.set({ [tabUrl]: pageData });
 
