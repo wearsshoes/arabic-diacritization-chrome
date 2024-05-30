@@ -3,46 +3,7 @@ import { TextNode, WebpageDiacritizationData } from "../common/webpageDataClass"
 import { fullDiacritization } from "./arabicDiacritization";
 import { messageContentScript } from './background';
 
-export async function processSelectedText(tab: chrome.tabs.Tab, method: string = 'fullDiacritics'): Promise<void> {
-  if (!tab.id || !tab.url) throw new Error('Tab id or url not found')
-
-  const request = await messageContentScript(tab.id, { action: "getSelectedNodes" });
-  if (request.status === 'error') throw new Error(request.errorMessage);
-
-  const { selectedNodes } = request;
-  if (!selectedNodes) throw new Error("No selection");
-  console.log('Selected nodes:', selectedNodes);
-
-  const { pageData } = await buildData(tab.id, tab.url);
-  const diacriticsSet = new Set(pageData.getDiacritization('fullDiacritics').map(node => node.elementId));
-
-  const [oldNodes, newNodes] = selectedNodes.reduce<TextNode[][]>(
-    (result, node) => {
-      result[diacriticsSet.has(node.elementId) ? 0 : 1].push(node);
-      return result;
-    }, [[], []]);
-
-  console.log('Processing old nodes:', oldNodes);
-  await messageContentScript(tab.id, {
-    action: 'updateWebsiteText',
-    tabUrl: tab.url,
-    replacements: oldNodes,
-    method,
-    ruby: method === 'arabizi'
-  });
-
-  if (newNodes.length > 0) {
-    console.log('Processing new nodes:', newNodes);
-    await fullDiacritization(tab.id, tab.url, newNodes, method === 'arabizi')
-      .then((result) => { pageData.updateDiacritization(result, 'fullDiacritics') });
-  }
-
-  chrome.tabs.sendMessage(tab.id, { action: 'updateProgressBar', strLength: 100000 });
-  await chrome.storage.local.set({ [tab.url]: pageData });
-  console.log(Object(await chrome.storage.local.get(tab.url))[tab.url]);
-}
-
-export async function processWebpage(tab: chrome.tabs.Tab, method: string): Promise<AppResponse> {
+export async function processText(tab: chrome.tabs.Tab, method: string = 'fullDiacritics', entirePage: boolean = false): Promise<AppResponse> {
   if (!tab.id || !tab.url) {
     const error = new Error('Tab id or url not found');
     return ({ status: 'error', errorMessage: error.message });
@@ -50,46 +11,50 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
 
   try {
     const { id: tabId, url: tabUrl } = tab;
-    const { saveExists, pageData } = await buildData(tabId, tabUrl);
-    let diacritics: TextNode[];
+    const {pageData } = await buildData(tabId, tabUrl);
 
-    if (saveExists) {
-      const diacriticsSet = new Set(pageData.getDiacritization('fullDiacritics').map(node => node.elementId));
-      const original = pageData.getDiacritization('original');
+    let selectedNodes: TextNode[] = [];
 
-      const [oldNodes, newNodes] = original.reduce<TextNode[][]>(
-        (result, node) => {
-          result[diacriticsSet.has(node.elementId) ? 0 : 1].push(node);
-          return result;
-        }, [[], []]);
-
-      console.log('Processing old nodes:', oldNodes);
-      await messageContentScript(tabId, {
-        action: 'updateWebsiteText',
-        tabUrl: tabUrl,
-        replacements: oldNodes,
-        method,
-        ruby: method === 'arabizi'
-      });
-
-      if (newNodes.length > 0) {
-        console.log('Processing new nodes:', newNodes);
-        const newDiacritics = await fullDiacritization(tabId, tabUrl, newNodes, method === 'arabizi');
-        pageData.updateDiacritization(newDiacritics, 'fullDiacritics');
-        diacritics = [...oldNodes, ...newDiacritics];
-      } else {
-        diacritics = oldNodes;
-      }
+    if (entirePage) {
+      selectedNodes = pageData.getDiacritization('original');
     } else {
-      const original = pageData.getDiacritization('original');
-      diacritics = await fullDiacritization(tabId, tabUrl, original, method === 'arabizi');
-      pageData.updateDiacritization(diacritics, 'fullDiacritics');
+      const request = await messageContentScript(tabId, { action: "getSelectedNodes" });
+      if (request.status === 'error') throw new Error(request.errorMessage);
+      selectedNodes = request.selectedNodes || [];
+      if (!selectedNodes) throw new Error("No selection");
+    }
+
+    const diacritics = pageData.getDiacritization(method === 'original' ? 'original' : 'fullDiacritics')
+    const diacriticsSet = new Set(diacritics.map(node => node.elementId));
+    const selectedSet = new Set(selectedNodes.map(node => node.elementId));
+    const oldNodes = diacritics.filter(node => selectedSet.has(node.elementId));
+    const newNodes = selectedNodes.filter(node => !diacriticsSet.has(node.elementId));
+
+    console.log('Processing old nodes:', oldNodes);
+    await messageContentScript(tabId, {
+      action: 'updateWebsiteText',
+      tabUrl: tabUrl,
+      replacements: oldNodes,
+      method,
+      ruby: method === 'arabizi'
+    });
+
+    if (newNodes.length > 0) {
+      console.log('Processing new nodes:', newNodes);
+      const newDiacritics = await fullDiacritization(tabId, tabUrl, newNodes, method === 'arabizi');
+      pageData.updateDiacritization(newDiacritics, 'fullDiacritics');
     }
 
     await chrome.storage.local.set({ [tabUrl]: pageData });
+    console.log(Object(await chrome.storage.local.get(tabUrl))[tabUrl]);
 
-    messageContentScript(tabId, { action: 'allDone' });
-    return { status: 'success', userMessage: 'Webpage diacritization complete.' };
+    if (entirePage) {
+      messageContentScript(tabId, { action: 'allDone' });
+      return { status: 'success', userMessage: 'Webpage diacritization complete.' };
+    } else {
+      chrome.tabs.sendMessage(tabId, { action: 'updateProgressBar', strLength: 100000 });
+      return { status: 'success' };
+    }
 
   } catch (error) {
     if (error instanceof Error) {
@@ -104,10 +69,13 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
   return ({ status: 'error', errorMessage: 'Unknown error occurred' });
 }
 
-async function buildData(tabId: number, tabUrl: string): Promise<{ saveExists: boolean, pageData: WebpageDiacritizationData }> {
+export async function processWebpage(tab: chrome.tabs.Tab, method: string): Promise<AppResponse> {
+  return processText(tab, method, true);
+}
+
+async function buildData(tabId: number, tabUrl: string): Promise<{ pageData: WebpageDiacritizationData }> {
 
   let pageData: WebpageDiacritizationData;
-  let saveExists: boolean;
 
   const latest = await messageContentScript(tabId, { action: 'getWebsiteText' });
   if (latest.status === 'error') throw new Error(latest.errorMessage);
@@ -122,13 +90,11 @@ async function buildData(tabId: number, tabUrl: string): Promise<{ saveExists: b
     Object.setPrototypeOf(saved, WebpageDiacritizationData.prototype);
     pageData = saved;
     pageData.updateLastVisited(new Date());
-    saveExists = true;
   } else {
     console.log('Content has changed, creating new webpage data.');
     pageData = await WebpageDiacritizationData.build(tabUrl, contentSignature);
     pageData.createOriginal(selectedNodes);
-    saveExists = false;
   }
 
-  return { saveExists, pageData };
+  return { pageData };
 }

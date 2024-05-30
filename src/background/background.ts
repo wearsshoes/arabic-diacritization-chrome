@@ -2,7 +2,7 @@ import { countSysPromptTokens } from './anthropicCaller'
 // import { DiacritizationDataManager } from './datamanager';
 import { getAPIKey } from "../common/utils";
 import { AppMessage, AppResponse } from '../common/types';
-import { processWebpage, processSelectedText } from './processTextNodes';
+import { processWebpage, processText } from './processTextNodes';
 // @ts-expect-error No types for "bottleneck/light"
 import BottleneckLight from "bottleneck/light.js";
 
@@ -82,7 +82,7 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
     return;
   }
   if (info.menuItemId === "processSelectedText") {
-    processSelectedText(tab, 'fullDiacritics')
+    processText(tab, 'fullDiacritics')
       .then(() => {
         console.log('Website text updated with diacritics.');
       })
@@ -91,7 +91,7 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
       });
   } else if (info.menuItemId === "romanizeSelectedText") {
     console.log("Transliterating selected text...");
-    processSelectedText(tab, 'arabizi')
+    processText(tab, 'arabizi')
       .then(() => {
         console.log('Website text updated to transliteration.');
       })
@@ -161,7 +161,7 @@ async function handleProcessSelection(message: AppMessage, sender: chrome.runtim
   let tab: chrome.tabs.Tab;
   if (sender.tab) tab = sender.tab;
   else tab = await getActiveTab();
-  processSelectedText(tab, message.method ?? 'fullDiacritics')
+  processText(tab, message.method ?? 'fullDiacritics')
   return ({ status: 'success' });
 }
 
