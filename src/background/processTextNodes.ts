@@ -23,30 +23,25 @@ export async function processSelectedText(tab: chrome.tabs.Tab, method: string =
   }
 
   const diacriticsSet = new Set(pageData.getDiacritization('fullDiacritics').map(node => node.elementId));
+  const oldNodes = selectedNodes.filter(node => diacriticsSet.has(node.elementId));
   const newNodes = selectedNodes.filter(node => !diacriticsSet.has(node.elementId));
+
+  await messageContentScript(tab.id, {
+    action: 'updateWebsiteText',
+    tabUrl: tab.url,
+    replacements: oldNodes,
+    method,
+    ruby: method === 'arabizi'
+  });
 
   if (newNodes.length > 0) {
     await fullDiacritization(tab.id, tab.url, newNodes, method === 'arabizi')
     .then((result) => { pageData.updateDiacritization(result, 'fullDiacritics') });
   }
 
-  const updatedDiacritics = pageData.getDiacritization('fullDiacritics');
-  const selectedNodeSet = new Set(selectedNodes.map(node => node.elementId));
-  const filteredDiacritics = updatedDiacritics.filter(node => selectedNodeSet.has(node.elementId));
-
-  await messageContentScript(tab.id, {
-    action: 'updateWebsiteText',
-    tabUrl: tab.url,
-    replacements: filteredDiacritics,
-    method,
-    ruby: method === 'arabizi'
-  });
-
   chrome.tabs.sendMessage(tab.id, { action: 'updateProgressBar', strLength: 100000 }); //lmao
   await chrome.storage.local.set({ [tab.url]: pageData })
   console.log(Object(await chrome.storage.local.get(tab.url))[tab.url]);
-  return;
-
 }
 
 export async function processWebpage(tab: chrome.tabs.Tab, method: string): Promise<AppResponse> {
