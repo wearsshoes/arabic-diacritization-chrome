@@ -24,10 +24,6 @@ export class WebpageDiacritizationData {
         return new WebpageDiacritizationData(id, pageUrl, lastVisited, contentSignature)
     }
 
-    createOriginal(websiteText: TextNode[]) {
-        this.diacritizations = { ['original']: websiteText };
-    }
-
     updateDiacritization(updates: TextNode[], method: string) {
         if (this.diacritizations[method] === undefined) {
             this.diacritizations[method] = updates;

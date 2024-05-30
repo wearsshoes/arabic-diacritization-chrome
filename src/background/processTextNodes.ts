@@ -93,7 +93,7 @@ async function buildData(tabId: number, tabUrl: string): Promise<{ pageData: Web
   } else {
     console.log('Content has changed, creating new webpage data.');
     pageData = await WebpageDiacritizationData.build(tabUrl, contentSignature);
-    pageData.createOriginal(selectedNodes);
+    pageData.updateDiacritization(selectedNodes, 'original');
   }
 
   return { pageData };
