@@ -24,12 +24,17 @@ export class WebpageDiacritizationData {
         return new WebpageDiacritizationData(id, pageUrl, lastVisited, contentSignature)
     }
 
-    async createOriginal(websiteText: TextNode[]) {
+    createOriginal(websiteText: TextNode[]) {
         this.diacritizations = { ['original']: websiteText };
     }
 
-    async addDiacritization(diacritizedText: TextNode[], method: string) {
-        this.diacritizations[method] = diacritizedText;
+    updateDiacritization(diacritizedText: TextNode[], method: string) {
+        if (this.diacritizations[method] === undefined) {
+            this.diacritizations[method] = diacritizedText;
+        } else {
+            const set = new Set([...this.diacritizations[method], ...diacritizedText]);
+            this.diacritizations[method] = Array.from(set);
+        }
     }
 
     getDiacritization(method: string): TextNode[] {
@@ -38,6 +43,10 @@ export class WebpageDiacritizationData {
         } else {
             return this.diacritizations[method];
         }
+    }
+
+    getDiacritizationMethods(): string[] {
+        return Object.keys(this.diacritizations);
     }
 
     updateLastVisited(date: Date): void {
