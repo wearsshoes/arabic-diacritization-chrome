@@ -5,7 +5,6 @@ import { mainNode, language } from './content';
 import { TextNode } from '../common/webpageDataClass';
 import { arabicToArabizi } from "./arabizi";
 
-// TODO: re-implement diacritizedStatus tracking; currently static
 let editStatus = 'original';
 const collectedNodes: TextNode[] = [];
 let contentSignature = '';
@@ -29,7 +28,7 @@ const onContentLoaded = () => {
 };
 
 const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {
-contentSignature = await calculateHash(mainNode.innerText || '');
+  contentSignature = await calculateHash(mainNode.innerText || '');
   if (editStatus === 'original') labelCounter = labelDOM(mainNode);
   collectTextNodes(mainNode).forEach((node) => {
     collectedNodes.push(node);
@@ -123,7 +122,7 @@ export async function handleGetWebsiteText(): Promise<AppResponse> {
   const textElements = editStatus === 'original' ? collectTextNodes(mainNode) : collectedNodes;
   if (editStatus === 'original') textElements.forEach((node) => collectedNodes.push(node));
   console.log('Sent collected all text nodes.');
-  return { status: 'success', selectedNodes: Array.from(textElements), diacritizedStatus: editStatus, contentSignature };
+  return { status: 'success', selectedNodes: Array.from(textElements), contentSignature };
 }
 
 export async function handleGetSelectedNodes(): Promise<AppResponse> {
@@ -143,7 +142,7 @@ export async function handleGetSelectedNodes(): Promise<AppResponse> {
   }
   const selectedTexts = Array.from(selectedNodes).map((node) => node.text)
   console.log('Sending selected text for processing:', selectedTexts);
-  return { status: 'success', selectedNodes: Array.from(selectedNodes), diacritizedStatus: editStatus };
+  return { status: 'success', selectedNodes: Array.from(selectedNodes) };
 }
 
 export async function handleUpdateWebsiteText(message: AppMessage): Promise<AppResponse> {

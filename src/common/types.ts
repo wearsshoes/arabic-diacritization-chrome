@@ -10,27 +10,26 @@ export interface Prompt {
 // TODO: structure AppMessage and AppResponse more strictly based on the message types
 export interface AppMessage {
   action: string;
+
   tabUrl?: string;
-  prompt?: string;
+
   wholePage?: boolean;
-  method?: string;
-  originals?: TextNode[];
-  langScript?: string;
-  replacements?: TextNode[];
+
   strLength?: number;
+
+  method?: string;
+  replacements?: TextNode[];
   ruby?: boolean;
 }
 interface SuccessResponse {
   status: 'success';
-  userMessage?: string;
-  error?: Error;
+
   selectedNodes?: TextNode[];
   contentSignature?: string;
-  diacritizedStatus?: string;
+
   language?: string;
   characterCount?: number;
-  key?: string;
-  tokens?: number;
+  promptTokens?: number;
   savedInfo?: string[];
 }
 

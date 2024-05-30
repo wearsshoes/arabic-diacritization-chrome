@@ -54,11 +54,10 @@ export async function processText(tab: chrome.tabs.Tab, method: string = 'fullDi
 
     if (entirePage) {
       messageContentScript(tabId, { action: 'allDone' });
-      return { status: 'success', userMessage: 'Webpage diacritization complete.' };
     } else {
-      chrome.tabs.sendMessage(tabId, { action: 'updateProgressBar', strLength: 100000 });
-      return { status: 'success' };
+      messageContentScript(tabId, { action: 'updateProgressBar', strLength: 100000 });
     }
+    return ({ status: 'success' });
 
   } catch (error) {
     if (error instanceof Error) {
@@ -162,7 +161,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
 
   const selectedNodesArray = Array.from(selectedNodes);
   const strLength = selectedNodesArray.flatMap((textNode) => textNode.text.split(' ')).length;
-  messageContentScript(tabId, { action: 'beginProcessing', tabUrl, strLength });
+  messageContentScript(tabId, { action: 'beginProcessing', strLength });
 
   // diacritize the texts in parallel with retries
   const diacritizedNodes = await Promise.all(

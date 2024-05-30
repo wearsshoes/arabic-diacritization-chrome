@@ -3,6 +3,7 @@ import { AppMessage, AppResponse } from '../common/types';
 import { processText } from './processTextNodes';
 // @ts-expect-error No types for "bottleneck/light"
 import BottleneckLight from "bottleneck/light.js";
+import { Prompt } from '../common/types';
 
 // ----------------- Event Listeners ----------------- //
 
@@ -100,19 +101,17 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
 
   if (!handler) {
     console.warn(`Invalid action: ${message.action}`);
-    sendResponse({ status: 'error', error: new Error('Invalid action') });
+    sendResponse({ status: 'error', errorMessage: 'Invalid action' });
   }
 
   (async () => {
-    let tab: chrome.tabs.Tab;
-    if (sender.tab) tab = sender.tab;
-    else tab = await getActiveTab();
+    const tab = sender.tab ?? (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
     try {
       const response = await handler(tab, message);
       sendResponse({ status: 'success', ...response });
     } catch (error) {
       console.warn(`Error processing ${message.action}: ${error}`);
-      sendResponse({ status: 'error', error: error as Error });
+      sendResponse({ status: 'error', errorMessage: (error as Error).message });
     }
   })();
 
@@ -122,10 +121,9 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
     return processText(tab, message.method ?? 'fullDiacritics', message.wholePage ?? false);
   }
 
-  async function handleGetSystemPromptLength(_tab: chrome.tabs.Tab, message: AppMessage): Promise<Partial<AppResponse>> {
-    if (!message.prompt) throw new Error('No prompt to count');
-    const tokens = await countSysPromptTokens(message.prompt);
-    return { tokens };
+  async function handleGetSystemPromptLength(): Promise<Partial<AppResponse>> {
+    const { selectedPrompt } = await chrome.storage.sync.get(['selectedPrompt']);
+    return ({ promptTokens: await countSysPromptTokens((selectedPrompt as Prompt).text) });
   }
 
   async function handleCancelTask(tab: chrome.tabs.Tab): Promise<Partial<AppResponse>> {
@@ -145,8 +143,7 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
 
   async function handleGetSavedDiacritizations(tab: chrome.tabs.Tab): Promise<Partial<AppResponse>> {
     const response = await chrome.storage.local.get(tab.url!);
-    const savedDiacritizations = Object.keys(response?.diacritizations || {});
-    return { savedInfo: savedDiacritizations };
+    return ({ savedInfo: Object.keys(response?.diacritizations || {}) });
   }
 
   async function handleOpenOptions(): Promise<Partial<AppResponse>> {
@@ -168,10 +165,6 @@ export function messageContentScript(tabId: number, message: AppMessage): Promis
       }
     });
   });
-}
-
-async function getActiveTab(): Promise<chrome.tabs.Tab> {
-  return chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => tabs[0]);
 }
 
 // TODO: should this be a class?

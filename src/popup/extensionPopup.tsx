@@ -105,10 +105,10 @@ const App: React.FC = () => {
       if (data.selectedPrompt) {
         setSelectedPrompt(data.selectedPrompt.name);
         chrome.runtime.sendMessage<AppMessage, AppResponse>(
-          { action: 'getSystemPromptLength', prompt: data.selectedPrompt.text },
+          { action: 'getSystemPromptLength' },
           (response) => {
-            if (response.status === 'success' && response.tokens) {
-              setPromptLength(response.tokens);
+            if (response.status === 'success') {
+              setPromptLength(response?.promptTokens ?? 0);
             } else {
               console.error('Error getting prompt length:', response.error || 'tokens unknown');
               setPromptLength(0);
