@@ -11,17 +11,19 @@ export async function processText(tab: chrome.tabs.Tab, method: string = 'fullDi
 
   try {
     const { id: tabId, url: tabUrl } = tab;
-    const {pageData } = await buildData(tabId, tabUrl);
+    let pageData
 
     let selectedNodes: TextNode[] = [];
 
     if (entirePage) {
+      ({ pageData } = await buildData(tabId, tabUrl));
       selectedNodes = pageData.getDiacritization('original');
     } else {
       const request = await messageContentScript(tabId, { action: "getSelectedNodes" });
       if (request.status === 'error') throw new Error(request.errorMessage);
       selectedNodes = request.selectedNodes || [];
       if (!selectedNodes) throw new Error("No selection");
+      ({ pageData } = await buildData(tabId, tabUrl, selectedNodes))
     }
 
     const diacritics = pageData.getDiacritization(method === 'original' ? 'original' : 'fullDiacritics')
@@ -73,28 +75,64 @@ export async function processWebpage(tab: chrome.tabs.Tab, method: string): Prom
   return processText(tab, method, true);
 }
 
-async function buildData(tabId: number, tabUrl: string): Promise<{ pageData: WebpageDiacritizationData }> {
+async function buildData(tabId: number, tabUrl: string, selectedNodes?: TextNode[]): Promise<{ pageData: WebpageDiacritizationData }> {
 
   let pageData: WebpageDiacritizationData;
 
   const latest = await messageContentScript(tabId, { action: 'getWebsiteText' });
+
   if (latest.status === 'error') throw new Error(latest.errorMessage);
 
-  const { contentSignature, selectedNodes } = latest;
+  const { contentSignature, selectedNodes: allNodes } = latest;
+
   if (!contentSignature) throw new Error("Didn't get content signature");
-  if (!selectedNodes) throw new Error("Didn't get website text");
+  if (!allNodes) throw new Error("Didn't get website text");
 
   const saved: WebpageDiacritizationData = Object(await chrome.storage.local.get(tabUrl))[tabUrl];
-  if (saved && saved.contentSignature === contentSignature) {
-    console.log('Using saved webpage data.');
+
+  if (!saved) {
+
+    console.log('No save, creating new webpage data.');
+    pageData = await WebpageDiacritizationData.build(tabUrl, contentSignature);
+
+  } else {
+
     Object.setPrototypeOf(saved, WebpageDiacritizationData.prototype);
     pageData = saved;
     pageData.updateLastVisited(new Date());
-  } else {
-    console.log('Content has changed, creating new webpage data.');
-    pageData = await WebpageDiacritizationData.build(tabUrl, contentSignature);
-    pageData.updateDiacritization(selectedNodes, 'original');
+
+    if (saved.contentSignature === contentSignature) {
+
+      console.log('Using saved data.');
+
+    } else {
+
+      console.log('Content has changed, updating.');
+      const latestTextMap = new Map(allNodes.map(node => [node.text, node]));
+      const updatedOriginals: TextNode[] = [];
+      const updatedFullDiacritics: TextNode[] = [];
+
+      saved.getDiacritization('original').forEach(originalNode => {
+        const latestNode = latestTextMap.get(originalNode.text);
+        if (latestNode) {
+
+          updatedOriginals.push({ ...originalNode, elementId: latestNode.elementId })
+          const fullDiacriticNode = saved.getDiacritization('fullDiacritics').find(node => node.elementId === originalNode.elementId);
+
+          if (fullDiacriticNode) {
+            updatedFullDiacritics.push({ ...fullDiacriticNode, elementId: latestNode.elementId });
+          }
+
+        }
+
+      });
+
+      pageData.updateDiacritization(updatedOriginals, 'original', true);
+      pageData.updateDiacritization(updatedFullDiacritics, 'fullDiacritics', true);
+    }
+
   }
 
+  pageData.updateDiacritization(selectedNodes ?? allNodes, 'original');
   return { pageData };
 }
