@@ -33,22 +33,16 @@ const App: React.FC = () => {
   const [savedInfo, setSavedInfo] = useState('');
   const [loadState, setLoadState] = useState(false);
   const [method, setMethod] = useState('fullDiacritics');
-  const [contentLoaded, setContentLoaded] = useState(false);
-  // const [apiKeyFound, setApiKeyFound] = useState(true);
+  const [apiKeyFound, setApiKeyFound] = useState(false);
 
 
   useEffect(() => {
-    //   // Check API key
-    //   (async () => {
-    //     const response = await chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'getAPIKey' });
-    //     console.log('API key response:', response);
-    //     if (response.key) {
-    //       setApiKeyFound(true);
-    //     } else {
-    //       setApiKeyFound(false);
-    //     }
-    setLoadState(true);
-    //   })();
+    chrome.storage.sync.get(['apiKey'], (data) => {
+      if (data.apiKey) {
+        setApiKeyFound(true);
+        setLoadState(true);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -100,7 +94,6 @@ const App: React.FC = () => {
         setPageLanguage(lang + ' (' + lang_ar + ')');
       }
       if (characterCount) {
-        setContentLoaded(true);
         setCharacterCount(characterCount);
         setOutputTokenCount(characterCount * 2.3);
       }
@@ -178,8 +171,6 @@ const App: React.FC = () => {
           <Text fontSize={'md'} align={'center'}> This popup is still under construction. Recommend using the onscreen widget (Control-Shift-U / Command-Shift-U to restore if closed).</Text>
         </Stack>
         <Button size='xs' onClick={() => chrome.runtime.openOptionsPage()}>Open Options Page</Button>
-
-
         <Accordion alignContent={'center'} allowToggle>
           <AccordionItem width='100%'>
             <Heading size='md'>
@@ -192,7 +183,7 @@ const App: React.FC = () => {
             </Heading>
             <AccordionPanel textAlign={'center'} padding='2'>
               <Stack direction='column' alignContent='auto'>
-                <Text>{contentLoaded ? 'Success' : 'Loading...'}</Text>
+                <Text>{apiKeyFound ? 'Api Key Loaded' : 'API Key Not Found.'}</Text>
                 <Text fontWeight={'bold'}>Page language: </Text>
                 <Text>{pageLanguage}</Text>
                 <Text fontWeight={'bold'}>Active prompt: </Text>
