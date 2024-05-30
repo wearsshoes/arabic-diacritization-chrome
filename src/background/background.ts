@@ -118,7 +118,6 @@ chrome.commands.onCommand.addListener((command) => {
 
 // ----------------- Functions ----------------- //
 
-// export const dataManager = DiacritizationDataManager.getInstance();
 const schedulerOptions: BottleneckLight.ConstructorOptions = {
   maxConcurrent: 3,
   minTime: 1500
@@ -128,13 +127,6 @@ export let scheduler = new BottleneckLight(schedulerOptions);
 
 async function getActiveTab(): Promise<chrome.tabs.Tab> {
   return chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => tabs[0]);
-}
-
-async function getSavedInfo(tab: chrome.tabs.Tab): Promise<string[]> {
-  if (!tab.url) throw new Error('No URL to get saved info for.');
-  const response = await chrome.storage.local.get(tab.url);
-  const savedDiacritizations = (Object.keys(response?.diacritizations || {})).filter((key) => (key !== 'original'));
-  return savedDiacritizations;
 }
 
 async function handleProcessWebpage(message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
@@ -212,6 +204,13 @@ async function handleGetSavedDiacritizations(_message: AppMessage, sender: chrom
     return { status: 'success', savedInfo };
   } else {
     return { status: 'error', error: new Error('No tab ID to get saved diacritizations') }
+  }
+
+  async function getSavedInfo(tab: chrome.tabs.Tab): Promise<string[]> {
+    if (!tab.url) throw new Error('No URL to get saved info for.');
+    const response = await chrome.storage.local.get(tab.url);
+    const savedDiacritizations = (Object.keys(response?.diacritizations || {})).filter((key) => (key !== 'original'));
+    return savedDiacritizations;
   }
 }
 

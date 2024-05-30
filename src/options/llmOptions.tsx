@@ -19,7 +19,7 @@ const LLMOptions: React.FC = () => {
     // Load the last selected prompt
     chrome.storage.sync.get(['selectedPrompt'], (data: { selectedPrompt?: Prompt }) => {
       const selected = data.selectedPrompt?.name;
-      setCustomPrompt(defaultPrompts[1].text || '');
+      setCustomPrompt(defaultPrompts[0].text || '');
       if (selected) {
         //TODO: this should just ask the background worker for the prompt text
         const selectedPrompt = defaultPrompts.find((prompt) => prompt.name === selected);

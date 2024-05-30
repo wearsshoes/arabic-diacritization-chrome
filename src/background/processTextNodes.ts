@@ -134,7 +134,7 @@ async function buildData(tabId: number, tabUrl: string, selectedNodes?: TextNode
   pageData.updateDiacritization(selectedNodes ?? allNodes, 'original');
   return { pageData };
 }
-const defaultPrompt = prompts[1];
+const defaultPrompt = prompts[0];
 
 async function getPrompt(): Promise<Prompt> {
   try {
