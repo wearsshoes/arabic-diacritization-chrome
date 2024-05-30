@@ -21,20 +21,18 @@ chrome.runtime.onInstalled.addListener(function (details) {
   }
 
   chrome.contextMenus.create({
-    id: "processSelectedText",
-    title: "Fully Diacritize Selected Text",
+    id: "fullDiacritics",
+    title: "Diacritize Selection",
     contexts: ["selection"]
-  }, () => {
-    if (chrome.runtime.lastError) {
-      console.error(`Error creating context menu: ${chrome.runtime.lastError.message}`);
-    }
-  });
+  }, () => onError);
 
   chrome.contextMenus.create({
-    id: "romanizeSelectedText",
-    title: "Romanize Selected Text",
+    id: "arabizi",
+    title: "Transliterate Selection",
     contexts: ["selection"]
-  }, () => {
+  }, () => onError);
+
+  function onError() {
     if (chrome.runtime.lastError) {
       console.error(`Error creating context menu: ${chrome.runtime.lastError.message}`);
     }
@@ -72,27 +70,24 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
 });
 
 chrome.contextMenus.onClicked.addListener(async function (info, tab) {
-  if (!tab) {
-    console.error(new Error(`${info.menuItemId}: ${tab} doesn't exist.`));
-    return;
-  }
-  if (info.menuItemId === "processSelectedText") {
-    processText(tab, 'fullDiacritics')
-      .then(() => {
-        console.log('Website text updated with diacritics.');
-      })
-      .catch((error) => {
-        console.error(`Could not diacritize selected text: ${error}`);
-      });
-  } else if (info.menuItemId === "romanizeSelectedText") {
-    console.log("Transliterating selected text...");
-    processText(tab, 'arabizi')
-      .then(() => {
-        console.log('Website text updated to transliteration.');
-      })
-      .catch((error) => {
-        console.error(`Could not transliterate selected text: ${error}`);
-      });
+  if (!tab) return;
+  console.log(`Context menu item clicked: ${info.menuItemId}`);
+
+  try {
+    switch (info.menuItemId) {
+      case "processSelectedText":
+        await processText(tab, 'arabizi');
+        break;
+      case "romanizeSelectedText":
+        await processText(tab, 'fullDiacritics');
+        break;
+      default:
+        throw new Error(`Unknown context menu item: ${info.menuItemId}`);
+    }
+    console.log(`Website text updated successfully.`);
+
+  } catch (error) {
+    console.warn(`Could not process selected text: ${error}`);
   }
 });
 
