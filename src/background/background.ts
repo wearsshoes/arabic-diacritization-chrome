@@ -116,18 +116,8 @@ chrome.commands.onCommand.addListener((command) => {
   }
 });
 
-// ----------------- Functions ----------------- //
+// ----------------- Handlers ----------------- //
 
-const schedulerOptions: BottleneckLight.ConstructorOptions = {
-  maxConcurrent: 3,
-  minTime: 1500
-}
-
-export let scheduler = new BottleneckLight(schedulerOptions);
-
-async function getActiveTab(): Promise<chrome.tabs.Tab> {
-  return chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => tabs[0]);
-}
 
 async function handleProcessWebpage(message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
   let tab: chrome.tabs.Tab;
@@ -138,7 +128,7 @@ async function handleProcessWebpage(message: AppMessage, sender: chrome.runtime.
       return result;
     })
     .catch((error) => {
-      return { status: 'error', error: new Error(`Error caught at handleProcessWebpage: ${error}`)};
+      return { status: 'error', error: new Error(`Error caught at handleProcessWebpage: ${error}`) };
     });
 
 }
@@ -152,7 +142,7 @@ async function handleProcessSelection(message: AppMessage, sender: chrome.runtim
       return result;
     })
     .catch((error) => {
-      return { status: 'error', error: new Error(`Error caught at handleProcessSelection: ${error}`)};
+      return { status: 'error', error: new Error(`Error caught at handleProcessSelection: ${error}`) };
     });
 }
 
@@ -214,6 +204,8 @@ async function handleGetSavedDiacritizations(_message: AppMessage, sender: chrom
   }
 }
 
+// ----------------- Functions ----------------- //
+
 export function messageContentScript(tabId: number, message: AppMessage): Promise<AppResponse> {
   return new Promise((resolve, reject) => {
     chrome.tabs.sendMessage<AppMessage, AppResponse>(tabId, message, (response) => {
@@ -221,12 +213,19 @@ export function messageContentScript(tabId: number, message: AppMessage): Promis
         console.error('Error sending message:', message);
         reject(chrome.runtime.lastError);
       } else {
-        resolve(response !== undefined ? response : { status: 'error', error: new Error('No response') });
+        resolve(response ?? { status: 'error', error: new Error('No response') });
       }
     });
   });
 }
 
+async function getActiveTab(): Promise<chrome.tabs.Tab> {
+  return chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => tabs[0]);
+}
+
+// TODO: should this be a class?
+const schedulerOptions: BottleneckLight.ConstructorOptions = { maxConcurrent: 3, minTime: 1500 }
+export let scheduler = new BottleneckLight(schedulerOptions);
 export const controllerMap = new Map<number, AbortController>();
 
 function cancelTask(tabId: number) {

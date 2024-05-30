@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0 (Current)
+Improvements
+- Removed useless files and functions
+
 ## 0.4.4 (2024-05-29)
 Improvements
 - Major under the hood improvements; replace indexedDB with chrome.storage
