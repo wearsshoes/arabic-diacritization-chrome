@@ -6,7 +6,6 @@ import BottleneckLight from "bottleneck/light.js";
 
 // ----------------- Event Listeners ----------------- //
 
-// Check whether new version is installed
 chrome.runtime.onInstalled.addListener(function (details) {
 
   if (details.reason == "install") {
@@ -36,36 +35,6 @@ chrome.runtime.onInstalled.addListener(function (details) {
     if (chrome.runtime.lastError) {
       console.error(`Error creating context menu: ${chrome.runtime.lastError.message}`);
     }
-  });
-});
-
-chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse: (response: AppResponse) => void) => {
-  console.log(`Received message: ${message.action} from ${typeof sender.tab?.index === 'number' ? 'extension script in tab #' + (sender.tab.index + 1) : 'popup'}`);
-
-  const actionHandlers: Record<string, (message: AppMessage, sender: chrome.runtime.MessageSender) => Promise<AppResponse>> = {
-    'cancelTask': handleCancelTask,
-    'getSystemPromptLength': handleGetSystemPromptLength,
-    'getWebsiteData': handleGetWebsiteData,
-    'getSavedDiacritizations': handleGetSavedDiacritizations,
-    'clearWebpageData': handleClearWebpageData,
-    'processWebpage': handleProcessWebpage,
-    'processSelection': handleProcessSelection,
-    'openOptions': async () => { chrome.runtime.openOptionsPage(); return { status: 'success' } }
-  };
-
-  const handler = actionHandlers[message.action];
-
-  if (handler) {
-    handler(message, sender)
-      .then((response) => sendResponse(response))
-      .catch((error) => {
-        console.error(`Error processing ${message.action}: ${error}`);
-        sendResponse({ status: 'error', error: error as Error });
-      });
-    return true;
-  } else {
-    console.error(`Invalid action: ${message.action}`);
-    sendResponse({ status: 'error', error: new Error('Invalid action') });
   }
 });
 
@@ -112,87 +81,84 @@ chrome.commands.onCommand.addListener((command) => {
   }
 });
 
-// ----------------- Handlers ----------------- //
+chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse: (response: AppResponse) => void) => {
 
+  const messageSource = sender.tab?.index ? `extension script in tab #${sender.tab.index + 1}` : 'popup';
+  console.log(`Received message: ${message.action} from ${messageSource}`);
 
-async function handleProcessWebpage(message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
-  let tab: chrome.tabs.Tab;
-  if (sender.tab) tab = sender.tab;
-  else tab = await getActiveTab();
-  return processText(tab, message.method ?? 'fullDiacritics', true)
-    .then((result) => {
-      return result;
-    })
-    .catch((error) => {
-      return { status: 'error', error: new Error(`Error caught at handleProcessWebpage: ${error}`) };
-    });
+  const actionHandlers: Record<string, (tab: chrome.tabs.Tab, message: AppMessage) => Promise<Partial<AppResponse>>> = {
+    'cancelTask': handleCancelTask,
+    'getSystemPromptLength': handleGetSystemPromptLength,
+    'getWebsiteData': handleGetWebsiteData,
+    'getSavedDiacritizations': handleGetSavedDiacritizations,
+    'clearWebpageData': handleClearWebpageData,
+    'processWebpage': handleProcessWebpage,
+    'processSelection': handleProcessSelection,
+    'openOptions': handleOpenOptions,
+  };
 
-}
+  const handler = actionHandlers[message.action];
 
-async function handleProcessSelection(message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
-  let tab: chrome.tabs.Tab;
-  if (sender.tab) tab = sender.tab;
-  else tab = await getActiveTab();
-  return processText(tab, message.method ?? 'fullDiacritics', false)
-    .then((result) => {
-      return result;
-    })
-    .catch((error) => {
-      return { status: 'error', error: new Error(`Error caught at handleProcessSelection: ${error}`) };
-    });
-}
-
-async function handleCancelTask(_message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
-  if (sender.tab && sender.tab.id) {
-    cancelTask(sender.tab.id);
-    return { status: 'success' }
-  } else {
-    console.error('No tab ID to cancel task');
-    return { status: 'error', error: new Error('No tab ID to cancel task') }
+  if (!handler) {
+    console.warn(`Invalid action: ${message.action}`);
+    sendResponse({ status: 'error', error: new Error('Invalid action') });
   }
-}
 
-async function handleGetSystemPromptLength(message: AppMessage): Promise<AppResponse> {
-  if (message.prompt) {
-    const tokens = await countSysPromptTokens(message.prompt);
-    return { status: 'success', tokens }
-  } else {
-    return { status: 'error', error: new Error('No prompt to count') }
-  }
-}
-
-async function handleClearWebpageData(): Promise<AppResponse> {
-  const tab = await getActiveTab()
-  if (!tab.url) throw new Error('No URL to clear saved info for..');
-  await chrome.storage.local.remove(tab.url);
-  if (tab.id) chrome.tabs.reload(tab.id);
-  return { status: 'success' }
-}
-
-async function handleGetWebsiteData(_message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
-  let tab: chrome.tabs.Tab;
-  if (sender.tab && sender.tab.id) tab = sender.tab;
-  else tab = await getActiveTab();
-  if (tab.id) {
-    const websiteData = await messageContentScript(tab.id, { action: 'getWebsiteData' });
-    return websiteData;
-  } else {
-    return { status: 'error', error: new Error('No tab ID to get website data') }
-  }
-}
-
-  async function handleGetSavedDiacritizations(_message: AppMessage, sender: chrome.runtime.MessageSender): Promise<AppResponse> {
-    const tab = sender.tab && sender.tab.id ? sender.tab : await getActiveTab();
-
-    if (!tab.id || !tab.url) {
-      return { status: 'error', error: new Error('No tab ID or URL to get saved diacritizations') };
+  (async () => {
+    let tab: chrome.tabs.Tab;
+    if (sender.tab) tab = sender.tab;
+    else tab = await getActiveTab();
+    try {
+      const response = await handler(tab, message);
+      sendResponse({ status: 'success', ...response });
+    } catch (error) {
+      console.warn(`Error processing ${message.action}: ${error}`);
+      sendResponse({ status: 'error', error: error as Error });
     }
+  })();
 
-    const response = await chrome.storage.local.get(tab.url);
-    const savedDiacritizations = Object.keys(response?.diacritizations || {});
+  return true;
 
-    return { status: 'success', savedInfo: savedDiacritizations };
+  async function handleProcessWebpage(tab: chrome.tabs.Tab, message: AppMessage): Promise<Partial<AppResponse>> {
+    return processText(tab, message.method ?? 'fullDiacritics', true);
   }
+
+  async function handleProcessSelection(tab: chrome.tabs.Tab, message: AppMessage): Promise<Partial<AppResponse>> {
+    return processText(tab, message.method ?? 'fullDiacritics', false);
+  }
+
+  async function handleGetSystemPromptLength(_tab: chrome.tabs.Tab, message: AppMessage): Promise<Partial<AppResponse>> {
+    if (!message.prompt) throw new Error('No prompt to count');
+    const tokens = await countSysPromptTokens(message.prompt);
+    return { tokens };
+  }
+
+  async function handleCancelTask(tab: chrome.tabs.Tab): Promise<Partial<AppResponse>> {
+    cancelTask(tab.id!);
+    return {};
+  }
+
+  async function handleClearWebpageData(tab: chrome.tabs.Tab): Promise<Partial<AppResponse>> {
+    await chrome.storage.local.remove(tab.url!);
+    chrome.tabs.reload(tab.id!);
+    return {};
+  }
+
+  async function handleGetWebsiteData(tab: chrome.tabs.Tab): Promise<Partial<AppResponse>> {
+    return await messageContentScript(tab.id!, { action: 'getWebsiteData' });
+  }
+
+  async function handleGetSavedDiacritizations(tab: chrome.tabs.Tab): Promise<Partial<AppResponse>> {
+    const response = await chrome.storage.local.get(tab.url!);
+    const savedDiacritizations = Object.keys(response?.diacritizations || {});
+    return { savedInfo: savedDiacritizations };
+  }
+
+  async function handleOpenOptions(): Promise<Partial<AppResponse>> {
+    chrome.runtime.openOptionsPage();
+    return {};
+  }
+});
 
 // ----------------- Functions ----------------- //
 
