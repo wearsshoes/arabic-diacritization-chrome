@@ -4,6 +4,7 @@ import { Stack, Container, Button, ButtonGroup, Text, IconButton, Progress } fro
 import { SettingsIcon, ChevronUpIcon, CheckIcon, MinusIcon, CloseIcon, ArrowForwardIcon, SpinnerIcon } from '@chakra-ui/icons'
 import { Languages, translations } from "./widget_i18n";
 import { AppMessage, AppResponse } from "../common/types";
+import { WebpageDiacritizationData } from "../common/webpageDataClass";
 
 
 const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
@@ -18,9 +19,9 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
   const shouldDisplay = ['ar', 'arz'].includes(siteLanguage)
   const [textIsSelected, setTextIsSelected] = useState(false);
 
-  const [method, setMethod] = useState('fullDiacritics');
-  const [pageRenders, setPageRenders] = useState(new Set<string>(['original']));
+  const [method, setMethod] = useState('original');
   const [pageState, setPageState] = useState('original');
+  const [pageRenders, setPageRenders] = useState(new Set<string>(['original']));
 
   const [totalBatches, setTotal] = useState(0);
   const [finishedBatches, setProgress] = useState(0);
@@ -39,6 +40,15 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
       console.error('Error canceling:', response.errorMessage);
     }
   };
+
+  useEffect(() => {
+    chrome.storage.local.get(window.location.href, (result) => {
+      const savedData: WebpageDiacritizationData = result[window.location.href];
+      if (savedData) {
+        setPageRenders(new Set(["arabizi", "fullDiacritics", "original"]));
+      }
+    })
+  }, []);
 
   useEffect(() => {
     if (!shouldDisplay) onMinimize()
