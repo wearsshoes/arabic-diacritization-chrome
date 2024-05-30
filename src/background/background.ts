@@ -52,6 +52,7 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
     'clearWebpageData': handleClearWebpageData,
     'processWebpage': handleProcessWebpage,
     'processSelection': handleProcessSelection,
+    'openOptions': async () => { chrome.runtime.openOptionsPage(); return { status: 'success' } }
   };
 
   const handler = actionHandlers[message.action];
