@@ -3,7 +3,7 @@ import { labelDOM, replaceWebpageText, collectTextNodes } from './domUtils';
 import { AppMessage, AppResponse } from '../common/types';
 import { mainNode, language } from './content';
 import { TextNode } from '../common/webpageDataClass';
-import { arabicToArabizi } from "../background/arabizi";
+import { arabicToArabizi } from "./arabizi";
 
 // TODO: re-implement diacritizedStatus tracking; currently static
 let editStatus = 'original';
