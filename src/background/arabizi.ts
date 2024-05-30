@@ -5,14 +5,17 @@ interface TransliterationDict {
   [key: string]: string[];
 }
 
-export function arabicToArabizi(textNodes: TextNode[], dialect: string = "msa"): TextNode[] {
+// export function arabicToArabizi(textNodes: TextNode[]): TextNode[] {
+  export function arabicToArabizi(textNodes: TextNode[], dialect: string = "msa"): TextNode[] {
 
   let chars: TransliterationDict;
   let digraphs: TransliterationDict;
+  let trigraphs: TransliterationDict;
   switch (dialect) {
     case "msa":
-      chars = transliterations['ala-lc'].chars
-      digraphs = transliterations['ala-lc'].digraphs
+  chars = transliterations['ala-lc'].chars;
+  digraphs = transliterations['ala-lc'].digraphs;
+  trigraphs = transliterations['ala-lc'].trigraphs;
   }
 
   function transliterate(text: string): string {
@@ -44,17 +47,27 @@ export function arabicToArabizi(textNodes: TextNode[], dialect: string = "msa"):
       .replace(/(^|\s)(اَ?لْ?)/g, '$1al-')
 
       // handle arabic characters at beginning of word
+      // open alif
+      .replace(/(?<=[^\u0621-\u0652])ا(?=[\u0621-\u0652])/g, 'i')
       // alif waslah
       .replace(/(?<=[^\u0621-\u0652])آ(?=[\u0621-\u0652])/g, 'ā')
+      // .replace(/(?<=[^\u0621-\u0652])آ(?=[\u0621-\u0652])/g, 'aa')
       // hamza
+      // .replace(/(?<=[^\u0621-\u0652])[ءأإ](?=[\u0621-\u0652])/g, '2')
       .replace(/(?<=[^\u0621-\u0652])[ءأإ](?=[\u0621-\u0652])/g, '')
 
       // handle arabic characters at end of word
       // defective root shadda iyy ending
       .replace(/(?<=[\u0621-\u0652])ِيّ(?=[^\u0621-\u0652])/g, 'ī')
+      // .replace(/(?<=[\u0621-\u0652])ِيّ(?=[^\u0621-\u0652])/g, 'ii')
       .replace(/(?<=[\u0621-\u0652])ُوّ(?=[^\u0621-\u0652])/g, 'ūw')
+      // .replace(/(?<=[\u0621-\u0652])ُوّ(?=[^\u0621-\u0652])/g, 'uw')
       .replace(/(?<=[\u0621-\u0652])َوّ(?=[^\u0621-\u0652])/g, 'aww')
       .replace(/(?<=[\u0621-\u0652])وا(?=[^\u0621-\u0652])/g, 'u')
+
+      // ignore case endings
+      .replace(/(?<=[\u0621-\u0652])[\u064B-\u0650](?=(\u0651)?[^\u0621-\u0652])/g, '')
+
 
       // handle middle of word
 
@@ -66,8 +79,12 @@ export function arabicToArabizi(textNodes: TextNode[], dialect: string = "msa"):
 
     // map remaining arabic characters according to transliterationDict
     for (let i = 0; i < text.length; i++) {
-      const digraph = text[i] + text[i + 1];
-      if (digraphs[digraph]) {
+      const trigraph = text.slice(i, i + 3);
+      const digraph = text.slice(i, i + 2);
+      if (trigraphs[trigraph]) {
+        result += trigraphs[trigraph][0];
+        i += 2; // Skip the next two characters because we've already processed them as part of the trigraph
+      } else if (digraphs[digraph]) {
         result += digraphs[digraph][0];
         i++; // Skip the next character because we've already processed it as part of the digraph
       } else if (chars[text[i]]) {
@@ -133,4 +150,90 @@ export function arabicToArabizi(textNodes: TextNode[], dialect: string = "msa"):
 
 //   // Join the transliterated words back into a sentence
 //   return transliteratedWords.join(' ');
+// }
+
+// const chars: TransliterationDict = {
+//   "ا": ["a", "aa", "e"],
+//   "ب": ["b"],
+//   "ت": ["t"],
+//   "ث": ["th", "s"],
+//   "ج": ["j", "g"],
+//   "ح": ["H", "7", "h"],
+//   "خ": ["kh", "5"],
+//   "د": ["d"],
+//   "ذ": ["dh", "th"],
+//   "ر": ["r"],
+//   "ز": ["z"],
+//   "س": ["s"],
+//   "ش": ["sh", "ch"],
+//   "ص": ["S", "9"],
+//   "ض": ["D", "9'"],
+//   "ط": ["T", "6", "t"],
+//   "ظ": ["DH", "6'", "dh"],
+//   "ع": ["3", "a", "e"],
+//   "غ": ["gh", "4", "3'"],
+//   "ف": ["f"],
+//   "ق": ["q", "8", "9"],
+//   "ك": ["k"],
+//   "ل": ["l"],
+//   "م": ["m"],
+//   "ن": ["n"],
+//   "ه": ["h"],
+//   "و": ["w", "uu", "o"],
+//   "ي": ["y", "ii", "ee"],
+//   "ء": ["2", "a", "e"],
+//   "آ": ["2a", "aa", "2e"],
+//   "ة": ["h", "at", "ah", "a"],
+//   "ى": ["a", "aa", "e"],
+//   "أ": ["2", "a", "e", "2a", "2e"],
+//   "إ": ["2", "i", "e", "2e", "2i"],
+//   "ؤ": ["2", "o", "u", "w"],
+//   "ئ": ["2", "e", "y"],
+//   "َ": ["a"],
+//   "ِ": ["i"],
+//   "ُ": ["u"],
+//   "ً": ["an"],
+//   "ٍ": ["in"],
+//   "ٌ": ["un"],
+//   "ْ": [""],
+//   "ّ": [""],
+//   "،": [","],
+//   "؟": ["?"],
+//   "؛": [";"]
+// };
+
+// const trigraphs: TransliterationDict = {
+//   "َوْ": [
+//     "aw"
+//   ],
+//   "َىْ": [
+//     "ay"
+//   ],
+//   "َىّ": [
+//     "ayy"
+//   ]
+// }
+
+// const digraphs: TransliterationDict = {
+//   "ده": [
+//     "d'h"
+//   ],
+//   "ًا": [
+//     "an"
+//   ],
+//   "َا": [
+//     "aa"
+//   ],
+//   "ِى": [
+//     "ii"
+//   ],
+//   "ُو": [
+//     "uu"
+//   ],
+//   "َى": [
+//     "a"
+//   ],
+//   "ِي": [
+//     "ii"
+//   ]
 // }
