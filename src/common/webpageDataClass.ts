@@ -39,7 +39,7 @@ export class WebpageDiacritizationData {
     }
 
     getDiacritization(method: string): TextNode[] {
-        if (this.diacritizations === undefined) {
+        if (this.diacritizations[method] === undefined) {
             return [];
         } else {
             return this.diacritizations[method];
