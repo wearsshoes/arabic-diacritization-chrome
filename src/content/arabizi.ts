@@ -1,5 +1,5 @@
 import { TextNode } from '../common/webpageDataClass';
-import transliterations from './transliterations.json';
+import transliterations from '../background/transliterations.json';
 
 interface TransliterationDict {
   [key: string]: string[];
