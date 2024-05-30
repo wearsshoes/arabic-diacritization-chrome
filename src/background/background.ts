@@ -92,8 +92,7 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
     'getWebsiteData': handleGetWebsiteData,
     'getSavedDiacritizations': handleGetSavedDiacritizations,
     'clearWebpageData': handleClearWebpageData,
-    'processWebpage': handleProcessWebpage,
-    'processSelection': handleProcessSelection,
+    'processText': handleProcessText,
     'openOptions': handleOpenOptions,
   };
 
@@ -119,12 +118,8 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
 
   return true;
 
-  async function handleProcessWebpage(tab: chrome.tabs.Tab, message: AppMessage): Promise<Partial<AppResponse>> {
-    return processText(tab, message.method ?? 'fullDiacritics', true);
-  }
-
-  async function handleProcessSelection(tab: chrome.tabs.Tab, message: AppMessage): Promise<Partial<AppResponse>> {
-    return processText(tab, message.method ?? 'fullDiacritics', false);
+  async function handleProcessText(tab: chrome.tabs.Tab, message: AppMessage): Promise<Partial<AppResponse>> {
+    return processText(tab, message.method ?? 'fullDiacritics', message.wholePage ?? false);
   }
 
   async function handleGetSystemPromptLength(_tab: chrome.tabs.Tab, message: AppMessage): Promise<Partial<AppResponse>> {

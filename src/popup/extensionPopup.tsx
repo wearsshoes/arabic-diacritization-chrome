@@ -141,7 +141,7 @@ const App: React.FC = () => {
   const beginDiacritization = async () => {
     try {
       setDiacritizeStatus('Diacritizing, see progress bar modal...');
-      const response = await chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processWebpage', method });
+      const response = await chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processText', method, wholePage: true });
       console.log(`${method} response:`, response);
       setDiacritizeStatus('Diacritization complete, page updated.');
     } catch (error) {

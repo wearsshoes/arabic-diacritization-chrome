@@ -12,6 +12,7 @@ export interface AppMessage {
   action: string;
   tabUrl?: string;
   prompt?: string;
+  wholePage?: boolean;
   method?: string;
   originals?: TextNode[];
   langScript?: string;

@@ -162,7 +162,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
 
   const selectedNodesArray = Array.from(selectedNodes);
   const strLength = selectedNodesArray.flatMap((textNode) => textNode.text.split(' ')).length;
-  messageContentScript(tabId, { action: 'beginProcessing', tabUrl: tabUrl, strLength });
+  messageContentScript(tabId, { action: 'beginProcessing', tabUrl, strLength });
 
   // diacritize the texts in parallel with retries
   const diacritizedNodes = await Promise.all(

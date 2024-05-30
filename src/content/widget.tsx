@@ -67,7 +67,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
     console.log('selected task: ', task, 'current method: ', method, 'existing pageRenders:', pageRenders)
     if (pageRenders.has(task)) {
       setPageState(task);
-      chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processWebpage', method: task })
+      chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processText', method: task, wholePage: true })
         .catch((error) => console.error(`Error in ${task}:`, error));
     }
   };
@@ -76,14 +76,14 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
     try {
       if (isAnimating) return;
       if (textIsSelected) {
-        chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processSelection', method })
+        chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processText', method, wholePage: false})
           .then((result) => {
             result.status === 'success' ?
               console.log('Selection processed:', result)
               : console.error('Error processing selection:', result.errorMessage)
           });
       } else {
-        chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processWebpage', method })
+        chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processText', method, wholePage: true})
           .then((result) => {
             result.status === 'success' ?
               console.log('Webpage processed:', result)
