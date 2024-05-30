@@ -2,18 +2,10 @@
 
 ## MVP
 
-## Features
-
-- 0.4.4 transliterations of selected text should also get saved somehow (set matching?)
-- 0.4.4 when there's saved results, partially update based on matching.
-
 ### UI
-
 - 1.0 Redesign options page to be simpler and cleaner.
 - 1.0 Add FAQs/tooltips to options page.
 - 1.0 Redesign extension popup to be simpler and cleaner.
-
-## Future
 
 ### Bugs
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.4 (2024-05-29)
+Improvements
+- Major under the hood improvements; replace indexedDB with chrome.storage
+- Partial diacritizations are now saved to reduce load time (still buggy.)
+- Bugfix: Saves are now properly regenerated for changed pages.
+
+Known bugs:
+- Selecting small amounts of text doesn't work.
+- Toggling in the widget doesn't play nicely with partial diacritization.
+
 ## 0.4.3 (2024-05-25)
 - You can now flip between original, diacritics, and transliteration easily once the whole page is rendered.
 - Saves now work again! Saves you some compute money.
