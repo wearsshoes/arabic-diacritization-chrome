@@ -4,6 +4,7 @@ import { processText } from './processTextNodes';
 // @ts-expect-error No types for "bottleneck/light"
 import BottleneckLight from "bottleneck/light.js";
 import { Prompt } from '../common/types';
+import prompts from './defaultPrompts.json';
 
 // ----------------- Event Listeners ----------------- //
 
@@ -19,6 +20,16 @@ chrome.runtime.onInstalled.addListener(function (details) {
       console.log("Easy Peasy Arabizi updated from " + details.previousVersion + " to " + thisVersion + "!");
     }
   }
+
+  chrome.storage.sync.set({ selectedPrompt: prompts[0] });
+  chrome.storage.sync.get('savedPrompts', (result) => {
+    const savedPrompts: Prompt[] = result.savedPrompts || [];
+    const existingNames = new Set(savedPrompts.map((prompt: Prompt) => prompt.name));
+    const newPrompts = prompts.filter((prompt: Prompt) => !existingNames.has(prompt.name));
+    const updatedPrompts = [...savedPrompts, ...newPrompts];
+    chrome.storage.sync.set({ savedPrompts: updatedPrompts });
+  });
+
 
   chrome.contextMenus.create({
     id: "fullDiacritics",
@@ -76,7 +87,7 @@ chrome.commands.onCommand.addListener((command) => {
       chrome.tabs.query({ active: true, currentWindow: true })
         .then(([tab]) => {
           if (tab.id === undefined) throw new Error('No active tab found');
-          chrome.tabs.sendMessage<AppMessage, AppResponse>(tab.id, { action: 'toggleWidget' });
+          messageContentScript(tab.id, { action: 'toggleWidget' });
         });
       break;
   }
@@ -90,9 +101,6 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
   const actionHandlers: Record<string, (tab: chrome.tabs.Tab, message: AppMessage) => Promise<Partial<AppResponse>>> = {
     'cancelTask': handleCancelTask,
     'getSystemPromptLength': handleGetSystemPromptLength,
-    'getWebsiteData': handleGetWebsiteData,
-    'getSavedDiacritizations': handleGetSavedDiacritizations,
-    'clearWebpageData': handleClearWebpageData,
     'processText': handleProcessText,
     'openOptions': handleOpenOptions,
   };
@@ -122,28 +130,12 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
   }
 
   async function handleGetSystemPromptLength(): Promise<Partial<AppResponse>> {
-    const { selectedPrompt } = await chrome.storage.sync.get(['selectedPrompt']);
-    return ({ promptTokens: await countSysPromptTokens((selectedPrompt as Prompt).text) });
+    return { tokenLength: await countSysPromptTokens() };
   }
 
   async function handleCancelTask(tab: chrome.tabs.Tab): Promise<Partial<AppResponse>> {
     cancelTask(tab.id!);
     return {};
-  }
-
-  async function handleClearWebpageData(tab: chrome.tabs.Tab): Promise<Partial<AppResponse>> {
-    await chrome.storage.local.remove(tab.url!);
-    chrome.tabs.reload(tab.id!);
-    return {};
-  }
-
-  async function handleGetWebsiteData(tab: chrome.tabs.Tab): Promise<Partial<AppResponse>> {
-    return await messageContentScript(tab.id!, { action: 'getWebsiteData' });
-  }
-
-  async function handleGetSavedDiacritizations(tab: chrome.tabs.Tab): Promise<Partial<AppResponse>> {
-    const response = await chrome.storage.local.get(tab.url!);
-    return ({ savedInfo: Object.keys(response?.diacritizations || {}) });
   }
 
   async function handleOpenOptions(): Promise<Partial<AppResponse>> {

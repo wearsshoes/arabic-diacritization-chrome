@@ -11,7 +11,7 @@ export class Claude {
   private constructor(
     public model: Model,
     public apiKey: string = ''
-  ) {}
+  ) { }
 
   static async init() {
     const model = defaultModel;
@@ -34,12 +34,6 @@ interface Models {
 interface Model {
   currentVersion: string;
   level: number;
-}
-
-interface SysPromptTokenCache {
-  hash: string;
-  model: string;
-  tokens: number;
 }
 
 const claude: Models = {
@@ -122,61 +116,33 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
   });
 }
 
-// Check number of system prompt tokens, look up in cache, or call API
-async function countSysPromptTokens(prompt: string, model?: string): Promise<number> {
-  const modelUsed = model || defaultModel.currentVersion;
-  const promptHash = await calculateHash(prompt) as string;
+async function countSysPromptTokens(): Promise<number> {
+  const { selectedPrompt, savedPrompts = [] } = await chrome.storage.sync.get(['selectedPrompt', 'savedPrompts']);
 
-  const storedTokenCount = await getStoredPromptTokenCount(promptHash, modelUsed);
-  if (storedTokenCount !== null) {
-    return storedTokenCount;
-  }
+  if (!selectedPrompt) throw new Error('No prompt selected');
+  if (selectedPrompt.tokenLength) return selectedPrompt.tokenLength;
 
-  const msg = await anthropicAPICall({
-    model: modelUsed,
+  const existingPrompt = savedPrompts.find((p: Prompt) => p.name === selectedPrompt.name);
+  if (existingPrompt && existingPrompt.tokenLength) return existingPrompt.tokenLength;
+
+  // Make the API call using the provided message format
+  const sysPromptTokens = await anthropicAPICall({
+    model: defaultModel.currentVersion,
     max_tokens: 1,
     temperature: 0,
-    messages: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: prompt
-          }
-        ]
-      }
-    ]
-  });
+    messages: [{ role: "user", content: [{ type: "text", text: selectedPrompt.text }] }]
+  }).then(response => response.usage.input_tokens);
 
-  const sysPromptTokens: number = msg.usage.input_tokens;
-  saveSysPromptTokenCount(promptHash, modelUsed, sysPromptTokens);
+  // Update tokenLength for both the selected prompt and saved prompts
+  selectedPrompt.tokenLength = sysPromptTokens;
+  if (existingPrompt) {
+    existingPrompt.tokenLength = sysPromptTokens;
+  } else {
+    savedPrompts.push(selectedPrompt);
+  }
 
+  await chrome.storage.sync.set({ savedPrompts });
   return sysPromptTokens;
-}
-
-async function getStoredPromptTokenCount(promptHash: string, model: string): Promise<number | null> {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get('savedResults', (data: { savedResults?: SysPromptTokenCache[] }) => {
-      if (Array.isArray(data.savedResults)) {
-        const storedPrompt = data.savedResults.find(
-          (result) => result.hash === promptHash && result.model === model
-        );
-        if (storedPrompt) {
-          return resolve(storedPrompt.tokens);
-        }
-      }
-      resolve(null);
-    });
-  });
-}
-
-function saveSysPromptTokenCount(promptHash: string, model: string, tokens: number): void {
-  chrome.storage.sync.get('savedResults', (data: { savedResults?: SysPromptTokenCache[] }) => {
-    const savedResults = data.savedResults || [];
-    savedResults.push({ hash: promptHash, model, tokens });
-    chrome.storage.sync.set({ savedResults });
-  });
 }
 
 // Function to construct the message and make the API call
@@ -196,7 +162,7 @@ export function constructAnthropicMessage(
       {
         role: "user",
         content: [
-          {
+{
             type: "text",
             text: `Input: ${text} \nOutput:`,
           }

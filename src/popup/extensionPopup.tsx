@@ -49,7 +49,7 @@ const App: React.FC = () => {
     if (loadState) {
       getWebsiteData();
       getSelectedPrompt();
-      getSavedDiacrititizations();
+      getSavedDiacritizations();
       setModel('Claude Haiku');
     }
   }, [loadState]);
@@ -80,9 +80,11 @@ const App: React.FC = () => {
   }, [outputTokenCount, characterCount, promptLength]);
 
   const getWebsiteData = async () => {
-    chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'getWebsiteData' }, (response) => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.id) return;
+    chrome.tabs.sendMessage<AppMessage, AppResponse>(tab.id, { action: 'getWebsiteData' }, (response) => {
       if (response.status === 'error') {
-        console.error('Error getting website data:', response.error);
+        console.error('Error getting website data:', response.errorMessage);
         return;
       }
       const { characterCount, language } = response;
@@ -108,9 +110,9 @@ const App: React.FC = () => {
           { action: 'getSystemPromptLength' },
           (response) => {
             if (response.status === 'success') {
-              setPromptLength(response?.promptTokens ?? 0);
+              setPromptLength(response?.tokenLength ?? 0);
             } else {
-              console.error('Error getting prompt length:', response.error || 'tokens unknown');
+              console.error('Error getting prompt length:', response.errorMessage || 'tokens unknown');
               setPromptLength(0);
             }
           });
@@ -118,23 +120,19 @@ const App: React.FC = () => {
     });
   };
 
-  const getSavedDiacrititizations = () => {
+  const getSavedDiacritizations = async () => {
     try {
-      chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'getSavedDiacritizations' }, (response) => {
-        console.log('Saved info:', response);
-        if (response.status === 'error') {
-          throw new Error(`${response.error}`);
-        } else
-          if (response.savedInfo && response.savedInfo.length > 0) {
-            const savedInfo = response.savedInfo.join(', ');
-            setSavedInfo('Existing diacritizations: ' + savedInfo);
-          } else {
-            setSavedInfo('No saved diacritizations.');
-          }
-      });
+      const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!currentTab || !currentTab.url) throw new Error('No active tab with URL found');
+
+      const response = await chrome.storage.local.get(currentTab.url);
+      const diacritizations = response[currentTab.url]?.diacritizations || {};
+      const savedInfo = Object.keys(diacritizations).join(', ');
+
+      setSavedInfo(savedInfo ? `Existing diacritizations: ${savedInfo}` : 'No saved diacritizations.');
     } catch (error) {
-      console.error('Error getting saved info:', error);
-      setSavedInfo('Error getting saved info.');
+      console.error('Error:', error);
+      setSavedInfo('Error getting saved diacritizations.');
     }
   }
 
@@ -150,17 +148,20 @@ const App: React.FC = () => {
     }
   };
 
-  const clearSaved = () => {
+  const clearSaved = async () => {
     setSavedInfo('clearing cache info for page');
-    chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'clearWebpageData' }, (response) => {
-      if (response.status === 'success') {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.url) return;
+    await chrome.storage.local.remove(tab.url!)
+      .then(() => {
+        chrome.tabs.reload(tab.id!);
         setSavedInfo('Cleared saved data.');
         setLoadState(false);
-      } else {
-        console.error('Failed to clear saved data:', response.error);
-        setSavedInfo('Failed to clear saved data.');
-      }
-    });
+      })
+      .catch((error) => {
+        console.error('Error clearing saved data:', error);
+        setSavedInfo('Error clearing saved data.');
+      });
   };
 
   return (

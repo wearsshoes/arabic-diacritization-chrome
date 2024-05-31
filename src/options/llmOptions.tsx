@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import defaultPrompts from '../background/defaultPrompts.json';
-import { Prompt } from '../common/types';
+import { AppMessage, AppResponse, Prompt } from '../common/types';
 
 import { HStack, VStack, Input, Textarea, Select, Heading, Button } from '@chakra-ui/react'
 
@@ -18,24 +17,13 @@ const LLMOptions: React.FC = () => {
 
     // Load the last selected prompt
     chrome.storage.sync.get(['selectedPrompt'], (data: { selectedPrompt?: Prompt }) => {
-      const selected = data.selectedPrompt?.name;
-      setCustomPrompt(defaultPrompts[0].text || '');
-      if (selected) {
-        //TODO: this should just ask the background worker for the prompt text
-        const selectedPrompt = defaultPrompts.find((prompt) => prompt.name === selected);
-        if (selectedPrompt) {
-          setCustomPrompt(selectedPrompt.text);
-        }
-      }
+      setCustomPrompt(data.selectedPrompt?.text ?? '');
     });
 
     // Load saved prompts
     chrome.storage.sync.get(['savedPrompts'], (data: { savedPrompts?: Prompt[] }) => {
-      if (data.savedPrompts) {
-        setSavedPrompts([...defaultPrompts, ...data.savedPrompts]);
-      } else {
-        setSavedPrompts(defaultPrompts);
-      }
+      if (!data.savedPrompts) throw new Error('No saved prompts found');
+      setSavedPrompts([...data.savedPrompts]);
     });
   }, []);
 
@@ -57,19 +45,26 @@ const LLMOptions: React.FC = () => {
     }
   };
 
-  const handleSavePrompt = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSavePrompt = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const newPromptName = event.currentTarget.newPromptName.value;
-    if (customPrompt && newPromptName) {
-      const newPrompt: Prompt = { name: newPromptName, text: customPrompt };
-      chrome.storage.sync.get(['savedPrompts'], (data: { savedPrompts?: Prompt[] }) => {
-        const updatedPrompts = [...(data.savedPrompts || []), newPrompt];
-        chrome.storage.sync.set({ savedPrompts: updatedPrompts }, () => {
-          alert('Prompt saved!');
-          setSavedPrompts([...savedPrompts, newPrompt]);
-        });
+
+    if (!customPrompt || !newPromptName) throw new Error('Prompt name and text are required');
+
+    const result = await chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'getSystemPromptLength' })
+    if (result.status === 'error') throw new Error(result.errorMessage);
+    if (!result.tokenLength) throw new Error('Prompt length unknown');
+
+    const promptTokens = result.tokenLength;
+    const newPrompt: Prompt = { name: newPromptName, text: customPrompt, tokenLength: promptTokens };
+
+    chrome.storage.sync.get(['savedPrompts'], (data: { savedPrompts?: Prompt[] }) => {
+      const updatedPrompts = [...(data.savedPrompts || []), newPrompt];
+      chrome.storage.sync.set({ savedPrompts: updatedPrompts }, () => {
+        alert('Prompt saved!');
+        setSavedPrompts([...savedPrompts, newPrompt]);
       });
-    }
+    });
   };
 
   const handleDeletePrompt = () => {

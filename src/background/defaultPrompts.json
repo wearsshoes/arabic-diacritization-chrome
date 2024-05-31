@@ -1,6 +1,7 @@
 [
     {
-        "name": "Full diacritization 2",
-        "text": "Add full diacritics (taškīl) to the Arabic text based on pronunciation and grammar. Maintain the same number of '|' delimiters and leave non-Arabic text, numbers, and symbols unchanged. Example:\nInput: وصل |John| إلى مطار |JFK| الساعة (|10:30| صباحا)| يوم الاثنين|.[1]|\nOutput: وَصَلَ |John| إِلَى مَطَارِ |JFK| السَّاعَةَ (|10:30| صَبَاحًا)| يَوْمَ الِاثْنَيْنِ|.[1]|"
+        "name": "Full Diacritics",
+        "text": "Add full diacritics (taškīl) to the Arabic text based on pronunciation and grammar. Maintain the same number of '|' delimiters and leave non-Arabic text, numbers, and symbols unchanged. Example:\nInput: وصل |John| إلى مطار |JFK| الساعة (|10:30| صباحا)| يوم الاثنين|.[1]|\nOutput: وَصَلَ |John| إِلَى مَطَارِ |JFK| السَّاعَةَ (|10:30| صَبَاحًا)| يَوْمَ الِاثْنَيْنِ|.[1]|",
+        "tokenLength": 182
     }
 ]
