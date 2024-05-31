@@ -19,6 +19,7 @@ const APIKeyForm: React.FC = () => {
   const [apiKey, setApiKey] = useState('');
   const [savedKeyDisplay, setSavedKeyDisplay] = useState('');
   const [savedTimeDisplay, setSavedTimeDisplay] = useState('');
+  const [llmChoice, setLlmChoice] = useState('haiku');
 
   useEffect(() => {
     chrome.storage.sync.get(['apiKey', 'apiKeySavedAt'], (data: { apiKey?: string; apiKeySavedAt?: string }) => {
@@ -27,7 +28,16 @@ const APIKeyForm: React.FC = () => {
       setSavedKeyDisplay(data.apiKey || 'None');
       setSavedTimeDisplay(data.apiKeySavedAt || 'Never');
     });
+    chrome.storage.sync.get(['llmChoice'], (data: { llmChoice?: string }) => {
+      setLlmChoice(data.llmChoice || 'haiku');
+    });
   }, []);
+
+  const handleLlmChoiceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedChoice = event.target.value;
+    setLlmChoice(selectedChoice);
+    chrome.storage.sync.set({ llmChoice: selectedChoice });
+  };
 
   const handleApiKeySubmit = () => {
     const apiKeySavedAt = new Date().toLocaleString();
@@ -115,12 +125,13 @@ const APIKeyForm: React.FC = () => {
 
       <Stack pt="2" spacing={"4"}>
         <Stack >
+          <Heading size='md'>Model</Heading>
           <Text fontSize={"md"} fontStyle={"oblique"}>
             Models are arranged in order of quality and cost.{' '}
           </Text>
-          <Select
-            placeholder="Haiku (2024-02-29)"
-          />
+          <Select id="llmChoice" name="llmChoice" value={llmChoice} onChange={handleLlmChoiceChange}>
+            <option value="haiku">Claude Haiku</option>
+          </Select>
         </Stack>
         <Stack direction={'row'}>
           <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
@@ -153,9 +164,9 @@ const APIKeyForm: React.FC = () => {
           <Select placeholder="Always" width="160px" height="40px" />
         </Stack>
         <Stack direction={'row'} justify="flex-start" align="flex-end" spacing="0px" flex="1">
-            <Text flex={1} alignSelf={'stretch'}>
-              Maximum times to try per batch
-            </Text>
+          <Text flex={1} alignSelf={'stretch'}>
+            Maximum times to try per batch
+          </Text>
           <NumberInput maxWidth="24" defaultValue="2">
             <NumberInputField background="#FFFFFF" />
             <NumberInputStepper background="white">
@@ -164,13 +175,13 @@ const APIKeyForm: React.FC = () => {
             </NumberInputStepper>
           </NumberInput>
         </Stack>
-          <Stack direction="row" justify="flex-start" align="flex-end" spacing="0px">
-            <Text flex={1}>
-              Escalate to next best model upon malformed response
-            </Text>
-            <Switch size="lg" id="escalateSwitch" />
-          </Stack>
+        <Stack direction="row" justify="flex-start" align="flex-end" spacing="0px">
+          <Text flex={1}>
+            Escalate to next best model upon malformed response
+          </Text>
+          <Switch size="lg" id="escalateSwitch" />
         </Stack>
+      </Stack>
     </Stack>
   )
 }

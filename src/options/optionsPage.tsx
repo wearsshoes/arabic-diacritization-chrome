@@ -1,6 +1,6 @@
 import ReactDOM from 'react-dom/client';
 
-import LLMOptions from './llmOptions';
+import LLMOptions from './promptOptions';
 import APIKeyForm from './generalOptions';
 import DataManagement from './dataManagement';
 
