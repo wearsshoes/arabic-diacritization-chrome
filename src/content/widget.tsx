@@ -122,7 +122,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
         case "updateProgressBar":
           setProgress((prevFinished) => prevFinished + (strLength || 0));
           break;
-        case "allDone":
+        case "webpageDone":
           setProgress(totalBatches);
           setPageState(method);
           // setPageRenders((prev) => new Set([...prev, method]))

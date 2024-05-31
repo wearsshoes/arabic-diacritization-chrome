@@ -43,7 +43,7 @@ const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, se
     'getSelectedNodes': handleGetSelectedNodes,
     'updateWebsiteText': handleUpdateWebsiteText,
     // Dummy handlers to prevent 'Invalid action' #TODO: remove these
-    'allDone': async () => { },
+    'webpageDone': async () => { },
     'updateProgressBar': async () => { },
     'toggleWidget': async () => { },
     'beginProcessing': async () => { },

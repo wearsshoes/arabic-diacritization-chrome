@@ -39,7 +39,6 @@ export async function processText(tab: chrome.tabs.Tab, method: string = 'fullDi
       action: 'updateWebsiteText',
       tabUrl: tabUrl,
       replacements: oldNodes,
-      method,
       ruby: method === 'arabizi'
     });
 
@@ -53,7 +52,7 @@ export async function processText(tab: chrome.tabs.Tab, method: string = 'fullDi
     console.log(Object(await chrome.storage.local.get(tabUrl))[tabUrl]);
 
     if (entirePage) {
-      messageContentScript(tabId, { action: 'allDone' });
+      messageContentScript(tabId, { action: 'webpageDone' });
     } else {
       messageContentScript(tabId, { action: 'updateProgressBar', strLength: 100000 });
     }
