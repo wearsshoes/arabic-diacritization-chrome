@@ -30,7 +30,6 @@ chrome.runtime.onInstalled.addListener(function (details) {
     chrome.storage.sync.set({ savedPrompts: updatedPrompts });
   });
 
-
   chrome.contextMenus.create({
     id: "fullDiacritics",
     title: "Diacritize Selection",

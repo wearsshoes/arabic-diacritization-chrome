@@ -6,6 +6,17 @@ import { Languages, translations } from "./widget_i18n";
 import { AppMessage, AppResponse } from "../common/types";
 import { WebpageDiacritizationData } from "../common/webpageDataClass";
 
+function useCustomEvent(
+  eventName: string,
+  handler: (event: CustomEvent<{ strLength?: number }>) => void
+) {
+  useEffect(() => {
+    document.addEventListener(eventName, handler as EventListener);
+    return () => {
+      document.removeEventListener(eventName, handler as EventListener);
+    };
+  }, [eventName, handler]);
+}
 
 const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
 
@@ -109,35 +120,24 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
     });
   }, [textIsSelected]);
 
-  useEffect(() => {
-    const listener = (message: AppMessage) => {
-      const { action, strLength } = message;
-      switch (action) {
-        case "beginProcessing": {
-          setTotal(strLength || 0);
-          setProgress(0);
-          setIsAnimating(true);
-          break;
-        }
-        case "updateProgressBar":
-          setProgress((prevFinished) => prevFinished + (strLength || 0));
-          break;
-        case "webpageDone":
-          setProgress(totalBatches);
-          setPageState(method);
-          // setPageRenders((prev) => new Set([...prev, method]))
-          setPageRenders(new Set(['arabizi', 'fullDiacritics', 'original']));
-          break;
-        case "toggleWidget":
-          onToggle();
-          break;
-      }
-    }
+  useCustomEvent('beginProcessing', (event) => {
+    setTotal(event.detail.strLength || 0);
+    setProgress(0);
+    setIsAnimating(true);
+  });
 
-    chrome.runtime.onMessage.addListener(listener);
-    return () => {
-      chrome.runtime.onMessage.removeListener(listener);
-    };
+  useCustomEvent('updateProgressBar', (event) => {
+    setProgress((prevFinished) => prevFinished + (event.detail.strLength || 0));
+  });
+
+  useCustomEvent('webpageDone', () => {
+    setProgress(totalBatches);
+    setPageState(method);
+    setPageRenders(new Set(['arabizi', 'fullDiacritics', 'original']));
+  });
+
+  useCustomEvent('toggleWidget', () => {
+    onToggle();
   });
 
   return (

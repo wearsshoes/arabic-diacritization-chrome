@@ -1,9 +1,9 @@
 import { calculateHash } from '../common/utils';
-import { labelDOM, replaceWebpageText, collectTextNodes } from './domUtils';
 import { AppMessage, AppResponse } from '../common/types';
 import { mainNode, language } from './content';
 import { TextNode } from '../common/webpageDataClass';
-import { arabicToArabizi } from "./arabizi";
+import { arabicToArabizi } from './arabizi';
+import { collectTextNodes, labelDOM, replaceWebpageText } from './domUtils';
 
 let editStatus = 'original';
 const collectedNodes: TextNode[] = [];
@@ -35,35 +35,6 @@ const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {
   });
 };
 
-const listener = (message: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse | void) => void) => {
-
-  const actionHandlers: Record<string, (message: AppMessage) => Promise<AppResponse> | Promise<void>> = {
-    'getWebsiteData': handleGetWebsiteData,
-    'getWebsiteText': handleGetWebsiteText,
-    'getSelectedNodes': handleGetSelectedNodes,
-    'updateWebsiteText': handleUpdateWebsiteText,
-    // Dummy handlers to prevent 'Invalid action' #TODO: remove these
-    'webpageDone': async () => { },
-    'updateProgressBar': async () => { },
-    'toggleWidget': async () => { },
-    'beginProcessing': async () => { },
-  };
-
-  const handler = actionHandlers[message.action];
-
-  if (handler) {
-    handler(message)
-      .then((response) => sendResponse(response))
-      .catch((error) => {
-        console.error(`Error processing ${message.action}:`, error);
-        sendResponse({ status: 'error', errorMessage: error.message });
-      });
-    return true;
-  } else {
-    console.error(`Invalid action: ${message.action}`);
-    sendResponse({ status: 'error', errorMessage: 'Invalid action' });
-  }
-};
 
 const observer = new MutationObserver((mutations) => {
 
@@ -105,10 +76,9 @@ const main = () => {
   } else {
     onContentLoaded();
   }
-  chrome.runtime.onMessage.addListener(listener);
 }
 
-// ----------------- Functions ----------------- //
+// ----------------- Handlers ----------------- //
 
 export async function handleGetWebsiteData(): Promise<AppResponse> {
 

@@ -8,8 +8,6 @@ const APIKeyForm: React.FC = () => {
   const [savedTimeDisplay, setSavedTimeDisplay] = useState('');
 
   useEffect(() => {
-    // Load the API key
-    // TODO: have background worker handle this, so it's all in one place
     chrome.storage.sync.get(['apiKey', 'apiKeySavedAt'], (data: { apiKey?: string; apiKeySavedAt?: string }) => {
       setApiKey(data.apiKey || '');
       setSavedKeyDisplay(data.apiKey || 'None');
