@@ -104,32 +104,36 @@ const App: React.FC = () => {
 
   const getSelectedPrompt = () => {
     chrome.storage.sync.get(['selectedPrompt'], (data: { selectedPrompt?: Prompt }) => {
-      if (data.selectedPrompt) {
-        setSelectedPrompt(data.selectedPrompt.name);
-        chrome.runtime.sendMessage<AppMessage, AppResponse>(
-          { action: 'getSystemPromptLength' },
-          (response) => {
-            if (response.status === 'success') {
-              setPromptLength(response?.tokenLength ?? 0);
-            } else {
-              console.error('Error getting prompt length:', response.errorMessage || 'tokens unknown');
-              setPromptLength(0);
-            }
-          });
+      if (!data.selectedPrompt) return;
+      setSelectedPrompt(data.selectedPrompt.name);
+
+      if (data.selectedPrompt.tokenLength) {
+        setPromptLength(data.selectedPrompt.tokenLength);
+        return;
       }
+
+      chrome.runtime.sendMessage<AppMessage, AppResponse>(
+        { action: 'getSystemPromptLength' },
+        (response) => {
+          if (response.status === 'error') return;
+          setPromptLength(response.tokenLength || 0);
+        }
+      );
     });
   };
 
+
   const getSavedDiacritizations = async () => {
     try {
-      const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!currentTab || !currentTab.url) throw new Error('No active tab with URL found');
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab || !tab.url) throw new Error('No active tab with URL found');
 
-      const response = await chrome.storage.local.get(currentTab.url);
-      const diacritizations = response[currentTab.url]?.diacritizations || {};
-      const savedInfo = Object.keys(diacritizations).join(', ');
-
-      setSavedInfo(savedInfo ? `Existing diacritizations: ${savedInfo}` : 'No saved diacritizations.');
+      const response = Object(await chrome.storage.local.get(tab.url))[tab.url];
+      if (response?.diacritizations['fullDiacritics']) {
+        setSavedInfo(`Last visited: ${response.lastVisited}`);
+      } else {
+        setSavedInfo('No saved diacritizations.');
+      }
     } catch (error) {
       console.error('Error:', error);
       setSavedInfo('Error getting saved diacritizations.');
@@ -137,16 +141,15 @@ const App: React.FC = () => {
   }
 
   const beginDiacritization = async () => {
-    try {
-      setDiacritizeStatus('Diacritizing, see progress bar modal...');
-      const response = await chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processText', method, wholePage: true });
-      console.log(`${method} response:`, response);
-      setDiacritizeStatus('Diacritization complete, page updated.');
-    } catch (error) {
-      console.error(`Error in ${method}:`, error);
-      setDiacritizeStatus('Error diacritizing:' + error);
-    }
-  };
+    setDiacritizeStatus('Diacritizing, see progress bar modal...');
+    chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processText', method, wholePage: true })
+      .then(() => {
+        setDiacritizeStatus('Diacritization complete, page updated.')
+      })
+      .catch((error) => {
+        setDiacritizeStatus('Error diacritizing:' + error);
+      })
+  }
 
   const clearSaved = async () => {
     setSavedInfo('clearing cache info for page');
