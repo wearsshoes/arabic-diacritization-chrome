@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Stack, Text, Input, Button, Switch } from '@chakra-ui/react'
+import { Stack, Text, Icon, Input, Button, Switch, Divider, InputGroup, InputLeftElement } from '@chakra-ui/react'
 import {
   Select,
   Heading,
@@ -10,6 +10,8 @@ import {
   NumberDecrementStepper,
   Link
 } from '@chakra-ui/react'
+
+import { FiKey } from 'react-icons/fi';
 import { CheckIcon, CloseIcon, ExternalLinkIcon } from '@chakra-ui/icons'
 
 const APIKeyForm: React.FC = () => {
@@ -47,202 +49,128 @@ const APIKeyForm: React.FC = () => {
   };
 
   return (
-    <Stack direction='column' id="apiKeyForm">
-      <Text fontSize="md">
-        Easy Peasy Arabizi uses Claude for diacritization and transliteration.
-        Claude is a large language model similar to ChatGPT, but better at
-        language learning. You can get $5 in free credits on signing up, which is
-        about 100 diacritized webpages. A video will soon be added with
-        instructions.
-      </Text>
-      <Heading size="lg">
+
+    <Stack mt="4" direction='column' id="general">
+      <Heading >
         Anthropic API Key
       </Heading>
-      <Text>
-        Get your key from the <Link
-          href='https://console.anthropic.com'>Anthropic Console<ExternalLinkIcon mx='2px' /></Link>
-      </Text>
-      <Stack direction={'row'} flex="1" spacing="2">
-        <Input
-          placeholder="Placeholder"
-          type="text"
-          id="apiKey"
-          name="apiKey"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-        />
-        <Button id="saveBtn"
-          rightIcon={<CheckIcon data-icon="CkCheck" />}
-          colorScheme="blue"
-          onClick={handleApiKeySubmit}
-        >
-          Save
-        </Button>
-        <Button
-          id="clearBtn"
-          onClick={handleClearApiKey}
-          rightIcon={<CloseIcon data-icon="CkClose" />}
-          colorScheme="red"
-        >
-          Clear
-        </Button>
-      </Stack>
-      <Stack direction='row'>
-        <Text fontWeight='bold'>Current saved key: </Text>
-        <Text id="savedKey" flex="1" overflow="hidden" whiteSpace="nowrap" textOverflow="ellipsis">{savedKeyDisplay.slice(0, -10)}</Text>
-        <Text id="savedTime" color='gray.500' >
-          {savedTimeDisplay}
+      <Divider />
+      <Stack pt="2" spacing={"4"}>
+        <Text>
+          Easy Peasy Arabizi uses Claude for diacritization and transliteration.
+          Claude is a large language model similar to ChatGPT, but better at
+          language learning. You can get $5 in free credits on signing up, which is
+          about 100 diacritized webpages. A video will soon be added with
+          instructions.
         </Text>
-      </Stack>
+        <Stack>
+          <Text fontStyle={'oblique'}>
+            Get your key from the <Link
+              href='https://console.anthropic.com'>Anthropic Console <ExternalLinkIcon mb='4px' mx='2px' /> </Link>
+          </Text>
+          <Stack direction={'row'} flex="1" spacing="2">
+            <InputGroup>
+              <InputLeftElement>
+                <Icon as={FiKey} color={'gray.300'} />
+              </InputLeftElement>
+              <Input
+                placeholder="Placeholder"
+                type="text"
+                id="apiKey"
+                name="apiKey"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+              />
+            </InputGroup>
+            <Button id="saveBtn"
+              rightIcon={<CheckIcon data-icon="CkCheck" />}
+              colorScheme="blue"
+              onClick={handleApiKeySubmit}
+            >
+              Save
+            </Button>
+            <Button
+              id="clearBtn"
+              onClick={handleClearApiKey}
+              rightIcon={<CloseIcon data-icon="CkClose" />}
+              colorScheme="red"
+            >
+              Clear
+            </Button>
+          </Stack>
 
-      <Stack
-        paddingY="10px"
-        justify="flex-start"
-        align="flex-start"
-        spacing="10px"
-        alignSelf="stretch"
-      >
-        <Stack
-          justify="flex-start"
-          align="flex-start"
-          spacing="0px"
-          alignSelf="stretch"
-        >
-          <Heading size="lg"
-          >
-            Claude Model
-          </Heading>
-          <Text
-            lineHeight="1.33"
-            fontWeight="regular"
-            fontSize="12px"
-            color="#000000"
-            alignSelf="stretch"
-          >
-            In order of quality:{' '}
-          </Text>
-        </Stack>
-        <Select
-          placeholder="Haiku (2024-02-29)"
-        />
-      </Stack>
-      <Stack
-        paddingY="10px"
-        alignSelf="stretch"
-        direction="row"
-        justify="flex-end"
-        align="center"
-        spacing="0px"
-      >
-        <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
-          <Text
-            lineHeight="1.5"
-            fontWeight="regular"
-            fontSize="16px"
-            color="#000000"
-            alignSelf="stretch"
-          >
-            Query batch size (characters)
-          </Text>
-          <Text
-            lineHeight="1.33"
-            fontWeight="regular"
-            fontSize="12px"
-            color="#000000"
-            alignSelf="stretch"
-          >
-            Longer batches run slower but submit the prompt fewer times, so are
-            cheaper.
-          </Text>
-        </Stack>
-        <NumberInput defaultValue="750">
-          <NumberInputField background="#FFFFFF" />
-          <NumberInputStepper background="white">
-            <NumberIncrementStepper />
-            <NumberDecrementStepper />
-          </NumberInputStepper>
-        </NumberInput>
-      </Stack>
-      <Stack
-        paddingY="10px"
-        direction="row"
-        justify="flex-end"
-        align="center"
-        spacing="0px"
-        alignSelf="stretch"
-      >
-        <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
-          <Text
-            lineHeight="1.5"
-            fontWeight="regular"
-            fontSize="16px"
-            color="#000000"
-            alignSelf="stretch"
-          >
-            Reject malformed responses
-          </Text>
-          <Text
-            lineHeight="1.33"
-            fontWeight="regular"
-            fontSize="12px"
-            color="#000000"
-            alignSelf="stretch"
-          >
-            E.g. when the LLM leaves out words. The diacritization may still be
-            incorrect.
-          </Text>
-        </Stack>
-        <Select placeholder="Always" width="160px" height="40px" />
-      </Stack>
-      <Stack
-        paddingY="10px"
-        alignSelf="stretch"
-        direction="row"
-        justify="flex-end"
-        align="center"
-        spacing="0px"
-      >
-        <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
-          <Text
-            lineHeight="1.5"
-            fontWeight="regular"
-            fontSize="16px"
-            color="#000000"
-            alignSelf="stretch"
-          >
-            Maximum times to try per batch
-          </Text>
-        </Stack>
-        <NumberInput defaultValue="2">
-          <NumberInputField background="#FFFFFF" />
-          <NumberInputStepper background="white">
-            <NumberIncrementStepper />
-            <NumberDecrementStepper />
-          </NumberInputStepper>
-        </NumberInput>
-      </Stack>
-      <Stack
-        paddingY="10px"
-        alignSelf="stretch"
-        direction="row"
-        justify="flex-end"
-        align="center"
-        spacing="0px"
-      >
-        <Stack direction="row" justify="flex-start" align="flex-end" spacing="0px" flex="1">
-          <Text
-            lineHeight="1.5"
-            fontWeight="regular"
-            fontSize="16px"
-            color="#000000"
-            alignSelf="stretch"
-            flex={1}
-          >
-            Escalate to next best model upon malformed response
-          </Text>
-          <Switch id="escalateSwitch" />
+          <Stack direction='row'>
+            <Text fontWeight='bold'>Current saved key: </Text>
+            <Text id="savedKey" flex="1" overflow="hidden" whiteSpace="nowrap" textOverflow="ellipsis">{savedKeyDisplay.slice(0, -10)}</Text>
+            <Text id="savedTime" color='gray.500' >
+              {savedTimeDisplay}
+            </Text>
+          </Stack>
         </Stack>
       </Stack>
+      <Heading >
+        Model Options
+      </Heading>
+      <Divider />
+
+      <Stack pt="2" spacing={"4"}>
+        <Stack >
+          <Text fontSize={"md"} fontStyle={"oblique"}>
+            Models are arranged in order of quality and cost.{' '}
+          </Text>
+          <Select
+            placeholder="Haiku (2024-02-29)"
+          />
+        </Stack>
+        <Stack direction={'row'}>
+          <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
+            <Text alignSelf={"stretch"}>
+              Query batch size (characters)
+            </Text>
+            <Text fontSize="sm" alignSelf={"stretch"}>
+              Longer batches run slower but submit the prompt fewer times, so are
+              cheaper.
+            </Text>
+          </Stack>
+          <NumberInput maxWidth="24" defaultValue="750">
+            <NumberInputField background="#FFFFFF" />
+            <NumberInputStepper background="white">
+              <NumberIncrementStepper />
+              <NumberDecrementStepper />
+            </NumberInputStepper>
+          </NumberInput>
+        </Stack>
+        <Stack direction={'row'}>
+          <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
+            <Text alignSelf={"stretch"}>
+              Reject malformed responses
+            </Text>
+            <Text fontSize="sm" alignSelf={"stretch"}>
+              E.g. when the LLM leaves out words. The diacritization may still be
+              incorrect.
+            </Text>
+          </Stack>
+          <Select placeholder="Always" width="160px" height="40px" />
+        </Stack>
+        <Stack direction={'row'} justify="flex-start" align="flex-end" spacing="0px" flex="1">
+            <Text flex={1} alignSelf={'stretch'}>
+              Maximum times to try per batch
+            </Text>
+          <NumberInput maxWidth="24" defaultValue="2">
+            <NumberInputField background="#FFFFFF" />
+            <NumberInputStepper background="white">
+              <NumberIncrementStepper />
+              <NumberDecrementStepper />
+            </NumberInputStepper>
+          </NumberInput>
+        </Stack>
+          <Stack direction="row" justify="flex-start" align="flex-end" spacing="0px">
+            <Text flex={1}>
+              Escalate to next best model upon malformed response
+            </Text>
+            <Switch size="lg" id="escalateSwitch" />
+          </Stack>
+        </Stack>
     </Stack>
   )
 }

@@ -1,7 +1,7 @@
 import ReactDOM from 'react-dom/client';
 
 import LLMOptions from './llmOptions';
-import APIKeyForm from './apiKeyForm';
+import APIKeyForm from './generalOptions';
 import DataManagement from './dataManagement';
 
 import { ChakraProvider } from '@chakra-ui/react'
@@ -72,8 +72,8 @@ export default function SimpleSidebar({ children }: { children: ReactNode }) {
       {/* mobilenav */}
       <MobileNav display={{ base: 'flex', md: 'none' }} onOpen={onOpen} />
 
-      <Box ml={{ base: 0, md: 60 }} p="10" maxWidth={"800px"}>
-        <Heading size="2xl" pb="10" fontWeight={"100"} textTransform={"uppercase"}>{selectedItem ?? "OPTIONS"}</Heading>
+      <Box ml={{ base: 0, md: 60 }} px="10" py="4" maxWidth={"800px"}>
+        <Heading size="2xl" >{selectedItem ?? "Options"}</Heading>
         {selectedItem === 'General' ? <APIKeyForm /> : children}
         {selectedItem === 'Custom Prompt' ? <LLMOptions /> : children}
         {selectedItem === 'Local Data' ? <DataManagement /> : children}

@@ -1,5 +1,6 @@
 import { extendTheme } from '@chakra-ui/react'
 import '@fontsource-variable/cairo-play';
+import '@fontsource-variable/inter'
 
 const breakpoints = {
     sm: '320px',
@@ -13,25 +14,35 @@ const theme = extendTheme({
     breakpoints,
 
     fonts: {
-        heading: `Baskerville, sans-serif`,
-        body: `Verdana, sans-serif`,
+        heading: `Inter Variable, sans-serif`,
+        body: `Inter Variable, sans-serif`,
         arabic: `'Cairo Play Variable', sans-serif`,
     },
     styles: {
         global: {
             body: {
-                bg: '#053426',
-                color: 'black',
+                // bg: 'gray.100',
             },
 
         },
     },
 
     components: {
-        Text: {
+        Link: {
             baseStyle: {
-                color: 'black',
-                margin: '1',
+                color: 'blue.500',
+                _hover: {
+                    textDecoration: 'underline',
+                },
+            },
+            variants: {
+                menu: {
+                    color: 'gray.600',
+                    fontSize: 'md',
+                    _hover: {
+                        color: 'gray.900',
+                    },
+                },
             },
         },
         Container: {
@@ -40,7 +51,6 @@ const theme = extendTheme({
                 minH: { base: 'container.sm', xl: 'container.md' },
                 borderRadius: 'xl',
                 padding: { base: 2, xl: 5 },
-                bg: '#d9c19d',
             }
         },
         Grid: {
@@ -56,7 +66,21 @@ const theme = extendTheme({
                 padding: { base: 2, md: 5 },
             }
         },
+        Divider: {
+            baseStyle: {
+                borderColor: 'gray.900',
+                borderWidth: '1px',
+            },
+        },
         Heading: {
+            baseStyle: {
+                fontFamily: 'heading',
+                textTransform: 'uppercase',
+                fontWeight: '100',
+                lineHeight: 'shorter',
+                marginTop: '4',
+                size: "md",
+            },
             variants: {
                 heading1: {
                     fontFamily: 'basmala',
@@ -64,7 +88,23 @@ const theme = extendTheme({
                     marginTop: '1'
                 }
             }
-        }
+        },
+        Text: {
+            baseStyle: {
+                fontFamily: 'body',
+                fontSize: 'md',
+            },
+            variants: {
+                p: {
+                    fontSize: 'md',
+                    lineHeight: 'tall',
+                },
+                text: {
+                    fontSize: 'md',
+                    lineHeight: 'tall',
+                },
+            },
+        },
     }
 });
 
