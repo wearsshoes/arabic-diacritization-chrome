@@ -56,11 +56,11 @@ chrome.contextMenus.onClicked.addListener(async function (info, tab) {
 
   try {
     switch (info.menuItemId) {
-      case "processSelectedText":
-        await processText(tab, 'arabizi');
-        break;
-      case "romanizeSelectedText":
+      case "fullDiacritics":
         await processText(tab, 'fullDiacritics');
+        break;
+      case "arabizi":
+        await processText(tab, 'arabizi');
         break;
       default:
         throw new Error(`Unknown context menu item: ${info.menuItemId}`);
