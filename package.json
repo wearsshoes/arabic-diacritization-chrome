@@ -31,12 +31,16 @@
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
     "@fontsource-variable/cairo-play": "^5.0.13",
+    "@fontsource-variable/inter": "^5.0.18",
+    "@fontsource/inter": "^5.0.18",
     "bottleneck": "^2.19.5",
     "cldr": "^7.5.0",
     "events": "^3.3.0",
     "framer-motion": "^11.1.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-icons": "^5.2.1",
+    "typeface-inter": "^3.18.1",
     "xxhash-wasm": "^1.0.2"
   },
   "devDependencies": {
