@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AppMessage, AppResponse, Prompt } from '../common/types';
 
-import { Textarea, Select, Heading, Button } from '@chakra-ui/react'
+import { Textarea, Select, Button } from '@chakra-ui/react'
 import {
   Text,
   Stack,
@@ -81,8 +81,7 @@ const LLMOptions: React.FC = () => {
   };
 
   return (
-    <Stack spacing={4} mt="10">
-
+    <Stack spacing={4}>
       <Text>
         Diacritization means adding vowel marks to Arabic. Arabic can be confusing
         to learners because the language has grammar rules which depend on vowels,
@@ -110,7 +109,6 @@ const LLMOptions: React.FC = () => {
         <Switch size="lg" id="useCustomPrompt" />
       </Stack>
       <Stack>
-      <Heading>Custom Prompt</Heading>
         <form id="savePromptForm" onSubmit={handleSavePrompt}>
           <Stack>
             <Stack direction='row'>

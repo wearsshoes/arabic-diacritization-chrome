@@ -56,6 +56,7 @@ export default defineConfig({
     react(),
     crx({ manifest }),
   ],
+  assetsInclude: ['**/*.md'],
   server: {
     hmr: {
       port: 24601,

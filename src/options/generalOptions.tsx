@@ -60,7 +60,25 @@ const APIKeyForm: React.FC = () => {
 
   return (
 
-    <Stack mt="4" direction='column' id="general">
+    <Stack mt="4" id="general">
+      <Stack direction={'row'}>
+        <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
+          <Text
+            alignSelf="stretch"
+          >
+            Diacritize Arabic pages by default
+          </Text>
+          <Text
+            fontSize="sm"
+            alignSelf="stretch"
+          >
+            Warning: May get expensive! Track your stats in the usage tab.
+          </Text>
+        </Stack>
+        <Switch id="diacritizeSwitch" />
+      </Stack>
+      )
+
       <Heading >
         Anthropic API Key
       </Heading>
@@ -122,10 +140,8 @@ const APIKeyForm: React.FC = () => {
         Model Options
       </Heading>
       <Divider />
-
       <Stack pt="2" spacing={"4"}>
         <Stack >
-          <Heading size='md'>Model</Heading>
           <Text fontSize={"md"} fontStyle={"oblique"}>
             Models are arranged in order of quality and cost.{' '}
           </Text>
@@ -179,7 +195,7 @@ const APIKeyForm: React.FC = () => {
           <Text flex={1}>
             Escalate to next best model upon malformed response
           </Text>
-          <Switch size="lg" id="escalateSwitch" />
+          <Switch id="escalateSwitch" />
         </Stack>
       </Stack>
     </Stack>

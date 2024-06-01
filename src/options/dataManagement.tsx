@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Heading, Text, Stack, Button, IconButton } from '@chakra-ui/react'
+import { Text, Stack, Button, IconButton } from '@chakra-ui/react'
 import { DeleteIcon } from '@chakra-ui/icons';
+import {
+  Stat,
+  StatNumber,
+  StatHelpText,
+  StatArrow,
+} from '@chakra-ui/react'
 
 const DataManagement: React.FC = () => {
 
@@ -47,11 +53,34 @@ const DataManagement: React.FC = () => {
   return (
     <Stack>
       <Stack direction={"row"} alignItems={"baseline"}>
-        <Heading as="h3" size="sm">
-          SAVED PAGES
-        </Heading>
-        <Text flex={"1"}>({storageUsed > 0 ? `${(storageUsed / 10e5).toFixed(3)}` : "0"} mb used)</Text>
-        <Button id="clearDatabaseBtn" size="sm"
+        <Stat>
+          <Text color="gray.700">
+            Pages cached
+          </Text>
+          <StatNumber>768.39</StatNumber>
+          <StatHelpText>
+            <StatArrow type="increase">
+              <Stack id="arrow-up-s-fill" width="20px" height="20px" />
+            </StatArrow>
+              23.36%
+          </StatHelpText>
+        </Stat>
+        <Stat>
+          <Text color="gray.700">
+            Storage used
+          </Text>
+          <StatNumber alignSelf="stretch">{(storageUsed / 10e5).toFixed(3)} mb</StatNumber>
+          <StatHelpText>
+            <StatArrow type="increase">
+              <Stack id="arrow-up-s-fill" width="20px" height="20px" />
+            </StatArrow>
+              23.36%
+          </StatHelpText>
+        </Stat>
+        <Button
+          id="clearDatabaseBtn"
+          size="sm"
+          colorScheme="blue"
           onClick={handleClearDatabase}>
           Clear All
         </Button>
@@ -78,8 +107,10 @@ const DataManagement: React.FC = () => {
           />
         </Stack>
       ))}
+
     </Stack>
-  );
+  )
+
 };
 
 export default DataManagement;

@@ -3,8 +3,9 @@ import ReactDOM from 'react-dom/client';
 import LLMOptions from './promptOptions';
 import APIKeyForm from './generalOptions';
 import DataManagement from './dataManagement';
+import { Arabizi } from './arabizi';
 
-import { ChakraProvider } from '@chakra-ui/react'
+import { ChakraProvider, HeadingProps, TextProps } from '@chakra-ui/react'
 import theme from '../assets/theme';
 
 
@@ -30,10 +31,25 @@ import {
   FiSave,
   FiSettings,
   FiActivity,
-  FiMenu
+  FiMenu,
+  FiMoon
 } from 'react-icons/fi';
 
 import { IconType } from 'react-icons';
+
+import ReactMarkdown from 'react-markdown';
+import faqContent from './faq.md?raw';
+
+const chakraComponents = {
+  h1: (props: HeadingProps) => <Heading as="h1" size="xl" my={4} {...props} />,
+  h2: (props:  HeadingProps) => <Heading as="h2" size="lg" my={4} {...props} />,
+  h3: (props: HeadingProps) => <Heading as="h3" size="md" my={3} {...props} />,
+  p: (props: TextProps) => <Box fontSize={"md"} {...props} />,
+};
+
+function FAQComponent() {
+  return <ReactMarkdown components={chakraComponents}>{faqContent}</ReactMarkdown>;
+}
 
 interface LinkItemProps {
   name: string;
@@ -43,7 +59,9 @@ const LinkItems: Array<LinkItemProps> = [
   { name: 'General', icon: FiSettings },
   { name: 'Custom Prompt', icon: FiPenTool },
   { name: 'Local Data', icon: FiSave },
+  { name: 'Transliteration', icon: FiMoon },
   { name: 'API Usage', icon: FiActivity },
+  { name: 'FAQ', icon: FiActivity },
 ];
 
 export default function SimpleSidebar({ children }: { children: ReactNode }) {
@@ -69,14 +87,15 @@ export default function SimpleSidebar({ children }: { children: ReactNode }) {
           <SidebarContent onClose={onClose} onItemClick={() => { }} />
         </DrawerContent>
       </Drawer>
-      {/* mobilenav */}
       <MobileNav display={{ base: 'flex', md: 'none' }} onOpen={onOpen} />
 
       <Box ml={{ base: 0, md: 60 }} px="10" py="4" maxWidth={"800px"}>
-        <Heading size="2xl" >{selectedItem ?? "Options"}</Heading>
+        <Heading size="2xl" pb="4">{selectedItem ?? "Options"}</Heading>
         {selectedItem === 'General' ? <APIKeyForm /> : children}
         {selectedItem === 'Custom Prompt' ? <LLMOptions /> : children}
+        {selectedItem === 'Transliteration' ? <Arabizi /> : children}
         {selectedItem === 'Local Data' ? <DataManagement /> : children}
+        {selectedItem === 'FAQ' ? <FAQComponent /> : children}
       </Box>
     </Box>
   );
@@ -98,12 +117,12 @@ const SidebarContent = ({ onClose, onItemClick, ...rest }: SidebarProps) => {
       pos="fixed"
       h="full"
       {...rest}>
-      <Flex h="220" alignItems="center" mx="4" justifyContent="space-between">
+      <Flex h="240" alignItems="center" mx="4" justifyContent="space-between">
         <Box
           bg="white"
           paddingX="20px"
-          paddingY="20px"
-          paddingTop={"40px"}
+          paddingY="12px"
+          paddingTop={"48px"}
           paddingRight={"32px"}
           borderColor="#000000"
           borderStartWidth="1px"
@@ -183,13 +202,10 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
     <Flex
       ml={{ base: 0, md: 60 }}
       px={{ base: 4, md: 24 }}
-      height="20"
-      alignItems="center"
       bg={useColorModeValue('gray.100', 'gray.900')}
       borderBottomWidth="1px"
       borderBottomColor={useColorModeValue('gray.200', 'gray.700')}
-      justifyContent="flex-start"
-
+      alignItems="center"
       {...rest}>
       <IconButton
         variant="outline"
@@ -200,7 +216,6 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
       <Heading
         fontWeight="black"
         textTransform="uppercase"
-        paddingLeft="20px"
       >
         Easy Peasy Arabizi
       </Heading>

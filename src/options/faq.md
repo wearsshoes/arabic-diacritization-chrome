@@ -16,4 +16,4 @@ Arabizi is a set of Arabic romanization systems that evolved for use on cell pho
 
 For bug reports, feature requests, or if you want to contribute, this is the project Github:
 https://github.com/wearsshoes/arabic-diacritization-chrome.git
-Otherwise, please email Easy Peasy Arabiziextension@gmail.com for any other questions.
+Otherwise, please email arabeasyextension@gmail.com for any other questions.

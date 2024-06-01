@@ -19,12 +19,6 @@ const theme = extendTheme({
         arabic: `'Cairo Play Variable', sans-serif`,
     },
     styles: {
-        global: {
-            body: {
-                // bg: 'gray.100',
-            },
-
-        },
     },
 
     components: {
@@ -88,6 +82,12 @@ const theme = extendTheme({
                     marginTop: '1'
                 }
             }
+        },
+        Switch:
+        {
+            baseStyle: {
+                size: 'lg',
+            },
         },
         Text: {
             baseStyle: {
