@@ -3,7 +3,8 @@ export class ExtensionOptions {
 
     // General Options
     public autoDiacritize: boolean = false;
-    public anthropicAPIKey: { name: string, key: string, savedAt: string } = { name: '', key: '', savedAt: ''};
+    public apiKeys: { name: string, key: string, savedAt: string }[] = [];
+    public activeKey: string = '';
     public defaultModel: string = 'haiku';
     public rejectMalformed: boolean = false;
     public escalateModel: boolean = false;

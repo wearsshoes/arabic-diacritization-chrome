@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Stack, Text, Icon, Input, Button, IconButton, Switch, Divider, InputGroup, InputLeftElement } from '@chakra-ui/react'
+import { useToast, Stack, Text, Icon, Input, Button, IconButton, Switch, Divider, InputGroup, InputLeftElement, InputRightElement } from '@chakra-ui/react'
 import {
   Select,
   Heading,
@@ -8,51 +8,28 @@ import {
   NumberInputStepper,
   NumberIncrementStepper,
   NumberDecrementStepper,
-  Link
+  Link,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Td,
 } from '@chakra-ui/react'
 
-import { FiKey } from 'react-icons/fi';
+import { FiFeather, FiKey } from 'react-icons/fi';
 import { CheckIcon, DeleteIcon, ExternalLinkIcon } from '@chakra-ui/icons'
 
-const APIKeyForm: React.FC = () => {
+const GeneralOptions: React.FC = () => {
 
   const [apiKey, setApiKey] = useState('');
-  const [savedKeyDisplay, setSavedKeyDisplay] = useState('');
-  const [savedTimeDisplay, setSavedTimeDisplay] = useState('');
+
   const [llmChoice, setLlmChoice] = useState('haiku');
-  const [keyName, setKeyName] = useState('');
 
   useEffect(() => {
-    chrome.storage.sync.get(['anthropicAPIKey'], (data) => {
-      console.log(data);
-      setApiKey(data.anthropicAPIKey.key || '');
-      // setSavedKeyDisplay(data.apiKey?.slice(0, 12) + "..." + data.apiKey?.slice(-5, data.apiKey?.length) || 'None');
-      setSavedTimeDisplay(data.anthropicAPIKey.savedAt || 'Never'); // Fix: Convert the result to a string
-    });
     chrome.storage.sync.get(['llmChoice'], (data: { llmChoice?: string }) => {
       setLlmChoice(data.llmChoice || 'haiku');
     });
   }, []);
-
-
-  const handleApiKeySubmit = () => {
-    const savedAt = new Date().toLocaleString();
-    chrome.storage.sync.set({ anthropicAPIKey: { name: "key", apiKey, savedAt } }, () => {
-      alert('API Key saved!');
-      setSavedKeyDisplay(apiKey);
-      setSavedTimeDisplay(savedAt);
-    });
-  };
-
-  const handleClearApiKey = () => {
-    if (confirm('Are you sure you want to remove the API Key?')) {
-      chrome.storage.sync.remove(['apiKey', 'apiKeySavedAt'], () => {
-        setApiKey('');
-        setSavedKeyDisplay('None');
-        setSavedTimeDisplay('Never');
-      });
-    }
-  };
 
   const handleLlmChoiceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedChoice = event.target.value;
@@ -88,63 +65,9 @@ const APIKeyForm: React.FC = () => {
           about 100 diacritized webpages. A video will soon be added with
           instructions.
         </Text>
-        <Stack>
-          <Text fontStyle={'oblique'}>
-            Get your key from the <Link
-              href='https://console.anthropic.com'>Anthropic Console <ExternalLinkIcon mb='4px' mx='2px' /> </Link>
-          </Text>
-          <Stack direction={'row'} flex="1" spacing="2">
-            <InputGroup flex={1}>
-              <InputLeftElement>
-                <Icon as={FiKey} color={'gray.300'} />
-              </InputLeftElement>
-              <Input
-                placeholder="Name"
-                type="text"
-                id="keyName"
-                name="keyName"
-                value={keyName}
-                onChange={(e) => setKeyName(e.target.value)}
-
-              />
-            </InputGroup>
-            <InputGroup flex={1.5}>
-              <InputLeftElement>
-                <Icon as={FiKey} color={'gray.300'} />
-              </InputLeftElement>
-              <Input
-                placeholder="Api Key"
-                type="text"
-                id="apiKey"
-                name="apiKey"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-              />
-            </InputGroup>
-            <Button id="saveBtn"
-              rightIcon={<CheckIcon data-icon="CkCheck" />}
-              colorScheme="blue"
-              onClick={handleApiKeySubmit}
-            >
-              Save
-            </Button>
-          </Stack>
-
-          <Stack direction='row'>
-            <Text fontWeight='bold'>Current saved key: </Text>
-            <Text id="savedKey" flex="1" overflow="hidden" whiteSpace="nowrap" textOverflow="ellipsis">{savedKeyDisplay.slice(0, -10)}</Text>
-            <Text id="savedTime" color='gray.500' >
-              {savedTimeDisplay}
-            </Text>
-            <IconButton
-              id="clearBtn"
-              aria-label="Clear API Key"
-              onClick={handleClearApiKey}
-              icon={<DeleteIcon />}
-              colorScheme="red"
-            />
-          </Stack>
-        </Stack>
+        <APIKeyForm apiKey={apiKey} setApiKey={setApiKey} />
+        <Heading size='md'>Saved Keys: </Heading>
+        <KeyList latestKey={apiKey} />
       </Stack>
       <Heading >
         Model Options
@@ -172,7 +95,6 @@ const APIKeyForm: React.FC = () => {
           </Stack>
           <Select placeholder="Always" width="160px" height="40px" />
         </Stack>
-
         <Stack direction="row" justify="flex-start" align="flex-end" spacing="0px">
           <Text flex={1}>
             Escalate to next best model upon malformed response
@@ -217,4 +139,174 @@ const APIKeyForm: React.FC = () => {
 }
 
 
-export default APIKeyForm;
+
+const APIKeyForm: React.FC<{ apiKey: string, setApiKey: React.Dispatch<React.SetStateAction<string>> }> = ({ apiKey, setApiKey }) => {
+  const [keyName, setKeyName] = useState('');
+
+  const toast = useToast();
+  const handleApiKeySubmit = async () => {
+    const savedAt = new Date().toLocaleString();
+    chrome.storage.sync.get(['apiKeys'], (data) => {
+      const keys = data.apiKeys || [];
+      if (keyName.length > 0 && apiKey.length > 0) {
+        keys.push({ name: keyName, key: apiKey, savedAt: savedAt });
+        chrome.storage.sync.set({ apiKeys: keys }, () => {
+          toast({
+            title: 'API Key Saved',
+            description: `Key saved as ${keyName}`,
+            status: 'success',
+            duration: 5000,
+            isClosable: true,
+          });
+        });
+      }
+    });
+  };
+
+  return (
+    <Stack>
+      <Text fontStyle={'oblique'}>
+        Get your key from the <Link
+          href='https://console.anthropic.com'>Anthropic Console <ExternalLinkIcon mb='4px' mx='2px' /> </Link>
+      </Text>
+      <Stack direction={'row'} flex="1" spacing="2">
+        <InputGroup flex={1}>
+          <InputLeftElement>
+            <Icon as={FiFeather}
+              color={keyName.length === 20 ? 'red.300' : 'gray.300'}
+            />
+          </InputLeftElement>
+          <Input
+            placeholder="Name"
+            type="text"
+            id="keyName"
+            name="keyName"
+            value={keyName}
+            onChange={(e) => setKeyName(e.target.value)}
+            maxLength={20}
+          />
+          <InputRightElement
+            color={keyName.length === 20 ? 'red' : 'green'}
+          >
+            {20 - keyName.length}
+          </InputRightElement>
+        </InputGroup>
+        <InputGroup flex={1.5}>
+          <InputLeftElement>
+            <Icon as={FiKey} color={'gray.300'} />
+          </InputLeftElement>
+          <Input
+            placeholder="Api Key"
+            type="text"
+            id="apiKey"
+            name="apiKey"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+          />
+        </InputGroup>
+        <Button id="saveBtn"
+          rightIcon={<CheckIcon data-icon="CkCheck" />}
+          colorScheme="blue"
+          onClick={handleApiKeySubmit}
+          isDisabled={!(keyName.length > 0 && apiKey.length > 0)}
+        >
+          Save
+        </Button>
+      </Stack>
+    </Stack>
+  )
+}
+
+interface KeyListProps {
+  latestKey: string;
+}
+
+const KeyList: React.FC<KeyListProps> = (latestKey) => {
+
+  const [apiKeys, setApiKeys] = useState<{ name: string, key: string, savedAt: string }[]>([]);
+  const [activeKey, setActiveKey] = useState('');
+
+  const handleSetActiveKey = (index: number) => {
+    console.log('Setting Active Key', index);
+    chrome.storage.sync.set({ activeKey: apiKeys[index].key });
+    setActiveKey(apiKeys[index].key)
+  };
+
+  const handleClearApiKey = (i: number) => {
+    console.log('Clearing API Key', i);
+    const newKeys = apiKeys.filter((_, index) => index !== i);
+    chrome.storage.sync.set({ apiKeys: newKeys });
+  };
+
+  useEffect(() => {
+    chrome.storage.sync.get(['activeKey'], (data) => {
+      setActiveKey(data.activeKey || '');
+    });
+  }, []);
+
+  useEffect(() => {
+    const keys: { name: string, key: string, savedAt: string }[] = [];
+    chrome.storage.sync.get(['apiKeys'], (data) => {
+      keys.push(...data.apiKeys);
+      setApiKeys(keys);
+    });
+  }, [latestKey, activeKey, apiKeys]);
+
+  return (
+    <Table size='sm'>
+      <Thead fontWeight={'bold'}>
+        <Tr>
+          <Td>Name</Td>
+          <Td>Key</Td>
+          <Td>Saved At</Td>
+          <Td></Td>
+          <Td></Td>
+        </Tr>
+      </Thead>
+      <Tbody>
+        {apiKeys.map((apiKey, index: number) => (
+          <Tr key={index} overflow="hidden" whiteSpace="nowrap" textOverflow="ellipsis">
+            <Td id="keyName" fontWeight='bold' width={12}>
+              {apiKey?.name || ''}
+            </Td>
+            <Td id="savedKey" >
+              {apiKey.key.slice(0, 12) + "..." + apiKey.key.slice(-5, apiKey.key.length) || ''}
+            </Td>
+            <Td id="savedTime" color='gray.500' flex="1" >
+              {apiKey.savedAt || ''}
+            </Td>
+            <Td>
+              <Text color='green'
+                display={activeKey === apiKey.key ? 'flex' : 'none'}
+              >
+                Active
+              </Text>
+            </Td>
+            <Td>
+              <IconButton
+                id="setActiveBtn"
+                size='xs'
+                aria-label="Set as Active Key"
+                icon={<FiKey />}
+                colorScheme="blue"
+                isDisabled={activeKey === apiKey.key}
+                onClick={() => handleSetActiveKey(index)}
+              />
+              <IconButton
+                mx={2}
+                id="clearBtn"
+                size='xs'
+                aria-label="Clear API Key"
+                onClick={() => handleClearApiKey(index)}
+                icon={<DeleteIcon />}
+                colorScheme="red"
+              />
+            </Td>
+          </Tr>
+        ))}
+      </Tbody>
+    </Table>
+  )
+};
+
+export default GeneralOptions;

@@ -2,7 +2,7 @@ import React, { ReactNode, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 
 import LLMOptions from './promptOptions';
-import APIKeyForm from './generalOptions';
+import GeneralOptions from './generalOptions';
 import DataManagement from './dataManagement';
 import { Arabizi } from './arabizi';
 
@@ -90,7 +90,7 @@ export default function SimpleSidebar({ children }: { children: ReactNode }) {
 
       <Box ml={{ base: 0, md: 60 }} px="10" py="4" maxWidth={"800px"}>
         <Heading size="2xl" pb="4">{selectedItem ?? "Options"}</Heading>
-        {selectedItem === 'General' ? <APIKeyForm /> : children}
+        {selectedItem === 'General' ? <GeneralOptions /> : children}
         {selectedItem === 'Custom Prompt' ? <LLMOptions /> : children}
         {selectedItem === 'Transliteration' ? <Arabizi /> : children}
         {selectedItem === 'Local Data' ? <DataManagement /> : children}
