@@ -1,3 +1,4 @@
+import React, { ReactNode, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 
 import LLMOptions from './promptOptions';
@@ -5,11 +6,9 @@ import APIKeyForm from './generalOptions';
 import DataManagement from './dataManagement';
 import { Arabizi } from './arabizi';
 
-import { ChakraProvider, HeadingProps, TextProps } from '@chakra-ui/react'
 import theme from '../assets/theme';
 
-
-import React, { ReactNode, useState } from 'react';
+import { ChakraProvider, HeadingProps, TextProps } from '@chakra-ui/react'
 import {
   IconButton,
   Box,
@@ -47,7 +46,7 @@ const chakraComponents = {
   p: (props: TextProps) => <Box fontSize={"md"} {...props} />,
 };
 
-function FAQComponent() {
+const FAQComponent = () => {
   return <ReactMarkdown components={chakraComponents}>{faqContent}</ReactMarkdown>;
 }
 
