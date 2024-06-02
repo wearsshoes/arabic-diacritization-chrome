@@ -3,6 +3,7 @@ import { calculateHash } from '../common/utils';
 import { Prompt } from '../common/types';
 import { EventEmitter } from 'events'
 import { scheduler } from './background';
+import { extensionOptions } from './background';
 
 export { claude, defaultModel, anthropicAPICall, countSysPromptTokens };
 
@@ -15,7 +16,7 @@ export class Claude {
 
   static async init() {
     const model = defaultModel;
-    const { apiKey } = await chrome.storage.sync.get('apiKey');
+    const { apiKey } = (extensionOptions.activeKey || await chrome.storage.sync.get('activeKey')) as { apiKey: string };
     return new Claude(model, apiKey);
   }
 
