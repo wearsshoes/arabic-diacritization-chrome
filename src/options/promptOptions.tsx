@@ -15,9 +15,6 @@ const LLMOptions: React.FC = () => {
   const [savedPrompts, setSavedPrompts] = useState<Prompt[]>([]);
 
   useEffect(() => {
-
-
-
     // Load the last selected prompt
     chrome.storage.sync.get(['selectedPrompt'], (data: { selectedPrompt?: Prompt }) => {
       setCustomPrompt(data.selectedPrompt?.text ?? '');
@@ -29,8 +26,6 @@ const LLMOptions: React.FC = () => {
       setSavedPrompts([...data.savedPrompts]);
     });
   }, []);
-
-
 
   const handleCustomPromptChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setCustomPrompt(event.target.value);
@@ -124,7 +119,6 @@ const LLMOptions: React.FC = () => {
                   </option>
                 ))}
               </Select>
-
               <Button
                 rightIcon={<CheckIcon data-icon="CkCheck" />}
                 colorScheme="blue"

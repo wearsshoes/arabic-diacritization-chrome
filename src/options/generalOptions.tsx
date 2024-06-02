@@ -59,13 +59,10 @@ const APIKeyForm: React.FC = () => {
   };
 
   return (
-
     <Stack mt="4" id="general">
       <Stack direction={'row'}>
-        <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
-          <Text
-            alignSelf="stretch"
-          >
+        <Stack spacing="0px" flex='1'>
+          <Text alignSelf="stretch">
             Diacritize Arabic pages by default
           </Text>
           <Text
@@ -75,10 +72,8 @@ const APIKeyForm: React.FC = () => {
             Warning: May get expensive! Track your stats in the usage tab.
           </Text>
         </Stack>
-        <Switch id="diacritizeSwitch" />
+        <Switch size='lg' id="diacritizeSwitch" />
       </Stack>
-      )
-
       <Heading >
         Anthropic API Key
       </Heading>
@@ -142,6 +137,7 @@ const APIKeyForm: React.FC = () => {
       <Divider />
       <Stack pt="2" spacing={"4"}>
         <Stack >
+          <Text fontWeight={'bold'}>Default Model</Text>
           <Text fontSize={"md"} fontStyle={"oblique"}>
             Models are arranged in order of quality and cost.{' '}
           </Text>
@@ -149,25 +145,7 @@ const APIKeyForm: React.FC = () => {
             <option value="haiku">Claude Haiku</option>
           </Select>
         </Stack>
-        <Stack direction={'row'}>
-          <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
-            <Text alignSelf={"stretch"}>
-              Query batch size (characters)
-            </Text>
-            <Text fontSize="sm" alignSelf={"stretch"}>
-              Longer batches run slower but submit the prompt fewer times, so are
-              cheaper.
-            </Text>
-          </Stack>
-          <NumberInput maxWidth="24" defaultValue="750">
-            <NumberInputField background="#FFFFFF" />
-            <NumberInputStepper background="white">
-              <NumberIncrementStepper />
-              <NumberDecrementStepper />
-            </NumberInputStepper>
-          </NumberInput>
-        </Stack>
-        <Stack direction={'row'}>
+        <Stack direction={'row'} id="rejectResponses">
           <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
             <Text alignSelf={"stretch"}>
               Reject malformed responses
@@ -179,23 +157,44 @@ const APIKeyForm: React.FC = () => {
           </Stack>
           <Select placeholder="Always" width="160px" height="40px" />
         </Stack>
-        <Stack direction={'row'} justify="flex-start" align="flex-end" spacing="0px" flex="1">
+
+        <Stack direction="row" justify="flex-start" align="flex-end" spacing="0px">
+          <Text flex={1}>
+            Escalate to next best model upon malformed response
+          </Text>
+          <Switch size='lg' id="escalateSwitch" />
+        </Stack>
+        <Stack id="maxTries"
+          direction={'row'}
+          justify="flex-start" align="flex-end" spacing="0px" flex="1">
           <Text flex={1} alignSelf={'stretch'}>
             Maximum times to try per batch
           </Text>
-          <NumberInput maxWidth="24" defaultValue="2">
-            <NumberInputField background="#FFFFFF" />
-            <NumberInputStepper background="white">
+          <NumberInput maxWidth="24" h={'100%'} defaultValue="2">
+            <NumberInputField background="white" />
+            <NumberInputStepper >
               <NumberIncrementStepper />
               <NumberDecrementStepper />
             </NumberInputStepper>
           </NumberInput>
         </Stack>
-        <Stack direction="row" justify="flex-start" align="flex-end" spacing="0px">
-          <Text flex={1}>
-            Escalate to next best model upon malformed response
-          </Text>
-          <Switch id="escalateSwitch" />
+        <Stack direction={'row'}>
+          <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
+            <Text alignSelf={"stretch"}>
+              Query batch size (characters)
+            </Text>
+            <Text fontSize="sm" alignSelf={"stretch"}>
+              Longer batches run slower but submit the prompt fewer times, so are
+              cheaper.
+            </Text>
+          </Stack>
+          <NumberInput maxWidth="24" h={"100%"} size="md" step={50} defaultValue="750" min={0} max={4000}>
+            <NumberInputField background="white" />
+            <NumberInputStepper >
+              <NumberIncrementStepper />
+              <NumberDecrementStepper />
+            </NumberInputStepper>
+          </NumberInput>
         </Stack>
       </Stack>
     </Stack>

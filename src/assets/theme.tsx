@@ -83,8 +83,7 @@ const theme = extendTheme({
                 }
             }
         },
-        Switch:
-        {
+        Switch: {
             baseStyle: {
                 size: 'lg',
             },
