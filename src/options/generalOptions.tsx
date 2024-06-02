@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Stack, Text, Icon, Input, Button, Switch, Divider, InputGroup, InputLeftElement } from '@chakra-ui/react'
+import { Stack, Text, Icon, Input, Button, IconButton, Switch, Divider, InputGroup, InputLeftElement } from '@chakra-ui/react'
 import {
   Select,
   Heading,
@@ -12,7 +12,7 @@ import {
 } from '@chakra-ui/react'
 
 import { FiKey } from 'react-icons/fi';
-import { CheckIcon, CloseIcon, ExternalLinkIcon } from '@chakra-ui/icons'
+import { CheckIcon, DeleteIcon, ExternalLinkIcon } from '@chakra-ui/icons'
 
 const APIKeyForm: React.FC = () => {
 
@@ -20,31 +20,27 @@ const APIKeyForm: React.FC = () => {
   const [savedKeyDisplay, setSavedKeyDisplay] = useState('');
   const [savedTimeDisplay, setSavedTimeDisplay] = useState('');
   const [llmChoice, setLlmChoice] = useState('haiku');
+  const [keyName, setKeyName] = useState('');
 
   useEffect(() => {
-    chrome.storage.sync.get(['apiKey', 'apiKeySavedAt'], (data: { apiKey?: string; apiKeySavedAt?: string }) => {
-      setApiKey(data.apiKey || '');
+    chrome.storage.sync.get(['anthropicAPIKey'], (data) => {
+      console.log(data);
+      setApiKey(data.anthropicAPIKey.key || '');
       // setSavedKeyDisplay(data.apiKey?.slice(0, 12) + "..." + data.apiKey?.slice(-5, data.apiKey?.length) || 'None');
-      setSavedKeyDisplay(data.apiKey || 'None');
-      setSavedTimeDisplay(data.apiKeySavedAt || 'Never');
+      setSavedTimeDisplay(data.anthropicAPIKey.savedAt || 'Never'); // Fix: Convert the result to a string
     });
     chrome.storage.sync.get(['llmChoice'], (data: { llmChoice?: string }) => {
       setLlmChoice(data.llmChoice || 'haiku');
     });
   }, []);
 
-  const handleLlmChoiceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedChoice = event.target.value;
-    setLlmChoice(selectedChoice);
-    chrome.storage.sync.set({ llmChoice: selectedChoice });
-  };
 
   const handleApiKeySubmit = () => {
-    const apiKeySavedAt = new Date().toLocaleString();
-    chrome.storage.sync.set({ apiKey: apiKey, apiKeySavedAt }, () => {
+    const savedAt = new Date().toLocaleString();
+    chrome.storage.sync.set({ anthropicAPIKey: { name: "key", apiKey, savedAt } }, () => {
       alert('API Key saved!');
       setSavedKeyDisplay(apiKey);
-      setSavedTimeDisplay(apiKeySavedAt);
+      setSavedTimeDisplay(savedAt);
     });
   };
 
@@ -56,6 +52,12 @@ const APIKeyForm: React.FC = () => {
         setSavedTimeDisplay('Never');
       });
     }
+  };
+
+  const handleLlmChoiceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedChoice = event.target.value;
+    setLlmChoice(selectedChoice);
+    chrome.storage.sync.set({ llmChoice: selectedChoice });
   };
 
   return (
@@ -92,12 +94,26 @@ const APIKeyForm: React.FC = () => {
               href='https://console.anthropic.com'>Anthropic Console <ExternalLinkIcon mb='4px' mx='2px' /> </Link>
           </Text>
           <Stack direction={'row'} flex="1" spacing="2">
-            <InputGroup>
+            <InputGroup flex={1}>
               <InputLeftElement>
                 <Icon as={FiKey} color={'gray.300'} />
               </InputLeftElement>
               <Input
-                placeholder="Placeholder"
+                placeholder="Name"
+                type="text"
+                id="keyName"
+                name="keyName"
+                value={keyName}
+                onChange={(e) => setKeyName(e.target.value)}
+
+              />
+            </InputGroup>
+            <InputGroup flex={1.5}>
+              <InputLeftElement>
+                <Icon as={FiKey} color={'gray.300'} />
+              </InputLeftElement>
+              <Input
+                placeholder="Api Key"
                 type="text"
                 id="apiKey"
                 name="apiKey"
@@ -112,14 +128,6 @@ const APIKeyForm: React.FC = () => {
             >
               Save
             </Button>
-            <Button
-              id="clearBtn"
-              onClick={handleClearApiKey}
-              rightIcon={<CloseIcon data-icon="CkClose" />}
-              colorScheme="red"
-            >
-              Clear
-            </Button>
           </Stack>
 
           <Stack direction='row'>
@@ -128,6 +136,13 @@ const APIKeyForm: React.FC = () => {
             <Text id="savedTime" color='gray.500' >
               {savedTimeDisplay}
             </Text>
+            <IconButton
+              id="clearBtn"
+              aria-label="Clear API Key"
+              onClick={handleClearApiKey}
+              icon={<DeleteIcon />}
+              colorScheme="red"
+            />
           </Stack>
         </Stack>
       </Stack>

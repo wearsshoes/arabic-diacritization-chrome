@@ -3,8 +3,7 @@ import { AppMessage, AppResponse } from '../common/types';
 import { processText } from './processTextNodes';
 // @ts-expect-error No types for "bottleneck/light"
 import BottleneckLight from "bottleneck/light.js";
-import { Prompt } from '../common/types';
-import prompts from './defaultPrompts.json';
+import { ExtensionOptions } from './optionsClass';
 
 // ----------------- Event Listeners ----------------- //
 
@@ -21,14 +20,15 @@ chrome.runtime.onInstalled.addListener(function (details) {
     }
   }
 
-  chrome.storage.sync.set({ selectedPrompt: prompts[0] });
-  chrome.storage.sync.get('savedPrompts', (result) => {
-    const savedPrompts: Prompt[] = result.savedPrompts || [];
-    const existingNames = new Set(savedPrompts.map((prompt: Prompt) => prompt.name));
-    const newPrompts = prompts.filter((prompt: Prompt) => !existingNames.has(prompt.name));
-    const updatedPrompts = [...savedPrompts, ...newPrompts];
-    chrome.storage.sync.set({ savedPrompts: updatedPrompts });
-  });
+  const defaultOptions = new ExtensionOptions();
+
+  for (const [key, value] of Object.entries(defaultOptions)) {
+    chrome.storage.sync.get(key, (result) => {
+      if (result[key] === undefined) {
+        chrome.storage.sync.set({ [key]: value });
+      }
+    });
+  }
 
   chrome.contextMenus.create({
     id: "fullDiacritics",
@@ -46,6 +46,22 @@ chrome.runtime.onInstalled.addListener(function (details) {
     if (chrome.runtime.lastError) {
       console.error(`Error creating context menu: ${chrome.runtime.lastError.message}`);
     }
+  }
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'sync' && changes.options?.newValue) {
+
+    for (const [key, value] of Object.entries(changes.options.newValue)) {
+      if (extensionOptions[key] === undefined) {
+        console.warn(`Invalid option: ${key}`);
+        continue;
+      }
+
+      extensionOptions[key] = value;
+    }
+    console.log('Settings updated:', changes.options.newValue);
+
   }
 });
 
@@ -144,6 +160,17 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
 });
 
 // ----------------- Functions ----------------- //
+
+export const extensionOptions = new ExtensionOptions();
+
+chrome.storage.sync.get(null, (result) => {
+  for (const key in result) {
+    if (Object.prototype.hasOwnProperty.call(extensionOptions, key)) {
+      extensionOptions[key] = result[key];
+    }
+  }
+  console.log('Loaded options:', extensionOptions);
+});
 
 export function messageContentScript(tabId: number, message: AppMessage): Promise<AppResponse> {
   return new Promise((resolve, reject) => {

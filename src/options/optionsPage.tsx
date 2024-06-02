@@ -99,7 +99,6 @@ export default function SimpleSidebar({ children }: { children: ReactNode }) {
     </Box>
   );
 }
-
 interface SidebarProps extends BoxProps {
   onClose: () => void;
   onItemClick: (item: string) => void;
