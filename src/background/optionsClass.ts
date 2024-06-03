@@ -2,7 +2,7 @@ export class ExtensionOptions {
     [key: string]: unknown;
 
     // General Options
-    public autoDiacritize: boolean = false;
+    public autoDiacritize: ('off' | 'fullDiacritics' | 'arabizi') = 'off';
     public apiKeys: { name: string, key: string, savedAt: string }[] = [];
     public activeKey: string = '';
     public activeModel: string = 'haiku';

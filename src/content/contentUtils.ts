@@ -25,6 +25,16 @@ const onContentLoaded = () => {
         observer.observe(document.body, observerOptions);
       });
   }
+  chrome.storage.sync.get('autoDiacritize', (data) => {
+    if (data.autoDiacritize && data.autoDiacritize !== 'off') {
+      const autoDiacritize: string = data.autoDiacritize;
+      console.log('Auto-diacritizing page.');
+      chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processText', method: autoDiacritize, wholePage: true })
+    } else {
+      console.log('Auto-diacritization is off.');
+    }
+  });
+
 };
 
 const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {

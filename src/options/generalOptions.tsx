@@ -88,23 +88,23 @@ interface OptionProps {
 }
 
 const DiacritizeByDefault: React.FC<OptionProps> = ({ setOptionsSaved }) => {
-  const [autoDiacritize, setAutoDiacritize] = useState(false);
+  const [autoDiacritize, setAutoDiacritize] = useState("off");
 
   useEffect(() => {
-    chrome.storage.sync.get(['autoDiacritize'], (data: { autoDiacritize?: boolean }) => {
-      setAutoDiacritize(data.autoDiacritize || false);
+    chrome.storage.sync.get(['autoDiacritize'], (data: { autoDiacritize?: string }) => {
+      setAutoDiacritize(data.autoDiacritize || "off");
     });
   }, []);
 
-  const handleToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = event.target.checked;
+  const handleToggle = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newValue = event.target.value;
     setAutoDiacritize(newValue);
     chrome.storage.sync.set({ autoDiacritize: newValue }, () => { setOptionsSaved(true) });
   };
 
   return (
-    <Stack direction={'row'}>
-      <Stack spacing="0px" flex='1'>
+    <Wrap direction={{ base: "column", md: "row" }}>
+      <Stack spacing="0px" flex={1}>
         <Text alignSelf="stretch">
           Diacritize Arabic pages by default
         </Text>
@@ -115,13 +115,18 @@ const DiacritizeByDefault: React.FC<OptionProps> = ({ setOptionsSaved }) => {
           Warning: May get expensive! Track your stats in the usage tab.
         </Text>
       </Stack>
-      <Switch
-        size='lg'
-        id="diacritizeSwitch"
-        isChecked={autoDiacritize}
+      <Select
+        id="autoDiacritizeSelect"
+        value={autoDiacritize}
         onChange={handleToggle}
-      />
-    </Stack>
+        minW="10rem"
+        flex={0.3}
+      >
+        <option value="off">Off</option>
+        <option value="fullDiacritics">Full Diacritics</option>
+        <option value="arabizi">Transliteration</option>
+      </Select>
+    </Wrap>
   )
 }
 
