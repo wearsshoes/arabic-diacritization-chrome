@@ -167,7 +167,7 @@ const APIKeyForm: React.FC<OptionProps> = ({ setOptionsSaved }) => {
             />
           </InputLeftElement>
           <Input
-            placeholder="Name"
+            placeholder="Key Name"
             type="text"
             name="keyName"
             value={keyName}
@@ -185,7 +185,7 @@ const APIKeyForm: React.FC<OptionProps> = ({ setOptionsSaved }) => {
             <Icon as={FiKey} color={'gray.300'} />
           </InputLeftElement>
           <Input
-            placeholder="Api Key"
+            placeholder="API Key"
             type="text"
             name="apiKey"
             value={apiKey}
@@ -201,6 +201,7 @@ const APIKeyForm: React.FC<OptionProps> = ({ setOptionsSaved }) => {
           Save
         </Button>
       </Wrap>
+      <Text fontStyle={'oblique'}> Your API key is stored locally (in plaintext), and only sent to Anthropic. </Text>
     </Stack>
   )
 }
