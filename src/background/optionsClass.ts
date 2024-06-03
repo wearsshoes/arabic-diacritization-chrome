@@ -5,7 +5,7 @@ export class ExtensionOptions {
     public autoDiacritize: boolean = false;
     public apiKeys: { name: string, key: string, savedAt: string }[] = [];
     public activeKey: string = '';
-    public defaultModel: string = 'haiku';
+    public activeModel: string = 'haiku';
     public rejectMalformed: boolean = false;
     public escalateModel: boolean = false;
     public maxTries: number = 3;

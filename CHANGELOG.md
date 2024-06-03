@@ -2,6 +2,9 @@
 
 ## 1.0.0 (Current)
 Improvements
+- Redesigned options page.
+- New options:
+  - Diacritize by default
 - Removed useless files and functions
 
 ## 0.4.4 (2024-05-29)
