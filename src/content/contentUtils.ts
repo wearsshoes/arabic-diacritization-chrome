@@ -34,7 +34,6 @@ const onContentLoaded = () => {
       console.log('Auto-diacritization is off.');
     }
   });
-
 };
 
 const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {
@@ -44,7 +43,6 @@ const scrapeContent = async (mainNode: HTMLElement): Promise<void> => {
     collectedNodes.push(node);
   });
 };
-
 
 const observer = new MutationObserver((mutations) => {
 
@@ -128,10 +126,11 @@ export async function handleGetSelectedNodes(): Promise<AppResponse> {
 export async function handleUpdateWebsiteText(message: AppMessage): Promise<AppResponse> {
   let { replacements } = message;
   const { ruby } = message;
-  editStatus = 'changed'
+  editStatus = 'changed';
 
   if (!replacements) throw new Error('Text not provided.');
   if (ruby) replacements = arabicToArabizi(replacements);
+  console.log('Replacing text nodes:', replacements);
 
   observer.disconnect();
   replaceWebpageText(replacements);

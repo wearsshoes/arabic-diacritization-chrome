@@ -51,7 +51,6 @@ const GeneralOptions: React.FC = () => {
   return (
     <Stack mt="4" id="general">
       <Stack pt="2" spacing={"4"}>
-        <ColorVowels setOptionsSaved={setOptionsSaved} />
         <DiacritizeByDefault setOptionsSaved={setOptionsSaved} />
       </Stack>
       <Heading >
@@ -90,30 +89,6 @@ interface OptionProps {
   setOptionsSaved: React.Dispatch<React.SetStateAction<boolean>>;
   optionsSaved?: boolean;
 }
-
-const ColorVowels: React.FC<OptionProps> = ({ setOptionsSaved }) => {
-  const [colorVowels, setColorVowels] = useState(false);
-
-  useEffect(() => {
-    chrome.storage.sync.get(['colorVowels'], (data: { colorVowels?: boolean }) => {
-      setColorVowels(data.colorVowels || false);
-    });
-  }, []);
-
-  const handleColorVowelsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = event.target.checked;
-    setColorVowels(newValue);
-    chrome.storage.sync.set({ colorVowels: newValue }, () => { setOptionsSaved(true) });
-  };
-
-  return (
-    <Stack direction="row" align="center" spacing="3rem">
-      <Text flex={1}>Color vowel marks for visibility</Text>
-      <Switch size='lg' id="escalateSwitch" isChecked={colorVowels} onChange={handleColorVowelsChange} />
-    </Stack>
-  );
-};
-
 
 const DiacritizeByDefault: React.FC<OptionProps> = ({ setOptionsSaved }) => {
   const [autoDiacritize, setAutoDiacritize] = useState("off");

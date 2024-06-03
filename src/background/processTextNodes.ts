@@ -247,6 +247,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
         }
       }
       console.warn('Failed to diacritize chunk, returning original text');
+      // TODO: this would save the originals into diacritization; don't do that
       return originals;
     })
   ).then((result) => { return result.flat(); });

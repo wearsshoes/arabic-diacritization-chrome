@@ -19,7 +19,6 @@ export class ExtensionOptions {
     public waitTime: number = 1500;
 
     // Custom Prompt Options
-    public colorVowels: boolean = false;
     public useCustomPrompt: boolean = false;
     public savedPrompts: Prompt[] = defaultPrompts;
     public selectedPrompt: Prompt = defaultPrompts[0];
