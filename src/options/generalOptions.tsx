@@ -50,7 +50,10 @@ const GeneralOptions: React.FC = () => {
 
   return (
     <Stack mt="4" id="general">
-      <DiacritizeByDefault setOptionsSaved={setOptionsSaved} />
+      <Stack pt="2" spacing={"4"}>
+        <ColorVowels setOptionsSaved={setOptionsSaved} />
+        <DiacritizeByDefault setOptionsSaved={setOptionsSaved} />
+      </Stack>
       <Heading >
         Anthropic API Key
       </Heading>
@@ -71,8 +74,8 @@ const GeneralOptions: React.FC = () => {
         Model Options
       </Heading>
       <Divider />
-      <Stack pt="2" spacing={"4"}>
-        <LLMChoice setOptionsSaved={setOptionsSaved} />
+      <Stack pt="2" spacing={{base: 4, md: 6}}>
+        <ActiveModel setOptionsSaved={setOptionsSaved} />
         <EscalateModel setOptionsSaved={setOptionsSaved} />
         <MaxTries setOptionsSaved={setOptionsSaved} />
         <MaxChars setOptionsSaved={setOptionsSaved} />
@@ -87,6 +90,30 @@ interface OptionProps {
   setOptionsSaved: React.Dispatch<React.SetStateAction<boolean>>;
   optionsSaved?: boolean;
 }
+
+const ColorVowels: React.FC<OptionProps> = ({ setOptionsSaved }) => {
+  const [colorVowels, setColorVowels] = useState(false);
+
+  useEffect(() => {
+    chrome.storage.sync.get(['colorVowels'], (data: { colorVowels?: boolean }) => {
+      setColorVowels(data.colorVowels || false);
+    });
+  }, []);
+
+  const handleColorVowelsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = event.target.checked;
+    setColorVowels(newValue);
+    chrome.storage.sync.set({ colorVowels: newValue }, () => { setOptionsSaved(true) });
+  };
+
+  return (
+    <Stack direction="row" align="center" spacing="3rem">
+      <Text flex={1}>Color vowel marks for visibility</Text>
+      <Switch size='lg' id="escalateSwitch" isChecked={colorVowels} onChange={handleColorVowelsChange} />
+    </Stack>
+  );
+};
+
 
 const DiacritizeByDefault: React.FC<OptionProps> = ({ setOptionsSaved }) => {
   const [autoDiacritize, setAutoDiacritize] = useState("off");
@@ -302,33 +329,35 @@ const KeyList: React.FC<OptionProps> = ({ optionsSaved, setOptionsSaved }) => {
 };
 
 
-const LLMChoice: React.FC<OptionProps> = ({ setOptionsSaved }) => {
-  const [llmChoice, setLlmChoice] = useState('haiku');
+const ActiveModel: React.FC<OptionProps> = ({ setOptionsSaved }) => {
+  const [activeModel, setActiveModel] = useState('haiku');
 
   useEffect(() => {
     chrome.storage.sync.get(['activeModel'], (data: { activeModel?: string }) => {
-      setLlmChoice(data.activeModel || 'haiku');
+      setActiveModel(data.activeModel || 'haiku');
     });
   }, []);
 
-  const handleLlmChoiceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleActiveModelChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedChoice = event.target.value;
-    setLlmChoice(selectedChoice);
+    setActiveModel(selectedChoice);
     chrome.storage.sync.set({ activeModel: selectedChoice }, () => { setOptionsSaved(true) });
   };
 
   return (
-    <Stack id="activeModel">
-      <Text fontWeight={'bold'}>Default Model</Text>
-      <Text fontSize={"md"} fontStyle={"oblique"}>
-        Models are arranged in order of quality and cost.
-      </Text>
-      <Select id="llmChoice" name="llmChoice" value={llmChoice} onChange={handleLlmChoiceChange}>
+    <Wrap id="activeModel" align={'center'} direction={{base: 'column', md: 'row'}}>
+      <Stack direction={'column'} flex={1} spacing={0}>
+        <Text >Default Model</Text>
+        <Text fontSize={"md"} fontStyle={"oblique"}>
+          Models are arranged in order of quality and cost.
+        </Text>
+      </Stack>
+      <Select id="activeModel" name="activeModel" value={activeModel} onChange={handleActiveModelChange} w={"12rem"}>
         <option value="haiku">Claude Haiku</option>
         <option value="sonnet">Claude Sonnet</option>
         <option value="opus">Claude Opus</option>
       </Select>
-    </Stack>
+    </Wrap>
   );
 };
 
@@ -435,7 +464,7 @@ const MaxConcurrent: React.FC<OptionProps> = ({ setOptionsSaved }) => {
       <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
         <Text alignSelf={"stretch"}>Maximum number of concurrent batches (recommended: 3 or fewer)</Text>
         <Text fontSize="sm" alignSelf={"stretch"}>
-          For more information on API backoff, see <Link>https://docs.anthropic.com/en/api/rate-limits</Link>
+          For more information on API backoff, see <Link isExternal href='https://docs.anthropic.com/en/api/rate-limits'>Anthropic API Rate Limits.<ExternalLinkIcon mx='2px' /></Link>
         </Text>
       </Stack>
       <NumberInput maxWidth="24" h={'100%'} value={maxConcurrent} min={1} max={100} onChange={handleMaxConcurrentChange}>
@@ -468,7 +497,7 @@ const WaitTime: React.FC<OptionProps> = ({ setOptionsSaved }) => {
       <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
         <Text alignSelf={"stretch"}>Wait time between job submissions (milliseconds)</Text>
         <Text fontSize="sm" alignSelf={"stretch"}>
-          For more information on API backoff, see <Link>https://docs.anthropic.com/en/api/rate-limits</Link>
+          For more information on API backoff, see <Link isExternal href='https://docs.anthropic.com/en/api/rate-limits'>Anthropic API Rate Limits.<ExternalLinkIcon mx='2px' /></Link>
         </Text>
       </Stack>
       <NumberInput maxWidth="24" h={"100%"} size="md" step={100} value={waitTime} min={100} max={10000} onChange={handleWaitTimeChange}>
