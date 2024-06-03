@@ -31,6 +31,7 @@ import {
   FiSettings,
   FiActivity,
   FiMenu,
+  FiHelpCircle,
   FiMoon
 } from 'react-icons/fi';
 
@@ -60,7 +61,7 @@ const LinkItems: Array<LinkItemProps> = [
   { name: 'Local Data', icon: FiSave },
   { name: 'Transliteration', icon: FiMoon },
   { name: 'API Usage', icon: FiActivity },
-  { name: 'FAQ', icon: FiActivity },
+  { name: 'FAQ', icon: FiHelpCircle },
 ];
 
 export default function SimpleSidebar({ children }: { children: ReactNode }) {
@@ -88,7 +89,7 @@ export default function SimpleSidebar({ children }: { children: ReactNode }) {
       </Drawer>
       <MobileNav display={{ base: 'flex', md: 'none' }} onOpen={onOpen} />
 
-      <Box ml={{ base: 0, md: 60 }} px="10" py="4" maxWidth={"800px"}>
+      <Box ml={{ base: 0, md: 60 }} ps="10" pt="4" pb="20" maxWidth={"800px"}>
         <Heading size="2xl" pb="4">{selectedItem ?? "Options"}</Heading>
         {selectedItem === 'General' ? <GeneralOptions /> : children}
         {selectedItem === 'Custom Prompt' ? <LLMOptions /> : children}
