@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { AppMessage, AppResponse, Prompt } from '../common/types';
+import { AppMessage, AppResponse } from '../common/types';
+import { Prompt } from "../common/optionsClass";
 
 import { Textarea, Select, Button } from '@chakra-ui/react'
 import {

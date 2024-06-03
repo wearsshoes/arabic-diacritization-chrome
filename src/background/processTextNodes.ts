@@ -1,9 +1,8 @@
 import { EventEmitter } from "events";
-import { Prompt, AppResponse } from "../common/types";
+import { AppResponse } from "../common/types";
 import { TextNode, WebpageDiacritizationData } from "../common/webpageDataClass";
 import { Claude, anthropicAPICall, constructAnthropicMessage } from "./anthropicCaller";
-import { controllerMap, messageContentScript, cancelTask } from './background';
-import prompts from "./defaultPrompts.json";
+import { controllerMap, messageContentScript, cancelTask, extensionOptions } from './background';
 
 export async function processText(tab: chrome.tabs.Tab, method: string = 'fullDiacritics', entirePage: boolean = false): Promise<AppResponse> {
   if (!tab.id || !tab.url) {
@@ -61,11 +60,11 @@ export async function processText(tab: chrome.tabs.Tab, method: string = 'fullDi
   } catch (error) {
     cancelTask(tabId);
     if (entirePage) {
-      // messageContentScript(tabId, { action: 'webpageDone' });
-      messageContentScript(tabId, { action: 'errorMessage', userMessage: (error as Error).message});
+      messageContentScript(tabId, { action: 'webpageDone' });
+      messageContentScript(tabId, { action: 'errorMessage', userMessage: (error as Error).message });
     } else {
-      // messageContentScript(tabId, { action: 'updateProgressBar', strLength: 100000 });
-      messageContentScript(tabId, { action: 'errorMessage', userMessage: (error as Error).message});
+      messageContentScript(tabId, { action: 'updateProgressBar', strLength: 100000 });
+      messageContentScript(tabId, { action: 'errorMessage', userMessage: (error as Error).message });
     }
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
@@ -141,28 +140,18 @@ async function buildData(tabId: number, tabUrl: string, selectedNodes?: TextNode
   pageData.updateDiacritization(selectedNodes ?? allNodes, 'original');
   return { pageData };
 }
-const defaultPrompt = prompts[0];
-
-async function getPrompt(): Promise<Prompt> {
-  try {
-    const { selectedPrompt } = await chrome.storage.sync.get('selectedPrompt');
-    return selectedPrompt;
-  } catch (error) {
-    console.warn(`Error retrieving prompt: ${error}, using default prompt.`);
-    return defaultPrompt;
-  }
-}
 
 export async function fullDiacritization(tabId: number, tabUrl: string, selectedNodes: TextNode[], ruby: boolean = false): Promise<TextNode[]> {
+
+  const { maxChars, maxTries, selectedPrompt, escalateModel } = extensionOptions;
 
   const controller = new AbortController();
   const { signal: abortSignal } = controller;
   controllerMap.set(tabId, controller);
 
-  const diacritizationBatches = createBatches(selectedNodes, 750);
-  const prompt = await getPrompt();
+  const diacritizationBatches = createBatches(selectedNodes, maxChars);
   const claude = await Claude.init();
-  const maxTries = 3;
+
   const delimiter = '|';
   let elementValidationFailures = 0;
   let chunkValidationFailures = 0;
@@ -185,7 +174,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
       const replacements: TextNode[] = [];
 
       const eventEmitter = new EventEmitter();
-      const msg = constructAnthropicMessage(originalText, prompt, claude);
+      const msg = constructAnthropicMessage(originalText, selectedPrompt, claude);
 
       for (let tries = 1; tries < maxTries; tries++) {
         const sentencesToCheck = [...originals];
@@ -250,7 +239,9 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
         chunkValidationFailures++;
         if (tries < maxTries) {
           console.warn('Failed validation. trying again: try', tries + 1, 'of', maxTries);
-          claude.escalateModel(tries);
+          if (escalateModel) {
+            claude.escalateModel(tries);
+          }
         } else {
           console.warn('Failed to diacritize chunk after', maxTries, 'tries,');
         }

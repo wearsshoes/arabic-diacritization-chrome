@@ -1,12 +1,4 @@
-// Definition of types used in the application
-
 import { TextNode } from "./webpageDataClass";
-
-export interface Prompt {
-  name: string;
-  text: string;
-  tokenLength: number;
-}
 
 // TODO: structure AppMessage and AppResponse more strictly based on the message types
 export interface AppMessage {

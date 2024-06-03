@@ -1,3 +1,9 @@
+export interface Prompt {
+    name: string;
+    text: string;
+    tokenLength: number;
+}
+
 export class ExtensionOptions {
     [key: string]: unknown;
 
@@ -6,7 +12,7 @@ export class ExtensionOptions {
     public apiKeys: { name: string, key: string, savedAt: string }[] = [];
     public activeKey: string = '';
     public activeModel: string = 'haiku';
-    public rejectMalformed: boolean = false;
+    public rejectMalformed: boolean = true;
     public escalateModel: boolean = false;
     public maxTries: number = 3;
     public maxChars: number = 750;
@@ -14,8 +20,8 @@ export class ExtensionOptions {
     // Custom Prompt Options
     public addColors: boolean = false;
     public useCustomPrompt: boolean = false;
-    public savedPrompts: { name: string, text: string, tokenLength: number }[] = defaultPrompts;
-    public selectedPrompt: { name: string, text: string, tokenLength: number } = defaultPrompts[0];
+    public savedPrompts: Prompt[] = defaultPrompts;
+    public selectedPrompt: Prompt = defaultPrompts[0];
     public checkTokenLength: boolean = false;
 
     // Local Data Options
@@ -42,4 +48,4 @@ const defaultPrompts = [
         "text": "Add full diacritics (taškīl) to the Arabic text based on pronunciation and grammar. Maintain the same number of '|' delimiters and leave non-Arabic text, numbers, and symbols unchanged. Example:\nInput: وصل |John| إلى مطار |JFK| الساعة (|10:30| صباحا)| يوم الاثنين|.[1]|\nOutput: وَصَلَ |John| إِلَى مَطَارِ |JFK| السَّاعَةَ (|10:30| صَبَاحًا)| يَوْمَ الِاثْنَيْنِ|.[1]|",
         "tokenLength": 182
     }
-]
+];

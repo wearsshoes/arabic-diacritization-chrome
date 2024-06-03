@@ -3,8 +3,11 @@
 ## 1.0.0 (Current)
 Improvements
 - Redesigned options page.
+- Added FAQ (in options)
 - New options:
-  - Diacritize by default
+  - Ability to auto-diacritize or auto-transliterate by default
+  - Choose base model from anthropic models
+- More user-visible error handling
 - Removed useless files and functions
 
 ## 0.4.4 (2024-05-29)

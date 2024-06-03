@@ -1,33 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { calculateHash } from '../common/utils';
-import { Prompt } from '../common/types';
+import { Prompt } from "../common/optionsClass";
 import { EventEmitter } from 'events'
 import { scheduler } from './background';
 import { extensionOptions } from './background';
-
-export { claude, defaultModel, anthropicAPICall, countSysPromptTokens };
-
-export class Claude {
-
-  private constructor(
-    public model: Model,
-    public apiKey: string = ''
-  ) { }
-
-  static async init() {
-    const model = defaultModel;
-    const apiKey = extensionOptions.activeKey;
-    console.log('Initializing Claude with model:', model, 'and API key:', apiKey);
-    return new Claude(model, apiKey);
-  }
-
-  escalateModel(n: number = 1) {
-    const models = Object.values(claude);
-    const newModel = models.find(model => model.level === n);
-    if (newModel) this.model = newModel;
-    console.log('Escalated task to:', this.model);
-  }
-}
 
 interface Models {
   [key: string]: Model;
@@ -53,7 +29,26 @@ const claude: Models = {
   }
 };
 
-const defaultModel: Model = claude.haiku;
+class Claude {
+
+  private constructor(
+    public model: Model,
+    public apiKey: string = ''
+  ) { }
+
+  static async init() {
+    const model = claude[extensionOptions.activeModel];
+    const apiKey = extensionOptions.activeKey;
+    return new Claude(model, apiKey);
+  }
+
+  escalateModel(n: number = 1) {
+    const models = Object.values(claude);
+    const newModel = models.find(model => model.level === n);
+    if (newModel) this.model = newModel;
+    console.log('Escalated task to:', this.model);
+  }
+}
 
 async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: string, signal?: AbortSignal, eventEmitter?: EventEmitter): Promise<Anthropic.Message> {
   // generate a hash to identify the job
@@ -128,7 +123,7 @@ async function countSysPromptTokens(): Promise<number> {
 
   // Make the API call using the provided message format
   const sysPromptTokens = await anthropicAPICall({
-    model: defaultModel.currentVersion,
+    model: claude.haiku.currentVersion,
     max_tokens: 1,
     temperature: 0,
     messages: [{ role: "user", content: [{ type: "text", text: selectedPrompt.text }] }]
@@ -172,3 +167,5 @@ export function constructAnthropicMessage(
     ]
   };
 }
+
+export { Claude, anthropicAPICall, countSysPromptTokens };

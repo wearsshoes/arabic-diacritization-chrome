@@ -12,7 +12,7 @@ import {
 	Heading
 } from '@chakra-ui/react'
 import { CheckIcon, CloseIcon, AddIcon } from '@chakra-ui/icons'
-import { Prompt } from '../common/types'
+import { Prompt } from "../common/optionsClass"
 import { FormEvent, ChangeEvent } from 'react'
 export const Arabizi: React.FC = () => {
 	const customPrompt = ''

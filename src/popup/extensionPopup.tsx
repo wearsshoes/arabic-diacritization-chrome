@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client'
-import { AppMessage, AppResponse, Prompt } from '../common/types';
+import { AppMessage, AppResponse } from '../common/types';
+import { Prompt } from "../common/optionsClass";
 
 // import theme from '../assets/theme';
 import Fonts from '../assets/fonts';

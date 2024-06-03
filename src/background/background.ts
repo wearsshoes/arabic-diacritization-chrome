@@ -3,7 +3,7 @@ import { AppMessage, AppResponse } from '../common/types';
 import { processText } from './processTextNodes';
 // @ts-expect-error No types for "bottleneck/light"
 import BottleneckLight from "bottleneck/light.js";
-import { ExtensionOptions } from './optionsClass';
+import { ExtensionOptions } from '../common/optionsClass';
 
 // ----------------- Event Listeners ----------------- //
 
