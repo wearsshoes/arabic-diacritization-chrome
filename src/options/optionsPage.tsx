@@ -39,7 +39,7 @@ import {
 import { IconType } from 'react-icons';
 
 import ReactMarkdown from 'react-markdown';
-import faqContent from './faq.md?raw';
+import faqContent from '../../public/faq.md?raw';
 
 const chakraComponents = {
   h1: (props: HeadingProps) => <Heading as="h1" size="xl" my={4} {...props} />,
