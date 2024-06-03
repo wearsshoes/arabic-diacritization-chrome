@@ -153,7 +153,8 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
   }
 
   async function handleGetSystemPromptLength(): Promise<Partial<AppResponse>> {
-    return { tokenLength: await countSysPromptTokens() };
+    if (!message.promptText) throw new Error('No prompt text provided');
+    return { tokenLength: await countSysPromptTokens(message.promptText) };
   }
 
   async function handleCancelTask(tab: chrome.tabs.Tab): Promise<Partial<AppResponse>> {

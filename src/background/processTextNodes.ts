@@ -226,7 +226,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
           }
         });
 
-        const response = await anthropicAPICall(msg, claude.apiKey, abortSignal, eventEmitter);
+        const response = await anthropicAPICall(msg, abortSignal, eventEmitter);
         eventEmitter?.emit('text', delimiter);
         const diacritizedText: string = response.content[0].text;
         console.log(`Original: \n${originalText} \nResult: \n${diacritizedText}`);

@@ -6,9 +6,11 @@ export interface AppMessage {
   // chrome.runtime.sendMessage:
 
   // clearWebpageData
-  // getSystemPromptLength
   // cancelTask
   // openOptions
+
+  // getSystemPromptLength
+  promptText?: string;
 
   // processText
   method?: string;

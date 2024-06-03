@@ -50,15 +50,12 @@ class Claude {
   }
 }
 
-async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: string, signal?: AbortSignal, eventEmitter?: EventEmitter): Promise<Anthropic.Message> {
+async function anthropicAPICall(params: Anthropic.MessageCreateParams, signal?: AbortSignal, eventEmitter?: EventEmitter): Promise<Anthropic.Message> {
   // generate a hash to identify the job
   const hash = await calculateHash(JSON.stringify(params));
 
   // get the API key if it's not provided
-  const apiKey = key;
-  if (!apiKey) {
-    throw new Error('API key not set');
-  }
+  const apiKey = extensionOptions.activeKey;
   const client = new Anthropic({ apiKey: apiKey });
   console.log('Queued job', hash);
 
@@ -112,33 +109,16 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
   });
 }
 
-async function countSysPromptTokens(): Promise<number> {
-  const { activePromptIndex, savedPrompts = [] } = extensionOptions;
-  const activePrompt = savedPrompts[activePromptIndex];
-
-  if (!activePrompt) throw new Error('No prompt selected');
-  if (activePrompt.tokenLength && activePrompt.tokenLength !== 0) return activePrompt.tokenLength;
-
-  const existingPrompt = savedPrompts.find((p: Prompt) => p.name === activePrompt.name);
-  if (existingPrompt && existingPrompt.tokenLength) return existingPrompt.tokenLength;
+async function countSysPromptTokens(text: string): Promise<number> {
 
   // Make the API call using the provided message format
   const sysPromptTokens = await anthropicAPICall({
     model: claude.haiku.currentVersion,
     max_tokens: 1,
     temperature: 0,
-    messages: [{ role: "user", content: [{ type: "text", text: activePrompt.text }] }]
+    messages: [{ role: "user", content: [{ type: "text", text }] }]
   }).then(response => response.usage.input_tokens);
 
-  // Update tokenLength for both the selected prompt and saved prompts
-  activePrompt.tokenLength = sysPromptTokens;
-  if (existingPrompt) {
-    existingPrompt.tokenLength = sysPromptTokens;
-  } else {
-    savedPrompts.push(activePrompt);
-  }
-
-  await chrome.storage.sync.set({ savedPrompts });
   return sysPromptTokens;
 }
 
