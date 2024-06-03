@@ -12,7 +12,6 @@ export class ExtensionOptions {
     public apiKeys: { name: string, key: string, savedAt: string }[] = [];
     public activeKey: string = '';
     public activeModel: string = 'haiku';
-    public rejectMalformed: boolean = true;
     public escalateModel: boolean = false;
     public maxTries: number = 3;
     public maxChars: number = 750;

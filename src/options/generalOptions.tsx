@@ -73,7 +73,6 @@ const GeneralOptions: React.FC = () => {
       <Divider />
       <Stack pt="2" spacing={"4"}>
         <LLMChoice setOptionsSaved={setOptionsSaved} />
-        <RejectMalformed setOptionsSaved={setOptionsSaved} />
         <EscalateModel setOptionsSaved={setOptionsSaved} />
         <MaxTries setOptionsSaved={setOptionsSaved} />
         <MaxChars setOptionsSaved={setOptionsSaved} />
@@ -326,34 +325,6 @@ const LLMChoice: React.FC<OptionProps> = ({ setOptionsSaved }) => {
         <option value="sonnet">Claude Sonnet</option>
         <option value="opus">Claude Opus</option>
       </Select>
-    </Stack>
-  );
-};
-
-const RejectMalformed: React.FC<OptionProps> = ({ setOptionsSaved }) => {
-  const [rejectMalformed, setRejectMalformed] = useState(false);
-
-  useEffect(() => {
-    chrome.storage.sync.get(['rejectMalformed'], (data: { rejectMalformed?: boolean }) => {
-      setRejectMalformed(data.rejectMalformed || false);
-    });
-  }, []);
-
-  const handleRejectMalformedChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = event.target.checked;
-    setRejectMalformed(newValue);
-    chrome.storage.sync.set({ rejectMalformed: newValue }, () => { setOptionsSaved(true) });
-  };
-
-  return (
-    <Stack direction={'row'} id="rejectResponses" display={'none'} spacing="3rem">
-      <Stack align="center" spacing="0px" flex="1">
-        <Text alignSelf={"stretch"}>Reject malformed responses</Text>
-        <Text fontSize="sm" alignSelf={"stretch"}>
-          E.g. when the LLM leaves out words. The diacritization may still be incorrect.
-        </Text>
-      </Stack>
-      <Switch size='lg' id="rejectSwitch" isChecked={rejectMalformed} onChange={handleRejectMalformedChange} />
     </Stack>
   );
 };
