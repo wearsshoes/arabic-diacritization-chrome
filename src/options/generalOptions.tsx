@@ -76,6 +76,9 @@ const GeneralOptions: React.FC = () => {
         <EscalateModel setOptionsSaved={setOptionsSaved} />
         <MaxTries setOptionsSaved={setOptionsSaved} />
         <MaxChars setOptionsSaved={setOptionsSaved} />
+        {/* TODO: Implement */}
+        <Text> Placeholder for Simultaneous Runs</Text>
+        <Text> Placeholder for Scheduler wait time</Text>
       </Stack>
     </Stack>
   )

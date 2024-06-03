@@ -14,7 +14,9 @@ import {
 import { CheckIcon, CloseIcon, AddIcon } from '@chakra-ui/icons'
 import { Prompt } from "../common/optionsClass"
 import { FormEvent, ChangeEvent } from 'react'
-export const Arabizi: React.FC = () => {
+
+// TODO: (Post-v1.0) Implement all these fields
+export const TransliterationOptions: React.FC = () => {
 	const customPrompt = ''
 	const savedPrompts: Prompt[] = []
 	return (

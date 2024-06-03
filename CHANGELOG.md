@@ -7,6 +7,7 @@ Improvements
 - New options:
   - Ability to auto-diacritize or auto-transliterate by default
   - Choose base model from anthropic models
+  - Customize number of retries, number of characters per prompt
 - More user-visible error handling
 - Removed useless files and functions
 

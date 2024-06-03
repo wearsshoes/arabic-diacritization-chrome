@@ -1,10 +1,11 @@
 import React, { ReactNode, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 
-import LLMOptions from './promptOptions';
+import PromptOptions from './promptOptions';
 import GeneralOptions from './generalOptions';
 import DataManagement from './dataManagement';
-import { Arabizi } from './arabizi';
+// import { TransliterationOptions } from './transliterationOptions';
+import APIUsageManagement from './apiUsageManagement';
 
 import theme from '../assets/theme';
 
@@ -32,7 +33,7 @@ import {
   FiActivity,
   FiMenu,
   FiHelpCircle,
-  FiMoon
+  // FiMoon
 } from 'react-icons/fi';
 
 import { IconType } from 'react-icons';
@@ -58,8 +59,8 @@ interface LinkItemProps {
 const LinkItems: Array<LinkItemProps> = [
   { name: 'General', icon: FiSettings },
   { name: 'Custom Prompt', icon: FiPenTool },
+  // { name: 'Transliteration', icon: FiMoon },
   { name: 'Local Data', icon: FiSave },
-  { name: 'Transliteration', icon: FiMoon },
   { name: 'API Usage', icon: FiActivity },
   { name: 'FAQ', icon: FiHelpCircle },
 ];
@@ -92,8 +93,9 @@ export default function SimpleSidebar({ children }: { children: ReactNode }) {
       <Box ml={{ base: 0, md: 60 }} ps="10" pt="4" pb="20" maxWidth={"800px"}>
         <Heading size="2xl" pb="4">{selectedItem ?? "Options"}</Heading>
         {selectedItem === 'General' ? <GeneralOptions /> : children}
-        {selectedItem === 'Custom Prompt' ? <LLMOptions /> : children}
-        {selectedItem === 'Transliteration' ? <Arabizi /> : children}
+        {selectedItem === 'Custom Prompt' ? <PromptOptions /> : children}
+        {/* {selectedItem === 'Transliteration' ? <TransliterationOptions /> : children} */}
+        {selectedItem === 'API Usage' ? <APIUsageManagement /> : children}
         {selectedItem === 'Local Data' ? <DataManagement /> : children}
         {selectedItem === 'FAQ' ? <FAQComponent /> : children}
       </Box>

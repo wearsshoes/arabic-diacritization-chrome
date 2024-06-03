@@ -11,7 +11,14 @@ import {
 } from '@chakra-ui/react'
 import { CheckIcon, AddIcon, CloseIcon } from '@chakra-ui/icons'
 
-const LLMOptions: React.FC = () => {
+const PromptOptions: React.FC = () => {
+
+
+  // TODO: diacritic colors should be in general options
+  // TODO: (post-v1.0) tabs for diacritics vs transliteration prompts
+
+  // TODO: Implement all these fields
+
   const [customPrompt, setCustomPrompt] = useState('');
   const [savedPrompts, setSavedPrompts] = useState<Prompt[]>([]);
 
@@ -164,4 +171,4 @@ const LLMOptions: React.FC = () => {
   )
 };
 
-export default LLMOptions;
+export default PromptOptions;
