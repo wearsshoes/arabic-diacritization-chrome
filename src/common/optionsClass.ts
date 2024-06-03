@@ -2,6 +2,7 @@ export interface Prompt {
     name: string;
     text: string;
     tokenLength: number;
+    default: boolean;
 }
 
 export class ExtensionOptions {
@@ -21,7 +22,7 @@ export class ExtensionOptions {
     // Custom Prompt Options
     public useCustomPrompt: boolean = false;
     public savedPrompts: Prompt[] = defaultPrompts;
-    public selectedPrompt: Prompt = defaultPrompts[0];
+    public activePromptIndex: number = 0;
     public checkTokenLength: boolean = false;
 
     // Local Data Options
@@ -44,8 +45,9 @@ export class ExtensionOptions {
 
 const defaultPrompts = [
     {
-        "name": "Full Diacritics",
+        "name": "Full Diacritics (Default)",
         "text": "Add full diacritics (taškīl) to the Arabic text based on pronunciation and grammar. Maintain the same number of '|' delimiters and leave non-Arabic text, numbers, and symbols unchanged. Example:\nInput: وصل |John| إلى مطار |JFK| الساعة (|10:30| صباحا)| يوم الاثنين|.[1]|\nOutput: وَصَلَ |John| إِلَى مَطَارِ |JFK| السَّاعَةَ (|10:30| صَبَاحًا)| يَوْمَ الِاثْنَيْنِ|.[1]|",
-        "tokenLength": 182
-    }
+        "tokenLength": 182,
+        "default": true
+    },
 ];

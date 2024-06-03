@@ -113,12 +113,13 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
 }
 
 async function countSysPromptTokens(): Promise<number> {
-  const { selectedPrompt, savedPrompts = [] } = await chrome.storage.sync.get(['selectedPrompt', 'savedPrompts']);
+  const { activePromptIndex, savedPrompts = [] } = extensionOptions;
+  const activePrompt = savedPrompts[activePromptIndex];
 
-  if (!selectedPrompt) throw new Error('No prompt selected');
-  if (selectedPrompt.tokenLength) return selectedPrompt.tokenLength;
+  if (!activePrompt) throw new Error('No prompt selected');
+  if (activePrompt.tokenLength && activePrompt.tokenLength !== 0) return activePrompt.tokenLength;
 
-  const existingPrompt = savedPrompts.find((p: Prompt) => p.name === selectedPrompt.name);
+  const existingPrompt = savedPrompts.find((p: Prompt) => p.name === activePrompt.name);
   if (existingPrompt && existingPrompt.tokenLength) return existingPrompt.tokenLength;
 
   // Make the API call using the provided message format
@@ -126,15 +127,15 @@ async function countSysPromptTokens(): Promise<number> {
     model: claude.haiku.currentVersion,
     max_tokens: 1,
     temperature: 0,
-    messages: [{ role: "user", content: [{ type: "text", text: selectedPrompt.text }] }]
+    messages: [{ role: "user", content: [{ type: "text", text: activePrompt.text }] }]
   }).then(response => response.usage.input_tokens);
 
   // Update tokenLength for both the selected prompt and saved prompts
-  selectedPrompt.tokenLength = sysPromptTokens;
+  activePrompt.tokenLength = sysPromptTokens;
   if (existingPrompt) {
     existingPrompt.tokenLength = sysPromptTokens;
   } else {
-    savedPrompts.push(selectedPrompt);
+    savedPrompts.push(activePrompt);
   }
 
   await chrome.storage.sync.set({ savedPrompts });

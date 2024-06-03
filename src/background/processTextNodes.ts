@@ -3,6 +3,7 @@ import { AppResponse } from "../common/types";
 import { TextNode, WebpageDiacritizationData } from "../common/webpageDataClass";
 import { Claude, anthropicAPICall, constructAnthropicMessage } from "./anthropicCaller";
 import { controllerMap, messageContentScript, cancelTask, extensionOptions } from './background';
+import { Prompt } from "../common/optionsClass";
 
 export async function processText(tab: chrome.tabs.Tab, method: string = 'fullDiacritics', entirePage: boolean = false): Promise<AppResponse> {
   if (!tab.id || !tab.url) {
@@ -143,7 +144,8 @@ async function buildData(tabId: number, tabUrl: string, selectedNodes?: TextNode
 
 export async function fullDiacritization(tabId: number, tabUrl: string, selectedNodes: TextNode[], ruby: boolean = false): Promise<TextNode[]> {
 
-  const { maxChars, maxTries, selectedPrompt, escalateModel } = extensionOptions;
+  const { maxChars, maxTries, activePromptIndex, savedPrompts, escalateModel } = extensionOptions;
+  const activePrompt: Prompt = savedPrompts[activePromptIndex];
 
   const controller = new AbortController();
   const { signal: abortSignal } = controller;
@@ -174,7 +176,7 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
       const replacements: TextNode[] = [];
 
       const eventEmitter = new EventEmitter();
-      const msg = constructAnthropicMessage(originalText, selectedPrompt, claude);
+      const msg = constructAnthropicMessage(originalText, activePrompt, claude);
 
       for (let tries = 1; tries < maxTries; tries++) {
         const sentencesToCheck = [...originals];
