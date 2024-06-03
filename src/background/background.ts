@@ -188,8 +188,14 @@ export function messageContentScript(tabId: number, message: AppMessage): Promis
 }
 
 // TODO: should this be a class?
-const schedulerOptions: BottleneckLight.ConstructorOptions = { maxConcurrent: 3, minTime: 1500 }
+const schedulerOptions: BottleneckLight.ConstructorOptions = {
+  maxConcurrent: extensionOptions.maxConcurrent,
+  minTime: extensionOptions.waitTime
+}
+
+console.log('Scheduler options:', schedulerOptions);
 export let scheduler = new BottleneckLight(schedulerOptions);
+
 export const controllerMap = new Map<number, AbortController>();
 
 export function cancelTask(tabId: number) {

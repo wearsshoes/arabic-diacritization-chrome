@@ -76,9 +76,8 @@ const GeneralOptions: React.FC = () => {
         <EscalateModel setOptionsSaved={setOptionsSaved} />
         <MaxTries setOptionsSaved={setOptionsSaved} />
         <MaxChars setOptionsSaved={setOptionsSaved} />
-        {/* TODO: Implement */}
-        <Text> Placeholder for Simultaneous Runs</Text>
-        <Text> Placeholder for Scheduler wait time</Text>
+        <MaxConcurrent setOptionsSaved={setOptionsSaved} />
+        <WaitTime setOptionsSaved={setOptionsSaved} />
       </Stack>
     </Stack>
   )
@@ -417,5 +416,70 @@ const MaxChars: React.FC<OptionProps> = ({ setOptionsSaved }) => {
   );
 };
 
+const MaxConcurrent: React.FC<OptionProps> = ({ setOptionsSaved }) => {
+  const [maxConcurrent, setMaxConcurrent] = useState(3);
+
+  useEffect(() => {
+    chrome.storage.sync.get(['maxConcurrent'], (data: { maxConcurrent?: number }) => {
+      setMaxConcurrent(data.maxConcurrent || NaN);
+    });
+  }, []);
+
+  const handleMaxConcurrentChange = (_: string, valueAsNumber: number) => {
+    setMaxConcurrent(valueAsNumber);
+    chrome.storage.sync.set({ maxConcurrent: valueAsNumber }, () => { setOptionsSaved(true) });
+  };
+
+  return (
+    <Stack id="maxConcurrent" direction={'row'} align="center" spacing="0px" flex="1">
+      <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
+        <Text alignSelf={"stretch"}>Maximum number of concurrent batches (recommended: 3 or fewer)</Text>
+        <Text fontSize="sm" alignSelf={"stretch"}>
+          For more information on API backoff, see <Link>https://docs.anthropic.com/en/api/rate-limits</Link>
+        </Text>
+      </Stack>
+      <NumberInput maxWidth="24" h={'100%'} value={maxConcurrent} min={1} max={100} onChange={handleMaxConcurrentChange}>
+        <NumberInputField background="white" />
+        <NumberInputStepper>
+          <NumberIncrementStepper />
+          <NumberDecrementStepper />
+        </NumberInputStepper>
+      </NumberInput>
+    </Stack>
+  );
+};
+
+const WaitTime: React.FC<OptionProps> = ({ setOptionsSaved }) => {
+  const [waitTime, setWaitTime] = useState(3);
+
+  useEffect(() => {
+    chrome.storage.sync.get(['waitTime'], (data: { waitTime?: number }) => {
+      setWaitTime(data.waitTime || NaN);
+    });
+  }, []);
+
+  const handleWaitTimeChange = (_: string, valueAsNumber: number) => {
+    setWaitTime(valueAsNumber);
+    chrome.storage.sync.set({ waitTime: valueAsNumber }, () => { setOptionsSaved(true) });
+  };
+
+  return (
+    <Stack id="waitTime" direction={'row'} align="center" spacing="0px" flex="1">
+      <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
+        <Text alignSelf={"stretch"}>Wait time between job submissions (milliseconds)</Text>
+        <Text fontSize="sm" alignSelf={"stretch"}>
+          For more information on API backoff, see <Link>https://docs.anthropic.com/en/api/rate-limits</Link>
+        </Text>
+      </Stack>
+      <NumberInput maxWidth="24" h={"100%"} size="md" step={100} value={waitTime} min={100} max={10000} onChange={handleWaitTimeChange}>
+        <NumberInputField background="white" />
+        <NumberInputStepper>
+          <NumberIncrementStepper />
+          <NumberDecrementStepper />
+        </NumberInputStepper>
+      </NumberInput>
+    </Stack>
+  );
+};
 
 export default GeneralOptions;

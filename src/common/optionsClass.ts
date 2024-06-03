@@ -15,6 +15,8 @@ export class ExtensionOptions {
     public escalateModel: boolean = false;
     public maxTries: number = 3;
     public maxChars: number = 750;
+    public maxConcurrent: number = 3;
+    public waitTime: number = 1500;
 
     // Custom Prompt Options
     public addColors: boolean = false;

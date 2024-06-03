@@ -57,7 +57,7 @@ interface LinkItemProps {
   icon: IconType;
 }
 const LinkItems: Array<LinkItemProps> = [
-  { name: 'General', icon: FiSettings },
+  { name: 'General Options', icon: FiSettings },
   { name: 'Custom Prompt', icon: FiPenTool },
   // { name: 'Transliteration', icon: FiMoon },
   { name: 'Local Data', icon: FiSave },
@@ -67,7 +67,7 @@ const LinkItems: Array<LinkItemProps> = [
 
 export default function SimpleSidebar({ children }: { children: ReactNode }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [selectedItem, setSelectedItem] = useState('General');
+  const [selectedItem, setSelectedItem] = useState('General Options');
 
   return (
     <Box>
@@ -92,7 +92,7 @@ export default function SimpleSidebar({ children }: { children: ReactNode }) {
 
       <Box ml={{ base: 0, md: 60 }} ps="10" pt="4" pb="20" maxWidth={"800px"}>
         <Heading size="2xl" pb="4">{selectedItem ?? "Options"}</Heading>
-        {selectedItem === 'General' ? <GeneralOptions /> : children}
+        {selectedItem === 'General Options' ? <GeneralOptions /> : children}
         {selectedItem === 'Custom Prompt' ? <PromptOptions /> : children}
         {/* {selectedItem === 'Transliteration' ? <TransliterationOptions /> : children} */}
         {selectedItem === 'API Usage' ? <APIUsageManagement /> : children}
