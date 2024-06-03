@@ -177,6 +177,7 @@ export function messageContentScript(tabId: number, message: AppMessage): Promis
   return new Promise((resolve, reject) => {
     chrome.tabs.sendMessage<AppMessage, AppResponse>(tabId, message, (response) => {
       if (chrome.runtime.lastError) {
+        // TODO: send all errors through the errorMessage event
         console.error('Error sending message:', message);
         reject(chrome.runtime.lastError);
       } else {
@@ -191,7 +192,7 @@ const schedulerOptions: BottleneckLight.ConstructorOptions = { maxConcurrent: 3,
 export let scheduler = new BottleneckLight(schedulerOptions);
 export const controllerMap = new Map<number, AbortController>();
 
-function cancelTask(tabId: number) {
+export function cancelTask(tabId: number) {
   if (controllerMap.has(tabId)) {
     const controller = controllerMap.get(tabId);
     controller?.abort();

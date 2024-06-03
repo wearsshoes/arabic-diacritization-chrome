@@ -2,7 +2,7 @@ import { EventEmitter } from "events";
 import { Prompt, AppResponse } from "../common/types";
 import { TextNode, WebpageDiacritizationData } from "../common/webpageDataClass";
 import { Claude, anthropicAPICall, constructAnthropicMessage } from "./anthropicCaller";
-import { controllerMap, messageContentScript } from './background';
+import { controllerMap, messageContentScript, cancelTask } from './background';
 import prompts from "./defaultPrompts.json";
 
 export async function processText(tab: chrome.tabs.Tab, method: string = 'fullDiacritics', entirePage: boolean = false): Promise<AppResponse> {
@@ -10,9 +10,9 @@ export async function processText(tab: chrome.tabs.Tab, method: string = 'fullDi
     const error = new Error('Tab id or url not found');
     return ({ status: 'error', errorMessage: error.message });
   }
+  const { id: tabId, url: tabUrl } = tab;
 
   try {
-    const { id: tabId, url: tabUrl } = tab;
     let pageData
 
     let selectedNodes: TextNode[] = [];
@@ -59,14 +59,23 @@ export async function processText(tab: chrome.tabs.Tab, method: string = 'fullDi
     return ({ status: 'success' });
 
   } catch (error) {
+    cancelTask(tabId);
+    if (entirePage) {
+      // messageContentScript(tabId, { action: 'webpageDone' });
+      messageContentScript(tabId, { action: 'errorMessage', userMessage: (error as Error).message});
+    } else {
+      // messageContentScript(tabId, { action: 'updateProgressBar', strLength: 100000 });
+      messageContentScript(tabId, { action: 'errorMessage', userMessage: (error as Error).message});
+    }
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
         console.warn('Aborted processing webpage:', error.message);
         return ({ status: 'error', errorMessage: 'Processing aborted' });
       }
-      console.error(`Failed to process webpage: ${error.message}`, error.stack);
+      console.warn(`Failed to process webpage: ${error.message}`, error.stack);
       return ({ status: 'error', errorMessage: error.message });
     }
+    console.warn(`Failed to process webpage: ${error}`);
   }
   return ({ status: 'error', errorMessage: 'Unknown error occurred' });
 }

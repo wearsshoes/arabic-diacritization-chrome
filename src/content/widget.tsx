@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useDisclosure } from '@chakra-ui/react';
+import { useToast, useDisclosure } from '@chakra-ui/react';
 import { Stack, Container, Button, ButtonGroup, Text, IconButton, Progress } from '@chakra-ui/react'
 import { SettingsIcon, ChevronUpIcon, CheckIcon, MinusIcon, CloseIcon, ArrowForwardIcon, SpinnerIcon } from '@chakra-ui/icons'
 import { Languages, translations } from "./widget_i18n";
@@ -8,7 +8,7 @@ import { WebpageDiacritizationData } from "../common/webpageDataClass";
 
 function useCustomEvent(
   eventName: string,
-  handler: (event: CustomEvent<{ strLength?: number }>) => void
+  handler: (event: CustomEvent<{ strLength?: number, userMessage?: string }>) => void
 ) {
   useEffect(() => {
     document.addEventListener(eventName, handler as EventListener);
@@ -38,6 +38,8 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
   const [finishedBatches, setProgress] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const progressPercent = totalBatches > 0 ? (finishedBatches / totalBatches) * 100 : 0;
+
+  const toast = useToast();
 
   const toggleLanguage = () => {
     setLanguage(prevLang => prevLang === 'en' ? 'ar' : 'en');
@@ -71,7 +73,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
       setIsAnimating(false);
       console.log(`Finished updating webpage/selection with ${method}.`);
     }
-  }, [method, pageRenders, isAnimating, totalBatches, finishedBatches]);
+  }, [method, pageRenders, isAnimating, totalBatches, finishedBatches, toast]);
 
   const taskChoiceHandler = (task: string) => {
     setMethod(task);
@@ -84,21 +86,29 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
   };
 
   const beginDiacritization = () => {
+    console.log('Trying to start:', method)
     try {
       if (isAnimating) return;
+      console.log('Processing:', method)
       if (textIsSelected) {
-        chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processText', method, wholePage: false})
+        chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processText', method, wholePage: false })
           .then((result) => {
-            result.status === 'success' ?
+            console.log('Selection processed:', result)
+            if (result.status === 'success') {
               console.log('Selection processed:', result)
-              : console.error('Error processing selection:', result.errorMessage)
+            } else {
+              console.error('Error processing selection:', result.errorMessage)
+            }
           });
       } else {
-        chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processText', method, wholePage: true})
+        chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processText', method, wholePage: true })
           .then((result) => {
-            result.status === 'success' ?
+            console.log('Webpage processed:', result)
+            if (result.status === 'success') {
               console.log('Webpage processed:', result)
-              : console.error('Error processing webpage:', result.errorMessage)
+            } else {
+              console.warn('Error processing webpage:', result.errorMessage)
+            }
           });
       }
     } catch (error) {
@@ -136,6 +146,17 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
     setPageRenders(new Set(['arabizi', 'fullDiacritics', 'original']));
   });
 
+  useCustomEvent('errorMessage', (event) => {
+    const { userMessage } = event.detail;
+    toast({
+      title: 'Diacritization Error',
+      description: `${userMessage}`,
+      status: 'error',
+      duration: 5000,
+      isClosable: true,
+    });
+  });
+
   useCustomEvent('toggleWidget', () => {
     onToggle();
   });
@@ -145,7 +166,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
       position="fixed"
       bottom="0"
       right="0"
-      zIndex="9999"
+      zIndex="5000"
       width="auto"
       style={{ direction: "ltr" }}
       {...closeProps}

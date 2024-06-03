@@ -82,11 +82,10 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, key?: str
               resolve(message);
             })
             .on('error', (error) => {
-              console.error('Received error:', error);
+              console.warn('API error:', error);
               reject(error);
             })
             .on('abort', (error) => {
-              // console.error('Stream aborted:', error);
               reject(error);
             });
         });

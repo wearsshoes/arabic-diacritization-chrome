@@ -1,8 +1,11 @@
+import React, { useRef } from 'react';
+// import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { AppMessage, AppResponse } from '../common/types';
-import { ChakraProvider } from '@chakra-ui/react';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
+import { ChakraProvider } from '@chakra-ui/react';
+import { ToastProvider } from '@chakra-ui/toast';
 import theme from './widget_theme';
 import ContentWidget from "./widget";
 import contentUtils from "./contentUtils";
@@ -21,15 +24,20 @@ const appContainer = document.createElement("div");
 appContainer.id = "crx-app-container";
 document.body.appendChild(appContainer);
 
+
 // Create the shadow root
 const shadowRoot = appContainer.attachShadow({ mode: 'open' });
+const portalContainer = document.createElement("div");
+portalContainer.id = "crx-portal-custom";
+portalContainer.style.direction = "ltr";
+shadowRoot.appendChild(portalContainer);
 const emotionCache = createCache({
   key: 'crx-emotion',
   container: shadowRoot,
 });
 
-function dispatchCustomEvent(action: string, strLength?: number) {
-  const event = new CustomEvent(action, { detail: { strLength } });
+function dispatchCustomEvent(action: string, strLength?: number, userMessage?: string) {
+  const event = new CustomEvent(action, { detail: { strLength, userMessage } });
   document.dispatchEvent(event);
 }
 
@@ -41,13 +49,13 @@ function setupChromeMessageListener() {
     'updateWebsiteText': handleUpdateWebsiteText,
   };
 
-  const eventActions = ['webpageDone', 'updateProgressBar', 'toggleWidget', 'beginProcessing'];
+  const eventActions = ['webpageDone', 'updateProgressBar', 'toggleWidget', 'beginProcessing', 'errorMessage'];
 
   chrome.runtime.onMessage.addListener((message: AppMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response: AppResponse | void) => void) => {
-    const { action, strLength } = message;
+    const { action, strLength, userMessage } = message;
 
     if (eventActions.includes(action)) {
-      dispatchCustomEvent(action, strLength);
+      dispatchCustomEvent(action, strLength, userMessage);
       sendResponse({ status: 'success' });
     } else {
       const handler = actionHandlers[action];
@@ -64,13 +72,31 @@ function setupChromeMessageListener() {
   });
 }
 
+
+// eslint-disable-next-line react-refresh/only-export-components
+const ExtensionPortal: React.FC = () => {
+  const portalRef = useRef(portalContainer);
+
+  return (
+    <ToastProvider portalProps={{ containerRef: portalRef }} />
+  );
+}
+
 createRoot(shadowRoot).render(
   <CacheProvider value={emotionCache}>
     <ChakraProvider theme={theme}>
       <ContentWidget siteLanguage={language} />
+      <ExtensionPortal />
     </ChakraProvider>
   </CacheProvider>
 );
 
 setupChromeMessageListener();
 contentUtils();
+
+setTimeout(() => {
+  const portal = document.querySelector('.chakra-portal');
+  if (portal) {
+    portal.remove();
+  }
+}, 100);

@@ -32,6 +32,9 @@ export interface AppMessage {
   //  updateProgressBar
   strLength?: number;
 
+  // errorMessage
+  userMessage?: string;
+
   //  beginProcessing
   //    strLength?: number;
 
