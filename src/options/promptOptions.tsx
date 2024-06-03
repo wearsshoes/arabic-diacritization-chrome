@@ -2,86 +2,141 @@ import React, { useEffect, useState } from 'react';
 import { AppMessage, AppResponse } from '../common/types';
 import { Prompt } from "../common/optionsClass";
 
-import { Textarea, Select, Button } from '@chakra-ui/react'
 import {
+  Textarea,
+  Select,
+  Button,
+  ButtonGroup,
+  FormControl,
   Text,
   Stack,
   Switch,
   Checkbox,
-} from '@chakra-ui/react'
-import { CheckIcon, AddIcon, CloseIcon } from '@chakra-ui/icons'
+} from '@chakra-ui/react';
+import { CheckIcon, AddIcon, CloseIcon } from '@chakra-ui/icons';
+
+const getNewName = () => {
+  let name = '';
+  while (!name) {
+    name = prompt('Enter a name for the new prompt:') ?? '';
+  }
+  return name;
+}
 
 const PromptOptions: React.FC = () => {
 
-
-  // TODO: diacritic colors should be in general options
   // TODO: (post-v1.0) tabs for diacritics vs transliteration prompts
+  // TODO: popovers would be nicer than alerts.
 
-  // TODO: Implement all these fields
-
-  const [customPrompt, setCustomPrompt] = useState('');
+  const [enabled, setEnabled] = useState(false);
+  const [promptText, setPromptText] = useState('');
   const [savedPrompts, setSavedPrompts] = useState<Prompt[]>([]);
+  const [activePromptIndex, setActivePromptIndex] = useState(0);
+  const [isSaveAs, setIsSaveAs] = useState(false);
+  const [checkTokenLength, setCheckTokenLength] = useState(false);
 
+  const selectedPrompt: Prompt = savedPrompts[activePromptIndex];
+
+  // Initialize and setup listener for changes to extension options
   useEffect(() => {
-    // Load the last selected prompt
-    chrome.storage.sync.get(['selectedPrompt'], (data: { selectedPrompt?: Prompt }) => {
-      setCustomPrompt(data.selectedPrompt?.text ?? '');
+    chrome.storage.sync.get(['useCustomPrompt', 'activePromptIndex', 'savedPrompts', 'checkTokenLength'], (data) => {
+      setEnabled(data.useCustomPrompt || false);
+      setActivePromptIndex(data.activePromptIndex || 0);
+      setSavedPrompts([...data.savedPrompts] || []);
+      setCheckTokenLength(data.checkTokenLength || false);
     });
 
-    // Load saved prompts
-    chrome.storage.sync.get(['savedPrompts'], (data: { savedPrompts?: Prompt[] }) => {
-      if (!data.savedPrompts) throw new Error('No saved prompts found');
-      setSavedPrompts([...data.savedPrompts]);
-    });
+    const storageListener = (changes: { [key: string]: chrome.storage.StorageChange }) => {
+      for (const [key, change] of Object.entries(changes)) {
+        switch (key) {
+          case 'useCustomPrompt':
+            setEnabled(change.newValue);
+            break;
+          case 'activePromptIndex':
+            setActivePromptIndex(change.newValue);
+            break;
+          case 'savedPrompts':
+            setSavedPrompts(change.newValue);
+            break;
+          case 'checkTokenLength':
+            setCheckTokenLength(change.newValue);
+            break;
+          default:
+            break;
+        }
+      }
+    };
+
+    chrome.storage.onChanged.addListener(storageListener);
+
+    return () => {
+      chrome.storage.onChanged.removeListener(storageListener);
+    };
   }, []);
 
-  const handleCustomPromptChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setCustomPrompt(event.target.value);
-  };
+  useEffect(() => {
+    setPromptText(selectedPrompt?.text ?? '');
+  }, [selectedPrompt]);
 
-  const handleLoadPromptChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedPrompt = savedPrompts.find((prompt) => prompt.name === event.target.value);
-    if (selectedPrompt) {
-      setCustomPrompt(selectedPrompt.text);
-      chrome.storage.sync.set({ selectedPrompt });
+  const handleUseCustomPromptChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { checked } = event.target;
+    const newIndex = checked ? activePromptIndex : 0;
+
+    chrome.storage.sync.set({ activePromptIndex: newIndex, useCustomPrompt: checked });
+    setActivePromptIndex(newIndex);
+    setEnabled(checked);
+  }
+
+  const handlePromptChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const nextPrompt = savedPrompts.findIndex((prompt) => prompt.name === event.target.value);
+
+    if (promptText !== selectedPrompt?.text && !confirm('You have unsaved changes. Do you want to discard them?')) {
+      event.target.value = savedPrompts[activePromptIndex].name;
+      return;
     }
+
+    chrome.storage.sync.set({ activePromptIndex: nextPrompt });
+    setActivePromptIndex(nextPrompt);
   };
 
-  const handleSavePrompt = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSavePrompt = async (event: React.FormEvent<HTMLFormElement>, isSaveAs: boolean) => {
     event.preventDefault();
-    const newPromptName = prompt('Enter a name for the new prompt');
 
-    if (!customPrompt || !newPromptName) throw new Error('Prompt name and text are required');
+    const promptName = isSaveAs ? getNewName() : selectedPrompt?.name || 'New Prompt';
+    const existingPrompt = savedPrompts.find((prompt) => prompt.name === promptName);
 
-    const result = await chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'getSystemPromptLength' })
-    if (result.status === 'error') throw new Error(result.errorMessage);
-    if (!result.tokenLength) throw new Error('Prompt length unknown');
+    if (existingPrompt && isSaveAs) {
+      const overwrite = confirm('A prompt with this name already exists. Do you want to overwrite it?');
+      if (!overwrite) return;
+    }
 
-    const promptTokens = result.tokenLength;
-    const newPrompt: Prompt = { name: newPromptName, text: customPrompt, tokenLength: promptTokens };
+    const updatedPrompts = savedPrompts.filter((prompt) => prompt.name !== promptName);
+    const newPrompt: Prompt = { name: promptName, text: promptText, tokenLength: 0, default: false };
 
-    chrome.storage.sync.get(['savedPrompts'], (data: { savedPrompts?: Prompt[] }) => {
-      const updatedPrompts = [...(data.savedPrompts || []), newPrompt];
-      chrome.storage.sync.set({ savedPrompts: updatedPrompts }, () => {
-        alert('Prompt saved!');
-        setSavedPrompts([...savedPrompts, newPrompt]);
-      });
-    });
+    if (checkTokenLength) {
+      const result = await chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'getSystemPromptLength', promptText})
+      if (result.status === 'error') throw new Error(result.errorMessage);
+      newPrompt.tokenLength = result.tokenLength || 0;
+    }
+
+    updatedPrompts.push(newPrompt);
+    chrome.storage.sync.set({ savedPrompts: updatedPrompts, activePromptIndex: updatedPrompts.indexOf(newPrompt) });
   };
 
   const handleDeletePrompt = () => {
-    const selectedPrompt = savedPrompts.find((prompt) => prompt.text === customPrompt);
-    if (selectedPrompt) {
-      chrome.storage.sync.get(['savedPrompts'], (data: { savedPrompts?: Prompt[] }) => {
-        const updatedPrompts = (data.savedPrompts || []).filter((prompt) => prompt.name !== selectedPrompt.name);
-        chrome.storage.sync.set({ savedPrompts: updatedPrompts }, () => {
-          alert('Prompt deleted!');
-          setCustomPrompt('');
-          setSavedPrompts(updatedPrompts);
-        });
-      });
-    }
+    if (!confirm('Are you sure you want to delete this prompt?')) return;
+    const index = activePromptIndex;
+    const updatedPrompts = (savedPrompts).filter((_, i) => i !== index);
+    const nextPrompt = updatedPrompts[index] || updatedPrompts[0];
+    chrome.storage.sync.set({ savedPrompts: updatedPrompts, activePromptIndex: updatedPrompts.indexOf(nextPrompt) });
+    setSavedPrompts(updatedPrompts);
+    setActivePromptIndex(updatedPrompts.indexOf(nextPrompt));
   };
+
+  const handleCheckTokenLengthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setCheckTokenLength(event.target.checked);
+    chrome.storage.sync.set({ checkTokenLength: event.target.checked });
+  }
 
   return (
     <Stack spacing={4}>
@@ -90,81 +145,90 @@ const PromptOptions: React.FC = () => {
         to learners because the language has grammar rules which depend on vowels,
         but those vowels are often not written.
       </Text>
-      <Stack direction={'row'}>
-        <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
-          <Text
-            alignSelf="stretch">
-            Add colors to diacritics
-          </Text>
-          <Text
-            fontSize={"sm"}
-            alignSelf="stretch"
-          >
-            Makes it easier to see diacritic marks
-          </Text>
-        </Stack>
-        <Switch size="lg" id="colorDiacritics" />
-      </Stack>
       <Stack direction="row" justify="flex-start" align="flex-end" spacing="0px" flex="1">
         <Text flex="1">
           Use custom system prompt
         </Text>
-        <Switch size="lg" id="useCustomPrompt" />
+        <Switch
+          size="lg"
+          id="useCustomPrompt"
+          onChange={handleUseCustomPromptChange}
+          isChecked={enabled}
+        />
       </Stack>
       <Stack>
-        <form id="savePromptForm" onSubmit={handleSavePrompt}>
-          <Stack>
-            <Stack direction='row'>
-              <Select
-                id="loadPrompt"
-                name="loadPrompt"
-                onChange={handleLoadPromptChange}
-                flex="1"
+        <form
+          id="savePromptForm"
+          onSubmit={(event) => handleSavePrompt(event, isSaveAs)}
+        >
+          <FormControl isDisabled={!enabled}>
+            <Stack>
+              <Stack direction='row'>
+                <Select
+                  id="loadPrompt"
+                  name="loadPrompt"
+                  onChange={handlePromptChange}
+                  flex="1"
+                  value={selectedPrompt?.name}
+                >
+                  {savedPrompts.map((prompt) => (
+                    <option key={prompt.name} value={prompt.name}>
+                      {prompt.name} ({prompt.tokenLength !== 0 ? prompt.tokenLength : 'N/A'} tokens)
+                    </option>
+                  ))}
+                </Select>
+                <ButtonGroup isDisabled={!enabled}>
+                  {/* TODO: Save Button Does Nothing */}
+                  <Button
+                    rightIcon={<CheckIcon data-icon="CkCheck" />}
+                    colorScheme="blue"
+                    type="submit"
+                    id="savePromptBtn"
+                    isDisabled={selectedPrompt?.default || promptText.length === 0}
+                    onClick={() => setIsSaveAs(false)}
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    rightIcon={<AddIcon data-icon="CkAdd" />}
+                    type="submit" id="saveAsBtn"
+                    colorScheme="blue"
+                    isDisabled={promptText.length === 0 || !enabled}
+                    onClick={() => setIsSaveAs(true)}
+                  >
+                    Save as
+                  </Button>
+                  <Button
+                    rightIcon={<CloseIcon data-icon="CkClose" />}
+                    colorScheme="red"
+                    onClick={handleDeletePrompt}
+                    isDisabled={savedPrompts.length === 1 || selectedPrompt?.default}
+                  >
+                    Delete
+                  </Button>
+                </ButtonGroup>
+              </Stack>
+              <Textarea
+                id="promptText"
+                name="promptText"
+                rows={16}
+                cols={50}
+                value={promptText}
+                onChange={(e) => setPromptText(e.target.value)}
+              ></Textarea>
+              <Checkbox
+                id="checkTokenLength"
+                size="lg"
+                defaultChecked={false}
+                variant="blue"
+                alignSelf="stretch"
+                isChecked={checkTokenLength}
+                onChange={handleCheckTokenLengthChange}
               >
-                {savedPrompts.map((prompt) => (
-                  <option key={prompt.name} value={prompt.name}>
-                    {prompt.name}
-                  </option>
-                ))}
-              </Select>
-              <Button
-                rightIcon={<CheckIcon data-icon="CkCheck" />}
-                colorScheme="blue"
-              >
-                Save
-              </Button>
-              <Button
-                rightIcon={<AddIcon data-icon="CkAdd" />}
-                type="submit" id="savePromptBtn"
-                colorScheme="blue"
-              >
-                Save as
-              </Button>
-              <Button
-                rightIcon={<CloseIcon data-icon="CkClose" />}
-                colorScheme="red"
-                onClick={handleDeletePrompt}
-              >
-                Delete
-              </Button>
+                Ask Claude to return the number of prompt tokens when saving
+              </Checkbox>
             </Stack>
-            <Textarea
-              id="customPromptTextArea"
-              name="customPrompt"
-              rows={16}
-              cols={50}
-              value={customPrompt}
-              onChange={handleCustomPromptChange}
-            ></Textarea>
-            <Checkbox
-              size="lg"
-              defaultChecked={false}
-              variant="blue"
-              alignSelf="stretch"
-            >
-              Ask Claude to return the number of prompt tokens when saving
-            </Checkbox>
-          </Stack>
+          </FormControl>
         </form>
       </Stack>
     </Stack>
