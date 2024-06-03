@@ -213,7 +213,17 @@ const KeyList: React.FC<OptionProps> = ({ optionsSaved, setOptionsSaved }) => {
   const handleClearApiKey = (i: number) => {
     console.log('Clearing API Key', i);
     const newKeys = apiKeys.filter((_, index) => index !== i);
+
+    if (activeKey === apiKeys[i].key && newKeys.length > 0) {
+      chrome.storage.sync.set({ activeKey: newKeys[0].key });
+      setActiveKey(newKeys[0].key);
+    } else if (newKeys.length === 0) {
+      chrome.storage.sync.remove('activeKey');
+      setActiveKey('');
+    }
+
     chrome.storage.sync.set({ apiKeys: newKeys });
+    setApiKeys(newKeys);
     setOptionsSaved(true);
   };
 
@@ -331,8 +341,8 @@ const RejectMalformed: React.FC<OptionProps> = ({ setOptionsSaved }) => {
   };
 
   return (
-    <Stack direction={'row'} id="rejectResponses" display={'none'}>
-      <Stack justify="flex-start" align="flex-end" spacing="0px" flex="1">
+    <Stack direction={'row'} id="rejectResponses" display={'none'} spacing="3rem">
+      <Stack align="center" spacing="0px" flex="1">
         <Text alignSelf={"stretch"}>Reject malformed responses</Text>
         <Text fontSize="sm" alignSelf={"stretch"}>
           E.g. when the LLM leaves out words. The diacritization may still be incorrect.
@@ -359,7 +369,7 @@ const EscalateModel: React.FC<OptionProps> = ({ setOptionsSaved }) => {
   };
 
   return (
-    <Stack direction="row" justify="flex-start" align="flex-end" spacing="0px">
+    <Stack direction="row" align="center" spacing="3rem">
       <Text flex={1}>Escalate to next best model when result is awful (may cost more)</Text>
       <Switch size='lg' id="escalateSwitch" isChecked={escalateModel} onChange={handleEscalateModelChange} />
     </Stack>
@@ -371,7 +381,7 @@ const MaxTries: React.FC<OptionProps> = ({ setOptionsSaved }) => {
 
   useEffect(() => {
     chrome.storage.sync.get(['maxTries'], (data: { maxTries?: number }) => {
-      setMaxTries(data.maxTries || 3);
+      setMaxTries(data.maxTries || NaN);
     });
   }, []);
 
@@ -399,7 +409,7 @@ const MaxChars: React.FC<OptionProps> = ({ setOptionsSaved }) => {
 
   useEffect(() => {
     chrome.storage.sync.get(['maxChars'], (data: { maxChars?: number }) => {
-      setMaxChars(data.maxChars || 750);
+      setMaxChars(data.maxChars || NaN);
     });
   }, []);
 

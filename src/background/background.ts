@@ -50,17 +50,18 @@ chrome.runtime.onInstalled.addListener(function (details) {
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'sync' && changes.options?.newValue) {
+  console.log(`Storage change detected in ${area} area.`);
+  if (area === 'sync') {
+    console.log('Changes:', changes);
 
-    for (const [key, value] of Object.entries(changes.options.newValue)) {
+    for (const [key, value] of Object.entries(changes)) {
       if (extensionOptions[key] === undefined) {
         console.warn(`Invalid option: ${key}`);
         continue;
       }
 
-      extensionOptions[key] = value;
+      extensionOptions[key] = value.newValue;
     }
-    console.log('Settings updated:', changes.options.newValue);
 
   }
 });

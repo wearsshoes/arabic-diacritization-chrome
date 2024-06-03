@@ -16,7 +16,8 @@ export class Claude {
 
   static async init() {
     const model = defaultModel;
-    const { apiKey } = (extensionOptions.activeKey || await chrome.storage.sync.get('activeKey')) as { apiKey: string };
+    const apiKey = extensionOptions.activeKey;
+    console.log('Initializing Claude with model:', model, 'and API key:', apiKey);
     return new Claude(model, apiKey);
   }
 
