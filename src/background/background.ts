@@ -63,6 +63,13 @@ chrome.storage.onChanged.addListener((changes, area) => {
       extensionOptions[key] = value.newValue;
     }
 
+    if (changes.maxConcurrent || changes.waitTime) {
+      console.log('Updating scheduler settings:', extensionOptions.maxConcurrent, extensionOptions.waitTime);
+      scheduler.updateSettings({
+        maxConcurrent: extensionOptions.maxConcurrent,
+        minTime: extensionOptions.waitTime
+      });
+    }
   }
 });
 
@@ -193,7 +200,6 @@ const schedulerOptions: BottleneckLight.ConstructorOptions = {
   minTime: extensionOptions.waitTime
 }
 
-console.log('Scheduler options:', schedulerOptions);
 export let scheduler = new BottleneckLight(schedulerOptions);
 
 export const controllerMap = new Map<number, AbortController>();
