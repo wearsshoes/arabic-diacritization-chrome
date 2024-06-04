@@ -64,8 +64,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
     }
 
     if (changes.maxConcurrent || changes.waitTime) {
-      console.log('Updating scheduler settings:', extensionOptions.maxConcurrent, extensionOptions.waitTime);
-      scheduler.updateSettings({
+      scheduler.stop({ dropWaitingJobs: false });
+      scheduler = new BottleneckLight({
         maxConcurrent: extensionOptions.maxConcurrent,
         minTime: extensionOptions.waitTime
       });
@@ -171,15 +171,8 @@ chrome.runtime.onMessage.addListener((message: AppMessage, sender, sendResponse:
 // ----------------- Functions ----------------- //
 
 export const extensionOptions = new ExtensionOptions();
-
-chrome.storage.sync.get(null, (result) => {
-  for (const key in result) {
-    if (Object.prototype.hasOwnProperty.call(extensionOptions, key)) {
-      extensionOptions[key] = result[key];
-    }
-  }
-  console.log('Loaded options:', extensionOptions);
-});
+export const controllerMap = new Map<number, AbortController>();
+export let scheduler: BottleneckLight;
 
 export function messageContentScript(tabId: number, message: AppMessage): Promise<AppResponse> {
   return new Promise((resolve, reject) => {
@@ -195,22 +188,35 @@ export function messageContentScript(tabId: number, message: AppMessage): Promis
   });
 }
 
-// TODO: should this be a class?
-const schedulerOptions: BottleneckLight.ConstructorOptions = {
-  maxConcurrent: extensionOptions.maxConcurrent,
-  minTime: extensionOptions.waitTime
-}
-
-export let scheduler = new BottleneckLight(schedulerOptions);
-
-export const controllerMap = new Map<number, AbortController>();
-
 export function cancelTask(tabId: number) {
   if (controllerMap.has(tabId)) {
     const controller = controllerMap.get(tabId);
     controller?.abort();
     scheduler.stop();
     controllerMap.delete(tabId);
-    scheduler = new BottleneckLight(schedulerOptions);
+    scheduler = new BottleneckLight(
+      {
+        maxConcurrent: extensionOptions.maxConcurrent,
+        minTime: extensionOptions.waitTime
+      }
+    );
   }
 }
+
+function main() {
+  chrome.storage.sync.get(null, (result) => {
+    for (const key in result) {
+      if (Object.prototype.hasOwnProperty.call(extensionOptions, key)) {
+        extensionOptions[key] = result[key];
+      }
+    }
+    console.log('Loaded options:', extensionOptions);
+    scheduler = new BottleneckLight({
+      maxConcurrent: extensionOptions.maxConcurrent,
+      minTime: extensionOptions.waitTime
+    });
+
+  });
+}
+
+main();
