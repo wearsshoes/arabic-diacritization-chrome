@@ -4,10 +4,12 @@
 Improvements
 - Redesigned options page.
 - Added FAQ (in options)
+- Added storage usage, api usage charts in options
 - New options:
   - Ability to auto-diacritize or auto-transliterate by default
   - Choose base model from anthropic models
   - Customize number of retries, number of characters per prompt
+  - Ability to configure scheduler timing to account for api limits
 - More user-visible error handling
 - Removed useless files and functions
 
