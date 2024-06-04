@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { calculateHash } from '../common/utils';
-import { Prompt } from "../common/optionsClass";
+import { Prompt, APIUsageRecord } from "../common/optionsClass";
 import { EventEmitter } from 'events'
 import { scheduler } from './background';
 import { extensionOptions } from './background';
@@ -71,12 +71,17 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, signal?: 
               eventEmitter?.emit('text', textDelta);
             })
             .on('finalMessage', (message) => {
+              updateTokenUsage(params.model, message.usage);
               resolve(message);
             })
             .on('error', (error) => {
               console.warn('API error:', error);
-              if (error instanceof Anthropic.APIError && [400, 401, 403, 404, 422].includes(error.status || 0)) {
-                reject(error);
+              if (error instanceof Anthropic.APIError) {
+                if ([400, 401, 403, 404, 422].includes(error.status || 0)) {
+                  reject(error);
+                } else if (error.status === 529) {
+                  console.warn('Server overloaded!');
+                }
               }
             })
             .on('abort', (error) => {
@@ -149,6 +154,16 @@ export function constructAnthropicMessage(
       }
     ]
   };
+}
+
+async function updateTokenUsage(model: string, usage: Anthropic.Usage) {
+  const inputTokens = usage.input_tokens;
+  const outputTokens = usage.output_tokens;
+  const date = new Date().toISOString();
+  const newRecord: APIUsageRecord = { date, model, inputTokens, outputTokens};
+  console.log('New usage record:', newRecord);
+  extensionOptions.usageRecords.push(newRecord);
+  chrome.storage.sync.set({ usageRecords: extensionOptions.usageRecords });
 }
 
 export { Claude, anthropicAPICall, countSysPromptTokens };

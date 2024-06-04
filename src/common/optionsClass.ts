@@ -5,6 +5,12 @@ export interface Prompt {
     default: boolean;
 }
 
+export interface APIUsageRecord {
+    date: string;
+    model: string;
+    inputTokens: number;
+    outputTokens: number;
+}
 export class ExtensionOptions {
     [key: string]: unknown;
 
@@ -37,6 +43,7 @@ export class ExtensionOptions {
     public capitalizeProperNounsLLM: boolean = true;
 
     // API Usage Options
+    public usageRecords: APIUsageRecord[] = [];
 
     // State Management
     public language: string = 'en';
