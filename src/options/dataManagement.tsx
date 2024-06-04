@@ -31,7 +31,7 @@ import { DeleteIcon } from '@chakra-ui/icons';
 const DataManagement: React.FC = () => {
   const [saves, setSaves] = useState<{ url: string; bytes: number; lastVisited: Date }[]>([]);
   const [storageUsed, setStorageUsed] = useState<number>(0);
-const maxStorage = chrome.storage.local.QUOTA_BYTES;
+  const maxStorage = chrome.storage.local.QUOTA_BYTES;
   const [databaseMessage, setDatabaseMessage] = useState<string>('');
   const [sortBy, setSortBy] = useState<{ key: string; order: 'asc' | 'desc' }>({ key: 'storage', order: 'desc' });
   const [isMobile] = useMediaQuery("(max-width: 768px)");
@@ -49,6 +49,29 @@ const maxStorage = chrome.storage.local.QUOTA_BYTES;
       );
       setSaves(saves);
     });
+
+    // TODO: need to indicate if partial save or not; consider how to handle this
+
+    const storageListener = (changes: { [key: string]: chrome.storage.StorageChange }) => {
+      for (const [key, change] of Object.entries(changes)) {
+        if (change.newValue) {
+          setSaves((prev) => [
+            ...prev,
+            {
+              url: key,
+              bytes: change.newValue.bytes,
+              lastVisited: new Date(Date.parse(change.newValue.lastVisited)),
+            },
+          ]);
+        }
+      }
+    };
+
+    chrome.storage.local.onChanged.addListener(storageListener);
+
+    return () => {
+      chrome.storage.local.onChanged.removeListener(storageListener);
+    };
   }, []);
 
   useEffect(() => {
@@ -112,7 +135,7 @@ const maxStorage = chrome.storage.local.QUOTA_BYTES;
         <Stat minW="fit-content">
           <Text color="gray.700">Pages cached</Text>
           <StatNumber>{saves.length} pages</StatNumber>
-            <StatHelpText>
+          <StatHelpText>
             <Button
               id="clearDatabaseBtn"
               size="sm"
@@ -123,7 +146,7 @@ const maxStorage = chrome.storage.local.QUOTA_BYTES;
             >
               Clear All
             </Button>
-            </StatHelpText>
+          </StatHelpText>
         </Stat>
       </Stack>
       <Text id="databaseMessage">{databaseMessage}</Text>
