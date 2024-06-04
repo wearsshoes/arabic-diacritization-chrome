@@ -217,7 +217,6 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
               });
             } else {
               console.warn(`Validation failed:\n${newText}\n${checkText}\n${refText}`);
-              replacements.push(textNode);
               elementValidationFailures++;
             }
 
@@ -248,9 +247,8 @@ export async function fullDiacritization(tabId: number, tabUrl: string, selected
           console.warn('Failed to diacritize chunk after', maxTries, 'tries,');
         }
       }
-      console.warn('Failed to diacritize chunk, returning original text');
-      // TODO: this would save the originals into diacritization; don't do that
-      return originals;
+      console.warn('Failed to diacritize chunk.');
+      return [];
     })
   ).then((result) => { return result.flat(); });
 
