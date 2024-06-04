@@ -178,7 +178,6 @@ const PromptOptions: React.FC = () => {
                   ))}
                 </Select>
                 <ButtonGroup isDisabled={!enabled}>
-                  {/* TODO: Save Button Does Nothing */}
                   <Button
                     rightIcon={<CheckIcon data-icon="CkCheck" />}
                     colorScheme="blue"

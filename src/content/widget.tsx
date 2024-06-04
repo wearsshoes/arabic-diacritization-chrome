@@ -80,8 +80,9 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
     console.log('selected task: ', task, 'current method: ', method, 'existing pageRenders:', pageRenders)
     if (pageRenders.has(task)) {
       setPageState(task);
-      chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processText', method: task, wholePage: true })
-        .catch((error) => console.error(`Error in ${task}:`, error));
+      // TODO: this should just ask the service worker to return the textNodes, then update the page according to method.
+      //   chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processText', method: task, wholePage: true })
+      //     .catch((error) => console.error(`Error in ${task}:`, error));
     }
   };
 

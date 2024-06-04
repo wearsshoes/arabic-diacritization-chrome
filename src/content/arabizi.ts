@@ -121,16 +121,6 @@ interface TransliterationDict {
   return results;
 }
 
-// TODO: joined vowels -- fii instead of fiy, etc
-// e.g. 'arabiyyat
-// y and w at beginning of word
-// al- works sometimes and not other times in a weird and inconsistent way; maybe different unicode pts?
-// al gets dash only if near beginning of word (define a list of prefixes...?)
-// treat Allah special
-
-
-// TODO: punctuation (add in arabizi.json)
-
 // function transliterateTaMarbuta(sentence: string) {
 //   // Regular expression to match Arabic words
 //   const words = sentence.split(/\s+/);

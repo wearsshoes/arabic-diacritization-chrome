@@ -36,7 +36,6 @@ const App: React.FC = () => {
   const [method, setMethod] = useState('fullDiacritics');
   const [apiKeyFound, setApiKeyFound] = useState(false);
 
-
   useEffect(() => {
     chrome.storage.sync.get(['apiKey'], (data) => {
       if (data.apiKey) {
@@ -175,6 +174,7 @@ const App: React.FC = () => {
           <Heading fontFamily={'basmala'} padding={2} marginTop={5} marginBottom={0} textAlign='center' lineHeight={0}>Easy Peasy Arabizi</Heading>
           <Text fontSize={'md'} align={'center'}> This popup is still under construction. Recommend using the onscreen widget (Control-Shift-U / Command-Shift-U to restore if closed).</Text>
         </Stack>
+        {/* TODO: maybe we want it to open up the popup instead? */}
         <Button size='xs' onClick={() => chrome.runtime.openOptionsPage()}>Open Options Page</Button>
         <Accordion alignContent={'center'} allowToggle>
           <AccordionItem width='100%'>
