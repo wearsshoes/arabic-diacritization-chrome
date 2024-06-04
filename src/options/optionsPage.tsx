@@ -43,7 +43,7 @@ import faqContent from '../../public/faq.md?raw';
 
 const chakraComponents = {
   h1: (props: HeadingProps) => <Heading as="h1" size="xl" my={4} {...props} />,
-  h2: (props:  HeadingProps) => <Heading as="h2" size="lg" my={4} {...props} />,
+  h2: (props: HeadingProps) => <Heading as="h2" size="lg" my={4} {...props} />,
   h3: (props: HeadingProps) => <Heading as="h3" size="md" my={3} {...props} />,
   p: (props: TextProps) => <Box fontSize={"md"} {...props} />,
 };
@@ -74,18 +74,26 @@ export default function SimpleSidebar({ children }: { children: ReactNode }) {
       <SidebarContent
         onClose={() => onClose}
         display={{ base: 'none', md: 'block' }}
-        onItemClick={(item) => setSelectedItem(item)}
+        onItemClick={(item) => {
+          setSelectedItem(item)
+        }}
       />
       <Drawer
-        autoFocus={false}
         isOpen={isOpen}
-        placement="left"
+        placement='top'
         onClose={onClose}
         returnFocusOnClose={false}
         onOverlayClick={onClose}
-        size="full">
-        <DrawerContent>
-          <SidebarContent onClose={onClose} onItemClick={() => { }} />
+        size="full"
+      >
+        <DrawerContent >
+          <SidebarContent
+            onClose={onClose}
+            onItemClick={(item) => {
+              setSelectedItem(item);
+              onClose();
+            }}
+          />
         </DrawerContent>
       </Drawer>
       <MobileNav display={{ base: 'flex', md: 'none' }} onOpen={onOpen} />
@@ -201,13 +209,15 @@ interface MobileProps extends FlexProps {
 const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
   return (
     <Flex
-      ml={{ base: 0, md: 60 }}
-      px={{ base: 4, md: 24 }}
+      flexDirection="row"
+      alignItems={'center'}
+      p={2}
+      ps={4}
       bg={useColorModeValue('gray.100', 'gray.900')}
       borderBottomWidth="1px"
       borderBottomColor={useColorModeValue('gray.200', 'gray.700')}
-      alignItems="center"
-      {...rest}>
+      {...rest}
+    >
       <IconButton
         variant="outline"
         onClick={onOpen}
@@ -215,8 +225,14 @@ const MobileNav = ({ onOpen, ...rest }: MobileProps) => {
         icon={<FiMenu />}
       />
       <Heading
+        ml={2}
+        my={0}
+        px={2}
+        size={'lg'}
         fontWeight="black"
         textTransform="uppercase"
+      // outline={"1px solid black"}
+      // bg={"white"}
       >
         Easy Peasy Arabizi
       </Heading>

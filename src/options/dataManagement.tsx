@@ -229,7 +229,7 @@ const MobileView: React.FC<{
                 </Box>
               </Stack>
             </CardHeader>
-            <CardBody p={2} display="flex" flexDirection="column" justifyContent="flex-end" flexGrow={1}>
+            <CardBody p={2}>
               <Link fontSize={"xs"} href={save.url} target="_blank" rel="noopener noreferrer">
                 {decodeURI(save.url)}
               </Link>
@@ -239,8 +239,8 @@ const MobileView: React.FC<{
                 aria-label="Delete"
                 icon={<DeleteIcon />}
                 size="sm"
+                width="100%"
                 roundedTop={0}
-                flex={1}
                 onClick={() => {
                   chrome.storage.local.remove(save.url);
                   setSaves(saves.filter((s) => s.url !== save.url));
