@@ -75,7 +75,9 @@ async function anthropicAPICall(params: Anthropic.MessageCreateParams, signal?: 
             })
             .on('error', (error) => {
               console.warn('API error:', error);
-              reject(error);
+              if (error instanceof Anthropic.APIError && [400, 401, 403, 404, 422].includes(error.status || 0)) {
+                reject(error);
+              }
             })
             .on('abort', (error) => {
               reject(error);
@@ -139,7 +141,7 @@ export function constructAnthropicMessage(
       {
         role: "user",
         content: [
-{
+          {
             type: "text",
             text: `Input: ${text} \nOutput:`,
           }
