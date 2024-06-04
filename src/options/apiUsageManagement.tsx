@@ -69,10 +69,10 @@ const APIUsageManagement: React.FC = () => {
       }
     };
 
-    chrome.storage.onChanged.addListener(storageListener);
+    chrome.storage.sync.onChanged.addListener(storageListener);
 
     return () => {
-      chrome.storage.onChanged.removeListener(storageListener);
+      chrome.storage.sync.onChanged.removeListener(storageListener);
     };
   }, []);
 
