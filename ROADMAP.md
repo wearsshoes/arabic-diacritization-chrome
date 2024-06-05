@@ -10,7 +10,6 @@
 
 ### UI
 
-- 1.0 show cost for all models and total
 - 1.0 switch for choosing between arabizi and ala-lc.
 - 1.0 Redesign extension popup to be simpler and cleaner
 - 1.0 have widget have button to open popup

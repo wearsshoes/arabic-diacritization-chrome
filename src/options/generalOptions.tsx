@@ -24,11 +24,21 @@ import {
   NumberIncrementStepper,
   NumberDecrementStepper,
   SimpleGrid,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverArrow,
+  PopoverCloseButton,
+  PopoverHeader,
+  PopoverBody,
 } from '@chakra-ui/react';
 
 
 import { FiFeather, FiKey } from 'react-icons/fi';
-import { CheckIcon, DeleteIcon, ExternalLinkIcon, SunIcon } from '@chakra-ui/icons'
+import {
+  CheckIcon, DeleteIcon, ExternalLinkIcon, SunIcon,
+  QuestionOutlineIcon
+} from '@chakra-ui/icons'
 
 const GeneralOptions: React.FC = () => {
   const [optionsSaved, setOptionsSaved] = useState(false);
@@ -51,6 +61,7 @@ const GeneralOptions: React.FC = () => {
   return (
     <Stack mt="4" id="general">
       <Stack pt="2" spacing={"4"}>
+        <TransliterationMethod setOptionsSaved={setOptionsSaved} />
         <DiacritizeByDefault setOptionsSaved={setOptionsSaved} />
       </Stack>
       <Heading >
@@ -73,7 +84,7 @@ const GeneralOptions: React.FC = () => {
         Model Options
       </Heading>
       <Divider />
-      <Stack pt="2" spacing={{base: 4, md: 6}}>
+      <Stack pt="2" spacing={{ base: 4, md: 6 }}>
         <ActiveModel setOptionsSaved={setOptionsSaved} />
         <EscalateModel setOptionsSaved={setOptionsSaved} />
         <MaxTries setOptionsSaved={setOptionsSaved} />
@@ -88,6 +99,72 @@ const GeneralOptions: React.FC = () => {
 interface OptionProps {
   setOptionsSaved: React.Dispatch<React.SetStateAction<boolean>>;
   optionsSaved?: boolean;
+}
+
+const TransliterationMethod: React.FC<OptionProps> = ({ setOptionsSaved }) => {
+  const [transliterationMethod, setTransliterationMethod] = useState("off");
+
+  useEffect(() => {
+    chrome.storage.sync.get(['transliterationMethod'], (data: { transliterationMethod?: string }) => {
+      setTransliterationMethod(data.transliterationMethod || "ala-lc-strict");
+    });
+  }, []);
+
+  const handleToggle = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newValue = event.target.value;
+    setTransliterationMethod(newValue);
+    chrome.storage.sync.set({ transliterationMethod: newValue }, () => { setOptionsSaved(true) });
+  };
+
+  return (
+    <Box>
+      <Wrap direction={{ base: "column", md: "row" }} align='center'>
+        <Stack direction={'row'} flex={1} spacing={2} align={'center'}>
+          <Text>
+            Transliteration method to use
+          </Text>
+          <Popover>
+            <PopoverTrigger>
+              <IconButton
+                aria-label="Help"
+                icon={<QuestionOutlineIcon />}
+                isRound
+              />
+            </PopoverTrigger>
+            <PopoverContent w='fit-content' bg='gray.100'>
+              <PopoverArrow bg='gray.100'/>
+              <PopoverCloseButton />
+              <PopoverHeader>Explanation</PopoverHeader>
+              <PopoverBody >
+                {/* <Text fontSize={'sm'}>
+                  'ALA-LC Strict' is the more orthodox transliteration, which uses modified Latin characters and accent marks.
+                  This version is very similar to Wikipedia.<br />
+                </Text>
+                <Text fontSize={'sm'}>
+                  'Arabizi' is a more casual transliteration used in everyday life, based on normal Latin alphabet letters, using numbers to represent certain Arabic characters.
+                  We use a Duolingo-flavored Arabizi that learners might be familiar with.<br />
+                </Text> */}
+                <Text>
+                  <b>ALA-LC example: </b><i>al-ʿarabiyyahu l-fuṣḥā </i><br />
+                  <b>Arabizi example: </b><i>3arabiyyah an-naas </i><br />
+                </Text>
+              </PopoverBody>
+            </PopoverContent>
+          </Popover>
+        </Stack>
+        <Select
+          id="autoDiacritizeSelect"
+          value={transliterationMethod}
+          onChange={handleToggle}
+          minW="10rem"
+          flex={0.5}
+        >
+          <option value="ala-lc-strict">ALA-LC Strict</option>
+          <option value="duolingo-arabizi">Duolingo Arabizi</option>
+        </Select>
+      </Wrap>
+    </Box>
+  )
 }
 
 const DiacritizeByDefault: React.FC<OptionProps> = ({ setOptionsSaved }) => {
@@ -106,7 +183,7 @@ const DiacritizeByDefault: React.FC<OptionProps> = ({ setOptionsSaved }) => {
   };
 
   return (
-    <Wrap direction={{ base: "column", md: "row" }}>
+    <Wrap direction={{ base: "column", md: "row" }} align='center'>
       <Stack spacing="0px" flex={1}>
         <Text alignSelf="stretch">
           Diacritize Arabic pages by default
@@ -132,6 +209,7 @@ const DiacritizeByDefault: React.FC<OptionProps> = ({ setOptionsSaved }) => {
     </Wrap>
   )
 }
+
 
 const APIKeyForm: React.FC<OptionProps> = ({ setOptionsSaved }) => {
   const [keyName, setKeyName] = useState('');
@@ -320,7 +398,7 @@ const ActiveModel: React.FC<OptionProps> = ({ setOptionsSaved }) => {
   };
 
   return (
-    <Wrap id="activeModel" align={'center'} direction={{base: 'column', md: 'row'}}>
+    <Wrap id="activeModel" align={'center'} direction={{ base: 'column', md: 'row' }}>
       <Stack direction={'column'} flex={1} spacing={0}>
         <Text >Default Model</Text>
         <Text fontSize={"md"} fontStyle={"oblique"}>
