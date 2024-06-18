@@ -1,28 +1,34 @@
 import { TextNode } from '../common/webpageDataClass';
+// import { extensionOptions } from '../background/background';
 import transliterations from './transliterations.json';
 
 interface TransliterationDict {
   [key: string]: string[];
 }
 
-// export function arabicToArabizi(textNodes: TextNode[]): TextNode[] {
-  export function arabicToArabizi(textNodes: TextNode[], dialect: string = "msa"): TextNode[] {
+export function arabicToArabizi(textNodes: TextNode[], transliterationMethod: string = 'ala-lc'): TextNode[] {
+
+  // const { transliterationMethod } = extensionOptions;
 
   let chars: TransliterationDict;
   let digraphs: TransliterationDict;
   let trigraphs: TransliterationDict;
-  switch (dialect) {
-    case "msa":
-  chars = transliterations['ala-lc'].chars;
-  digraphs = transliterations['ala-lc'].digraphs;
-  trigraphs = transliterations['ala-lc'].trigraphs;
+  switch (transliterationMethod) {
+    case "ala-lc":
+      chars = transliterations['ala-lc'].chars;
+      digraphs = transliterations['ala-lc'].digraphs;
+      trigraphs = transliterations['ala-lc'].trigraphs;
+      break;
+    // case "arabizi":
+    //   chars = transliterations['arabizi'].chars;
+    //   digraphs = transliterations['arabizi'].digraphs;
+    //   trigraphs = transliterations['arabizi'].trigraphs;
+    //   break;
+
   }
 
   function transliterate(text: string): string {
-    // use shadda and sukkoon to do sun/moon transformation
     let result = '';
-
-    // text = transliterateTaMarbuta(text);
 
     text = text.replace(/اللَّه/g, 'Allah')
 
@@ -121,26 +127,6 @@ interface TransliterationDict {
   return results;
 }
 
-// function transliterateTaMarbuta(sentence: string) {
-//   // Regular expression to match Arabic words
-//   const words = sentence.split(/\s+/);
-//   const transliteratedWords = words.map(word => {
-//     if (word.startsWith('ال')) return word;
-//     else return word.replace(/ة([\u064B-\u0652]?)/g, (diacritic) => {
-//       // Check if there's a diacritic indicating a suffix
-//       if (diacritic && diacritic.match(/[\u064B-\u0652]/)) {
-//         // Transliterated as 't' if there's a diacritic (indicative of suffix or definite article)
-//         return 't';
-//       } else {
-//         // Transliterated as 'h' otherwise
-//         return 'h';
-//       }
-//     });
-//   });
-
-//   // Join the transliterated words back into a sentence
-//   return transliteratedWords.join(' ');
-// }
 
 // const chars: TransliterationDict = {
 //   "ا": ["a", "aa", "e"],
