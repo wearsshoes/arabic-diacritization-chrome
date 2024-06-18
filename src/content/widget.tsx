@@ -32,7 +32,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
 
   const [method, setMethod] = useState('original');
   const [pageState, setPageState] = useState('original');
-  const [pageRenders, setPageRenders] = useState(false);
+  const [saveExists, setSaveExists] = useState(false);
 
   const [totalBatches, setTotal] = useState(0);
   const [finishedBatches, setProgress] = useState(0);
@@ -58,7 +58,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
     chrome.storage.local.get(window.location.href, (result) => {
       const savedData: WebpageDiacritizationData = result[window.location.href];
       if (savedData) {
-        setPageRenders(true)
+        setSaveExists(true)
       }
     })
   }, []);
@@ -73,13 +73,14 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
       setIsAnimating(false);
       console.log(`Finished updating webpage/selection with ${method}.`);
     }
-  }, [method, pageRenders, isAnimating, totalBatches, finishedBatches, toast]);
+  }, [method, saveExists, isAnimating, totalBatches, finishedBatches, toast]);
 
   const taskChoiceHandler = (task: string) => {
     setMethod(task);
-    console.log('selected task: ', task, 'current method: ', method, 'existing pageRenders:', pageRenders)
-    if (pageRenders) {
+    console.log('selected task: ', task, 'current method: ', method, 'existing pageRenders:', saveExists)
+    if (saveExists) {
       setPageState(task);
+
       // TODO: this should just ask the service worker to return the textNodes, then update the page according to method.
       //   chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processText', method: task, wholePage: true })
       //     .catch((error) => console.error(`Error in ${task}:`, error));
@@ -144,7 +145,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
   useCustomEvent('webpageDone', () => {
     setProgress(totalBatches);
     setPageState(method);
-    setPageRenders(true);
+    setSaveExists(true);
   });
 
   useCustomEvent('errorMessage', (event) => {
