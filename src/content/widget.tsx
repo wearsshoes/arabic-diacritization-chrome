@@ -32,7 +32,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
 
   const [method, setMethod] = useState('original');
   const [pageState, setPageState] = useState('original');
-  const [pageRenders, setPageRenders] = useState(new Set<string>(['original']));
+  const [pageRenders, setPageRenders] = useState(false);
 
   const [totalBatches, setTotal] = useState(0);
   const [finishedBatches, setProgress] = useState(0);
@@ -58,7 +58,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
     chrome.storage.local.get(window.location.href, (result) => {
       const savedData: WebpageDiacritizationData = result[window.location.href];
       if (savedData) {
-        setPageRenders(new Set(["arabizi", "fullDiacritics", "original"]));
+        setPageRenders(true)
       }
     })
   }, []);
@@ -78,7 +78,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
   const taskChoiceHandler = (task: string) => {
     setMethod(task);
     console.log('selected task: ', task, 'current method: ', method, 'existing pageRenders:', pageRenders)
-    if (pageRenders.has(task)) {
+    if (pageRenders) {
       setPageState(task);
       // TODO: this should just ask the service worker to return the textNodes, then update the page according to method.
       //   chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processText', method: task, wholePage: true })
@@ -144,7 +144,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
   useCustomEvent('webpageDone', () => {
     setProgress(totalBatches);
     setPageState(method);
-    setPageRenders(new Set(['arabizi', 'fullDiacritics', 'original']));
+    setPageRenders(true);
   });
 
   useCustomEvent('errorMessage', (event) => {

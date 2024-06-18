@@ -5,7 +5,10 @@
 ### Bugs
 
 - [x] transliteration isn't working right now (why?)
-- widget is not working properly after partial diacritization (doesn't know about it)
+- [ ] when there is a saved version of the page, clicking on the transliteration method in the widget does not update the page.
+- [ ] when a partial diacritization has been done, the widget does not correctly handle the existing text based on save.
+- [ ] when a diacritization process is aborted, the part of the webpage diacritized so far is not saved.
+- [ ]
 - options page still being implemented
 
 - 1.0 need to structure AppMessage and AppResponse more strictly based on the message types to avoid errors.
