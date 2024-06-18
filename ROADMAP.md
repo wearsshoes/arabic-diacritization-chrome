@@ -4,13 +4,18 @@
 
 ### Bugs
 
+- [x] transliteration isn't working right now (why?)
+- widget is not working properly after partial diacritization (doesn't know about it)
+- options page still being implemented
+
 - 1.0 need to structure AppMessage and AppResponse more strictly based on the message types to avoid errors.
 - 1.0 widget should send textNodes directly to update.
 - 1.0 track partial saves better.
 
 ### UI
 
-- 1.0 switch for choosing between arabizi and ala-lc.
+- 1.0 implement toggle between arabizi and ala-lc.
+- 1.0 in widget, have text be 'ala-lc' or 'arabizi' depending on option.
 - 1.0 Redesign extension popup to be simpler and cleaner
 - 1.0 have widget have button to open popup
 

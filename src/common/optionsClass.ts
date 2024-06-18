@@ -16,6 +16,7 @@ export class ExtensionOptions {
 
     // General Options
     public autoDiacritize: ('off' | 'fullDiacritics' | 'arabizi') = 'off';
+    public transliterationMethod: string = 'ala-lc';
     public apiKeys: { name: string, key: string, savedAt: string }[] = [];
     public activeKey: string = '';
     public activeModel: string = 'haiku';
@@ -32,15 +33,15 @@ export class ExtensionOptions {
     public checkTokenLength: boolean = false;
 
     // Local Data Options
+    // public lastSort
 
     // Transliteration Options
-    public transliterationMethod: string = 'phonetic';
-    public baseScheme: string = 'arabizi';
-    public separateDigraphs: boolean = false;
-    public useSunMoon: boolean = true;
-    public modifyTaaMarbuutaLLM: boolean = true;
-    public hideCaseEndingsLLM: boolean = true;
-    public capitalizeProperNounsLLM: boolean = true;
+    // public baseScheme: string = 'arabizi';
+    // public separateDigraphs: boolean = false;
+    // public useSunMoon: boolean = true;
+    // public modifyTaaMarbuutaLLM: boolean = true;
+    // public hideCaseEndingsLLM: boolean = true;
+    // public capitalizeProperNounsLLM: boolean = true;
 
     // API Usage Options
     public usageRecords: APIUsageRecord[] = [];
