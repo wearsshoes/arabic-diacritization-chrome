@@ -5,6 +5,8 @@ import { SettingsIcon, ChevronUpIcon, CheckIcon, MinusIcon, CloseIcon, ArrowForw
 import { Languages, translations } from "./widget_i18n";
 import { AppMessage, AppResponse } from "../common/types";
 import { WebpageDiacritizationData } from "../common/webpageDataClass";
+import { replaceWebpageText } from "./domUtils";
+import { arabicToArabizi } from "./arabizi";
 
 function useCustomEvent(
   eventName: string,
@@ -33,6 +35,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
   const [method, setMethod] = useState('original');
   const [pageState, setPageState] = useState('original');
   const [saveExists, setSaveExists] = useState(false);
+  const [savedData, setSavedData] = useState<WebpageDiacritizationData | undefined>(undefined);
 
   const [totalBatches, setTotal] = useState(0);
   const [finishedBatches, setProgress] = useState(0);
@@ -55,12 +58,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
   };
 
   useEffect(() => {
-    chrome.storage.local.get(window.location.href, (result) => {
-      const savedData: WebpageDiacritizationData = result[window.location.href];
-      if (savedData) {
-        setSaveExists(true)
-      }
-    })
+    fetchSave;
   }, []);
 
   useEffect(() => {
@@ -77,13 +75,24 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
 
   const taskChoiceHandler = (task: string) => {
     setMethod(task);
-    console.log('selected task: ', task, 'current method: ', method, 'existing pageRenders:', saveExists)
-    if (saveExists) {
+    console.log('selected task: ', task, 'current method: ', method, 'saveExists:', saveExists)
+    console.log('savedData:', savedData)
+    console.log('saved data is class', savedData instanceof WebpageDiacritizationData)
+    if (saveExists && savedData) {
       setPageState(task);
-
-      // TODO: this should just ask the service worker to return the textNodes, then update the page according to method.
-      //   chrome.runtime.sendMessage<AppMessage, AppResponse>({ action: 'processText', method: task, wholePage: true })
-      //     .catch((error) => console.error(`Error in ${task}:`, error));
+      console.log(savedData.getDiacritization('fullDiacritics') ?? "nothing");
+      const textWithRuby = arabicToArabizi(savedData.getDiacritization('fullDiacritics'))
+      switch (task) {
+        case 'original':
+          replaceWebpageText(savedData.getDiacritization('original'));
+          break;
+        case 'fullDiacritics':
+          replaceWebpageText(savedData.getDiacritization('fullDiacritics'));
+          break;
+        case 'arabizi':
+          replaceWebpageText(textWithRuby);
+          break;
+      }
     }
   };
 
@@ -108,6 +117,7 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
             console.log('Webpage processed:', result)
             if (result.status === 'success') {
               console.log('Webpage processed:', result)
+              fetchSave();
             } else {
               console.warn('Error processing webpage:', result.errorMessage)
             }
@@ -117,6 +127,23 @@ const ContentWidget = ({ siteLanguage }: { siteLanguage: string }) => {
       console.error(`Error in ${method}:`, error);
     }
   };
+
+  const fetchSave = async () => {
+    chrome.storage.local.get(window.location.href, (result) => {
+      console.log('Retrieved saved data:', result[window.location.href]);
+      if (result[window.location.href]) {
+        const saved = result[window.location.href];
+        Object.setPrototypeOf(saved, WebpageDiacritizationData.prototype);
+        setSavedData(saved)
+      }
+      else {
+        setSavedData(undefined);
+      }
+      if (result) {
+        setSaveExists(true)
+      }
+    });
+  }
 
   useEffect(() => {
     if (isAnimating) {
